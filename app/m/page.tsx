@@ -539,17 +539,17 @@ function FastFrictionlessMenuContent() {
             >
               <button
                 onClick={() => setIsReviewOpen(true)}
-                className="w-full bg-slate-900/95 backdrop-blur-md text-white px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700/80 active:scale-98 transition-transform"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-between active:scale-98 transition-all border border-orange-400/40"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                  <span className="w-6 h-6 rounded-lg bg-white text-orange-600 font-black text-xs flex items-center justify-center shadow-xs">
                     {totalCount}
                   </span>
                   <span className="text-xs font-black text-white">عرض السلة ومتابعة الطلب</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-orange-400">{totalAmount} ₪</span>
-                  <ArrowLeft size={16} className="text-slate-400" />
+                  <span className="text-sm font-black text-white">{totalAmount} ₪</span>
+                  <ArrowLeft size={16} className="text-white/80" />
                 </div>
               </button>
             </motion.div>
@@ -557,7 +557,7 @@ function FastFrictionlessMenuContent() {
         </AnimatePresence>
 
         {/* ============================================================
-            4. DETAILED PRODUCT & EXTRAS MODAL
+            4. DETAILED PRODUCT & EXTRAS MODAL (تصميم أنيق وفاتح ومريح)
         ============================================================ */}
         <AnimatePresence>
           {selectedProduct && (
@@ -565,15 +565,15 @@ function FastFrictionlessMenuContent() {
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setSelectedProduct(null)} 
-                className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs"
+                className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
               />
               <motion.div 
                 initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 26, stiffness: 280 }}
-                className="relative bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl max-h-[90vh] flex flex-col z-10 shadow-2xl overflow-hidden"
+                className="relative bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl max-h-[90vh] flex flex-col z-10 shadow-2xl overflow-hidden border-t sm:border border-slate-200"
               >
                 {/* Product Image Header */}
-                <div className="relative h-48 w-full bg-slate-900 shrink-0">
+                <div className="relative h-52 w-full bg-orange-50 shrink-0 overflow-hidden">
                   {selectedProduct.imageUrl ? (
                     <img 
                       src={selectedProduct.imageUrl} 
@@ -585,23 +585,26 @@ function FastFrictionlessMenuContent() {
                       {selectedProduct.image}
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   
                   <button 
                     onClick={() => setSelectedProduct(null)} 
-                    className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-md"
+                    className="absolute top-3.5 left-3.5 w-8 h-8 rounded-full bg-white/95 text-slate-700 hover:text-slate-900 flex items-center justify-center shadow-md backdrop-blur-md border border-slate-200/60 transition-transform active:scale-90"
                   >
-                    <X size={18} />
+                    <X size={16} />
                   </button>
 
-                  <div className="absolute bottom-3 right-4 left-4 text-white">
-                    <h3 className="text-xl font-black">{selectedProduct.name}</h3>
-                    <p className="text-xs text-slate-300 mt-0.5">{selectedProduct.description}</p>
+                  <div className="absolute bottom-3 right-4 left-4 text-white drop-shadow-sm">
+                    <div className="inline-block px-2.5 py-0.5 rounded-full bg-orange-500 text-white font-black text-xs mb-1 shadow-xs">
+                      {selectedProduct.price} ₪
+                    </div>
+                    <h3 className="text-xl font-black leading-tight">{selectedProduct.name}</h3>
+                    <p className="text-xs text-white/95 font-medium mt-0.5 line-clamp-2">{selectedProduct.description}</p>
                   </div>
                 </div>
 
                 {/* Modal Body: Extras & Notes */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-white">
                   {/* Extras Section */}
                   {selectedProduct.extras && selectedProduct.extras.length > 0 && (
                     <div>
@@ -699,7 +702,7 @@ function FastFrictionlessMenuContent() {
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setIsReviewOpen(false)} 
-                className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs"
+                className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
               />
               <motion.div 
                 initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
