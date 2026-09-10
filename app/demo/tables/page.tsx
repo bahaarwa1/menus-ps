@@ -85,41 +85,41 @@ export default function TablesManagementPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedTableForQr(tablesList[0])}
-            className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-500/20 transition-all"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-500/20 transition-all"
           >
-            <QrCode size={16} />
+            <QrCode size={15} />
             <span>طباعة أكواد QR لجميع الطاولات</span>
           </button>
         </div>
       </div>
 
       {/* KPI Stats Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <p className="text-xs text-slate-400 font-medium">إجمالي الطاولات</p>
-          <p className="text-2xl font-black text-slate-900 mt-1">{tablesList.length} طاولة</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] sm:text-xs text-slate-400 font-medium">إجمالي الطاولات</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{tablesList.length} طاولة</p>
         </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <p className="text-xs text-orange-600 font-bold">طاولات مشغولة حالياً</p>
-          <p className="text-2xl font-black text-orange-600 mt-1">{occupiedCount}</p>
+        <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] sm:text-xs text-orange-600 font-bold">مشغولة حالياً</p>
+          <p className="text-xl sm:text-2xl font-black text-orange-600 mt-1">{occupiedCount}</p>
         </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <p className="text-xs text-emerald-600 font-bold">طاولات شاغرة ومتاحة</p>
-          <p className="text-2xl font-black text-emerald-600 mt-1">{freeCount}</p>
+        <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] sm:text-xs text-emerald-600 font-bold">شاغرة ومتاحة</p>
+          <p className="text-xl sm:text-2xl font-black text-emerald-600 mt-1">{freeCount}</p>
         </div>
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <p className="text-xs text-slate-400 font-medium">نسبة الإشغال</p>
-          <p className="text-2xl font-black text-slate-900 mt-1">
+        <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] sm:text-xs text-slate-400 font-medium">نسبة الإشغال</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             {Math.round((occupiedCount / tablesList.length) * 100)}%
           </p>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-2.5 shadow-xs flex items-center gap-1.5">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-2 sm:p-2.5 shadow-xs flex items-center gap-1.5 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setFilterStatus('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             filterStatus === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -127,7 +127,7 @@ export default function TablesManagementPage() {
         </button>
         <button
           onClick={() => setFilterStatus('مشغولة')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             filterStatus === 'مشغولة' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
           }`}
         >
@@ -135,7 +135,7 @@ export default function TablesManagementPage() {
         </button>
         <button
           onClick={() => setFilterStatus('فارغة')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             filterStatus === 'فارغة' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
           }`}
         >
@@ -144,7 +144,7 @@ export default function TablesManagementPage() {
       </div>
 
       {/* Tables Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
         {filteredTables.map((table) => {
           const isOccupied = table.status === 'مشغولة';
           const isFree = table.status === 'فارغة';
@@ -152,7 +152,7 @@ export default function TablesManagementPage() {
           return (
             <div
               key={table.id}
-              className={`bg-white rounded-3xl p-4 border transition-all flex flex-col justify-between shadow-xs hover:shadow-md ${
+              className={`bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border transition-all flex flex-col justify-between shadow-xs hover:shadow-md ${
                 isOccupied
                   ? 'border-orange-400/80 ring-2 ring-orange-500/10'
                   : 'border-slate-200/80'
@@ -161,7 +161,7 @@ export default function TablesManagementPage() {
               <div>
                 {/* Table Header */}
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-black text-slate-900 text-base">طاولة {table.id}</span>
+                  <span className="font-black text-slate-900 text-sm sm:text-base">طاولة {table.id}</span>
                   <span
                     className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                       isOccupied
@@ -237,7 +237,7 @@ export default function TablesManagementPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl z-10 border border-slate-100 text-center"
+              className="relative bg-white rounded-3xl p-4 sm:p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl z-10 border border-slate-100 text-center"
             >
               <button
                 onClick={() => setSelectedTableForQr(null)}
@@ -246,7 +246,7 @@ export default function TablesManagementPage() {
                 <X size={18} />
               </button>
 
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <div className="w-10 h-10 bg-orange-500 text-white rounded-2xl mx-auto flex items-center justify-center font-black text-lg mb-2 shadow-md shadow-orange-500/25">
                   M
                 </div>
@@ -255,8 +255,8 @@ export default function TablesManagementPage() {
               </div>
 
               {/* Realistic QR Canvas representation */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-6 mb-4 flex flex-col items-center justify-center">
-                <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-sm flex flex-col items-center justify-center border border-slate-200">
+              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-6 mb-3 sm:mb-4 flex flex-col items-center justify-center">
+                <div className="w-36 h-36 sm:w-44 sm:h-44 bg-white p-2.5 sm:p-3 rounded-2xl shadow-sm flex flex-col items-center justify-center border border-slate-200">
                   <div className="w-full h-full bg-slate-900 rounded-lg p-2 flex items-center justify-center relative">
                     {/* QR Pattern Simulation */}
                     <div className="w-full h-full border-2 border-white/40 grid grid-cols-5 gap-1 p-1">
@@ -271,7 +271,7 @@ export default function TablesManagementPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-3 font-medium">امسح الكود لطلب الطعام والدفع مباشرة</p>
+                <p className="text-[11px] text-slate-400 mt-2.5 sm:mt-3 font-medium">امسح الكود لطلب الطعام والدفع مباشرة</p>
                 
                 {/* Dynamic QR link & security badge */}
                 <div className="mt-2 w-full bg-slate-100 rounded-xl p-2 flex items-center justify-between gap-2 border border-slate-200">

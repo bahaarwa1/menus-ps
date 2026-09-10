@@ -47,24 +47,26 @@ export default function AnalyticsPage() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4"
       >
         {statCards.map((stat) => (
           <motion.div
             key={stat.label}
             variants={item}
-            className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xl sm:text-2xl">{stat.icon}</span>
+              <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${
                 stat.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
               }`}>
                 {stat.change}
               </span>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-            <div className="text-xs text-slate-500 font-medium mt-1">{stat.label}</div>
+            <div>
+              <div className="text-lg sm:text-2xl font-black text-slate-900">{stat.value}</div>
+              <div className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">{stat.label}</div>
+            </div>
           </motion.div>
         ))}
       </motion.div>
@@ -74,11 +76,11 @@ export default function AnalyticsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm"
+        className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
       >
-        <h2 className="text-base font-bold text-slate-900 mb-4">📈 اتجاه المبيعات (30 يوم)</h2>
+        <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-3 sm:mb-4">📈 اتجاه المبيعات (30 يوم)</h2>
         {mounted && (
-          <div className="h-72">
+          <div className="h-60 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailySales}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -115,19 +117,19 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm"
+          className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
         >
-          <h2 className="text-base font-bold text-slate-900 mb-4">🏆 الأكثر مبيعًا</h2>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-3 sm:mb-4">🏆 الأكثر مبيعًا</h2>
           {mounted && (
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={bestSellers.slice(0, 8)} layout="vertical">
+                <BarChart data={bestSellers.slice(0, 8)} layout="vertical" margin={{ top: 5, right: 15, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                   <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    width={110}
+                    width={85}
                     tick={{ fill: '#64748b', fontSize: 11 }}
                   />
                   <Tooltip
@@ -152,13 +154,13 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm"
+          className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
         >
-          <h2 className="text-base font-bold text-slate-900 mb-4">⏰ ساعات الذروة</h2>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-3 sm:mb-4">⏰ ساعات الذروة</h2>
           {mounted && (
-            <div className="h-72">
+            <div className="h-60 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={busyHours}>
+                <BarChart data={busyHours} margin={{ top: 5, right: 15, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="hour" tick={{ fill: '#64748b', fontSize: 11 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
@@ -187,19 +189,19 @@ export default function AnalyticsPage() {
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Orders Trend */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm"
+          className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
         >
-          <h2 className="text-base font-bold text-slate-900 mb-4">📦 عدد الطلبات اليومي</h2>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-3 sm:mb-4">📦 عدد الطلبات اليومي</h2>
           {mounted && (
-            <div className="h-64">
+            <div className="h-56 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailySales}>
+                <BarChart data={dailySales} margin={{ top: 5, right: 15, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
@@ -225,11 +227,11 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm"
+          className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
         >
-          <h2 className="text-base font-bold text-slate-900 mb-4">📱 نسبة طلبات QR</h2>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-3 sm:mb-4">📱 نسبة طلبات QR</h2>
           {mounted && (
-            <div className="h-64 flex items-center justify-center relative">
+            <div className="h-56 sm:h-64 flex items-center justify-center relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie

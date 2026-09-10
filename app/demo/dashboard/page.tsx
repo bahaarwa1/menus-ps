@@ -57,33 +57,35 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-10 font-sans" dir="rtl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1">التقارير والتحليلات المالية — Burger House نابلس</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 mb-1">التقارير والتحليلات المالية — Burger House نابلس</h1>
         <p className="text-slate-500 text-xs md:text-sm">إحصائيات نمو الإيرادات، ساعات الذروة، ونسب زيادة المبيعات (Upselling)</p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPIs (2 cols on mobile, 4 on desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {kpis.map((kpi, idx) => (
           <motion.div 
             key={idx}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+            transition={{ delay: idx * 0.08 }}
+            className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
-                <kpi.icon size={24} />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-orange-50 text-orange-600">
+                <kpi.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div className={`text-xs font-bold px-2 py-1 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`} dir="ltr">
+              <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`} dir="ltr">
                 {kpi.change}
               </div>
             </div>
-            <h3 className="text-slate-500 text-xs font-medium mb-1">{kpi.title}</h3>
-            <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
+            <div>
+              <h3 className="text-slate-500 text-[11px] sm:text-xs font-medium mb-0.5 truncate">{kpi.title}</h3>
+              <p className="text-lg sm:text-2xl font-black text-slate-900">{kpi.value}</p>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -91,35 +93,35 @@ export default function DashboardPage() {
       {isClient && (
         <>
           {/* Charts Row 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Revenue Trend */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-6">اتجاه المبيعات (أسبوعي)</h3>
-              <div className="h-[300px] w-full" dir="ltr">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">اتجاه المبيعات (أسبوعي)</h3>
+              <div className="h-[250px] sm:h-[300px] w-full" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailySales} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <LineChart data={dailySales} margin={{ top: 5, right: 15, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="day" stroke="#94a3b8" tick={{ fill: '#64748b' }} />
-                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b' }} tickFormatter={(val) => `₪${val}`} />
+                    <XAxis dataKey="day" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => `₪${val}`} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#0f172a' }}
                       itemStyle={{ color: '#f97316' }}
                     />
-                    <Line type="monotone" dataKey="sales" name="المبيعات" stroke="#f97316" strokeWidth={3} dot={{ r: 4, fill: '#f97316' }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="sales" name="المبيعات" stroke="#f97316" strokeWidth={3} dot={{ r: 3, fill: '#f97316' }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Best Sellers */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-6">الأصناف الأكثر مبيعاً</h3>
-              <div className="h-[300px] w-full" dir="ltr">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">الأصناف الأكثر مبيعاً</h3>
+              <div className="h-[250px] sm:h-[300px] w-full" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={bestSellers?.slice(0, 8) || []} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+                  <BarChart data={bestSellers?.slice(0, 8) || []} layout="vertical" margin={{ top: 5, right: 15, left: 35, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                     <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#64748b' }} />
-                    <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 12 }} width={80} />
+                    <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} width={75} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#0f172a' }}
                       cursor={{ fill: '#fff7ed' }}
@@ -132,16 +134,16 @@ export default function DashboardPage() {
           </div>
 
           {/* Charts Row 2 & Tables */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Busy Hours */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 lg:col-span-2 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-6">أوقات الذروة</h3>
-              <div className="h-[300px] w-full" dir="ltr">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 lg:col-span-2 shadow-sm">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">أوقات الذروة</h3>
+              <div className="h-[250px] sm:h-[300px] w-full" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={busyHours || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <BarChart data={busyHours || []} margin={{ top: 5, right: 15, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="time" stroke="#94a3b8" tick={{ fill: '#64748b' }} />
-                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b' }} />
+                    <XAxis dataKey="time" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#0f172a' }}
                       cursor={{ fill: '#fff7ed' }}
@@ -153,12 +155,12 @@ export default function DashboardPage() {
             </div>
 
             {/* Addon Conversion */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-6">معدل تحويل الإضافات</h3>
-              <div className="space-y-4">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">معدل تحويل الإضافات</h3>
+              <div className="space-y-3.5 sm:space-y-4">
                 {safeAddonConversion.map((addon, idx) => (
                   <div key={idx}>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-xs sm:text-sm mb-1">
                       <span className="text-slate-600 font-medium">{addon.name}</span>
                       <span className="text-orange-600 font-bold">{addon.rate}%</span>
                     </div>
@@ -177,24 +179,24 @@ export default function DashboardPage() {
       )}
 
       {/* Tables Overview */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h3 className="text-base font-bold text-slate-900">حالة الطاولات (الصالة الرئيسية)</h3>
-          <div className="flex items-center gap-4 text-xs font-semibold">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+          <h3 className="text-sm sm:text-base font-bold text-slate-900">حالة الطاولات (الصالة الرئيسية)</h3>
+          <div className="flex items-center gap-3 text-xs font-semibold flex-wrap">
             <span className="flex items-center gap-1.5 text-emerald-600"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> فارغة</span>
             <span className="flex items-center gap-1.5 text-orange-600"><div className="w-2 h-2 rounded-full bg-orange-500"></div> مشغولة</span>
             <span className="flex items-center gap-1.5 text-blue-600"><div className="w-2 h-2 rounded-full bg-blue-500"></div> محجوزة</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3.5">
           {safeTables.map((table, idx) => (
             <div 
               key={idx} 
-              className={`border rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-transform hover:scale-105 ${getTableColor(table.status)}`}
+              className={`border rounded-xl p-2.5 sm:p-4 flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-transform hover:scale-105 ${getTableColor(table.status)}`}
             >
-              <Utensils size={24} />
-              <div className="font-bold text-sm">{table.id}</div>
-              <div className="text-xs opacity-90">{table.seats} أشخاص</div>
+              <Utensils className="w-4 h-4 sm:w-6 sm:h-6" />
+              <div className="font-black text-xs sm:text-sm">{table.id}</div>
+              <div className="text-[10px] sm:text-xs opacity-90">{table.seats} مقاعد</div>
             </div>
           ))}
         </div>

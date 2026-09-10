@@ -7,13 +7,12 @@ import PublicLayout from '@/components/layout/PublicLayout';
 import { 
   QrCode, Smartphone, ChefHat, BarChart3, Sparkles, CheckCircle2, 
   ArrowLeft, ExternalLink, ShieldCheck, Zap, TrendingUp, Clock, 
-  ArrowDown, Plus, Check, Utensils
+  ArrowDown, Check
 } from 'lucide-react';
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
-  const [activeSlide, setActiveSlide] = useState(0);
 
   // Showcase state
   const [activeTab, setActiveTab] = useState<'menu' | 'kitchen' | 'dashboard'>('menu');

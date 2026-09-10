@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock, PlusCircle, RotateCcw, 
-  Search, Printer, ChevronRight, Check, ExternalLink
+  Search, Printer, ChevronRight, Check, ExternalLink, X
 } from 'lucide-react';
 import { orders as initialOrders } from '@/data/demo-data';
 
@@ -28,6 +29,7 @@ export default function OrdersManagementPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>(initialOrders[0]?.id || '');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
@@ -88,6 +90,144 @@ export default function OrdersManagementPage() {
   const newOrdersCount = ordersList.filter(o => o.status === 'جديد').length;
   const preparingCount = ordersList.filter(o => o.status === 'قيد التحضير').length;
   const readyCount = ordersList.filter(o => o.status === 'جاهز').length;
+
+  const renderInspectorContent = (order: any, isMobileModal: boolean = false) => {
+    if (!order) {
+      return (
+        <div className="bg-white rounded-xl border border-slate-200/80 p-6 text-center text-slate-400 text-xs">
+          اختر طلباً من القائمة لعرض تفاصيله
+        </div>
+      );
+    }
+
+    return (
+      <div className={`space-y-2.5 ${isMobileModal ? '' : 'bg-white rounded-xl border border-slate-200/80 shadow-xs p-3.5 max-h-[calc(100vh-170px)] overflow-y-auto'}`}>
+        {/* Header */}
+        <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-base text-slate-900">{order.id}</h3>
+              {getStatusBadge(order.status)}
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">طلب طاولة {order.table} — {order.time}</p>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => window.print()}
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+              title="طباعة بون الطلب"
+            >
+              <Printer size={16} />
+            </button>
+            {isMobileModal && (
+              <button
+                onClick={() => setIsMobileDetailOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                title="إغلاق"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Items List */}
+        <div className={`space-y-1.5 ${isMobileModal ? 'max-h-60' : 'max-h-56'} overflow-y-auto pr-0.5`}>
+          <p className="text-xs font-black text-slate-500">محتويات الطلب ({order.items.length} أصناف)</p>
+          {order.items.map((item: any, iIdx: number) => {
+             const img = mockImages[item.name];
+             return (
+            <div key={iIdx} className="bg-slate-50 p-2 rounded-xl flex items-center justify-between gap-2 border border-slate-100">
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center shrink-0 border border-orange-200">
+                  {item.quantity}×
+                </span>
+                {img && (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-200">
+                    <img src={img} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-black text-sm text-slate-900">{item.name}</p>
+                  {item.customization && (
+                    <span className="text-[10px] text-orange-700 font-bold block">• {item.customization}</span>
+                  )}
+                  {item.extras && item.extras.length > 0 && (
+                    <span className="text-[10px] text-slate-600 font-bold block">• + {item.extras.join('، ')}</span>
+                  )}
+                </div>
+              </div>
+              <span className="font-black text-sm text-slate-900 shrink-0">{item.price * item.quantity} ₪</span>
+            </div>
+          )})}
+        </div>
+
+        {/* Customer Notes */}
+        {order.notes && (
+          <div className="bg-amber-100/90 border border-amber-300 rounded-xl p-2.5 text-xs font-black text-amber-950">
+            <span className="block mb-0.5">⚠️ ملاحظات الزبون:</span>
+            <p className="font-bold">{order.notes}</p>
+          </div>
+        )}
+
+        {/* Bill Details */}
+        <div className="bg-slate-50 p-2.5 rounded-xl space-y-1 text-xs">
+          <div className="flex justify-between text-slate-500 font-bold">
+            <span>المجموع الفرعي:</span>
+            <span className="font-black text-slate-800">{order.total} ₪</span>
+          </div>
+          <div className="flex justify-between text-slate-500 font-bold">
+            <span>الضريبة والخدمة:</span>
+            <span className="font-black text-emerald-600">مشمولة (0 ₪)</span>
+          </div>
+          <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 pt-1.5 border-t border-slate-200">
+            <span>الإجمالي المطلوب:</span>
+            <span className="text-orange-600">{order.total} ₪</span>
+          </div>
+        </div>
+
+        {/* Action Buttons Based on Status */}
+        <div className="pt-1">
+          {order.status === 'جديد' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
+              className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+            >
+              <span>قبول الطلب وبدء التحضير</span>
+              <Check size={16} />
+            </button>
+          )}
+
+          {order.status === 'قيد التحضير' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'جاهز')}
+              className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+            >
+              <span>الطلب جاهز للتسليم (طاولة {order.table})</span>
+              <CheckCircle2 size={16} />
+            </button>
+          )}
+
+          {order.status === 'جاهز' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
+              className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+            >
+              <span>تم التسليم بنجاح وإغلاق الطلب</span>
+              <Check size={16} />
+            </button>
+          )}
+
+          {order.status === 'تم التسليم' && (
+            <div className="text-center py-2 bg-slate-100 rounded-xl text-xs sm:text-sm font-black text-slate-500">
+              تم تسليم هذا الطلب بنجاح ✓
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-2.5 max-w-7xl mx-auto font-sans text-slate-800 text-xs sm:text-sm" dir="rtl">
@@ -150,7 +290,7 @@ export default function OrdersManagementPage() {
           </button>
           <button
             onClick={() => setStatusFilter('قيد التحضير')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
               statusFilter === 'قيد التحضير'
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
@@ -160,7 +300,7 @@ export default function OrdersManagementPage() {
           </button>
           <button
             onClick={() => setStatusFilter('جاهز')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
               statusFilter === 'جاهز'
                 ? 'bg-emerald-500 text-white shadow-xs'
                 : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -186,8 +326,8 @@ export default function OrdersManagementPage() {
       {/* Main Split Interface - Master/Detail (Strictly Viewport-Fitted) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
         
-        {/* Orders List (Right Column - 7 Cols) */}
-        <div className="lg:col-span-7 space-y-2 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5">
+        {/* Orders List (Full width on Mobile, 7 Cols on Desktop) */}
+        <div className="w-full lg:col-span-7 space-y-2 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5">
           {filteredOrders.length === 0 ? (
             <div className="bg-white border border-slate-200/80 rounded-xl p-8 text-center text-slate-400">
               <ClipboardList size={32} className="mx-auto mb-1.5 opacity-40" />
@@ -201,7 +341,10 @@ export default function OrdersManagementPage() {
               return (
                 <div
                   key={order.id}
-                  onClick={() => setSelectedOrderId(order.id)}
+                  onClick={() => {
+                    setSelectedOrderId(order.id);
+                    setIsMobileDetailOpen(true);
+                  }}
                   className={`bg-white rounded-xl p-2.5 border transition-all cursor-pointer relative ${
                     isSelected
                       ? 'border-orange-500 shadow-sm ring-2 ring-orange-500/20 bg-orange-50/10'
@@ -232,7 +375,8 @@ export default function OrdersManagementPage() {
                   <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
                     <span className="font-black text-orange-600 text-sm sm:text-base">{order.total} ₪</span>
                     <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
-                      <span>عرض التفاصيل</span>
+                      <span className="lg:hidden text-orange-600">فتح التفاصيل والإجراءات</span>
+                      <span className="hidden lg:inline">عرض التفاصيل</span>
                       <ChevronRight size={14} className="rtl:rotate-180" />
                     </div>
                   </div>
@@ -242,133 +386,46 @@ export default function OrdersManagementPage() {
           )}
         </div>
 
-        {/* Selected Order Inspector / Action Pane (Left Column - 5 Cols) */}
-        <div className="lg:col-span-5 sticky top-1">
-          {selectedOrder ? (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-3.5 space-y-2.5 max-h-[calc(100vh-170px)] overflow-y-auto">
-              
-              {/* Header */}
-              <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-black text-base text-slate-900">{selectedOrder.id}</h3>
-                    {getStatusBadge(selectedOrder.status)}
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">طلب طاولة {selectedOrder.table} — {selectedOrder.time}</p>
-                </div>
-
-                <button
-                  onClick={() => window.print()}
-                  className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="طباعة بون الطلب"
-                >
-                  <Printer size={16} />
-                </button>
-              </div>
-
-              {/* Items List */}
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
-                <p className="text-xs font-black text-slate-500">محتويات الطلب ({selectedOrder.items.length} أصناف)</p>
-                {selectedOrder.items.map((item: any, iIdx: number) => {
-                   const img = mockImages[item.name];
-                   return (
-                  <div key={iIdx} className="bg-slate-50 p-2 rounded-xl flex items-center justify-between gap-2 border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center shrink-0 border border-orange-200">
-                        {item.quantity}×
-                      </span>
-                      {img && (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-200">
-                          <img src={img} alt={item.name} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-black text-sm text-slate-900">{item.name}</p>
-                        {item.customization && (
-                          <span className="text-[10px] text-orange-700 font-bold block">• {item.customization}</span>
-                        )}
-                        {item.extras && item.extras.length > 0 && (
-                          <span className="text-[10px] text-slate-600 font-bold block">• + {item.extras.join('، ')}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="font-black text-sm text-slate-900 shrink-0">{item.price * item.quantity} ₪</span>
-                  </div>
-                )})}
-              </div>
-
-              {/* Customer Notes */}
-              {selectedOrder.notes && (
-                <div className="bg-amber-100/90 border border-amber-300 rounded-xl p-2.5 text-xs font-black text-amber-950">
-                  <span className="block mb-0.5">⚠️ ملاحظات الزبون:</span>
-                  <p className="font-bold">{selectedOrder.notes}</p>
-                </div>
-              )}
-
-              {/* Bill Details */}
-              <div className="bg-slate-50 p-2.5 rounded-xl space-y-1 text-xs">
-                <div className="flex justify-between text-slate-500 font-bold">
-                  <span>المجموع الفرعي:</span>
-                  <span className="font-black text-slate-800">{selectedOrder.total} ₪</span>
-                </div>
-                <div className="flex justify-between text-slate-500 font-bold">
-                  <span>الضريبة والخدمة:</span>
-                  <span className="font-black text-emerald-600">مشمولة (0 ₪)</span>
-                </div>
-                <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 pt-1.5 border-t border-slate-200">
-                  <span>الإجمالي المطلوب:</span>
-                  <span className="text-orange-600">{selectedOrder.total} ₪</span>
-                </div>
-              </div>
-
-              {/* Action Buttons Based on Status */}
-              <div className="pt-1">
-                {selectedOrder.status === 'جديد' && (
-                  <button
-                    onClick={() => updateOrderStatus(selectedOrder.id, 'قيد التحضير')}
-                    className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>قبول الطلب وبدء التحضير</span>
-                    <Check size={16} />
-                  </button>
-                )}
-
-                {selectedOrder.status === 'قيد التحضير' && (
-                  <button
-                    onClick={() => updateOrderStatus(selectedOrder.id, 'جاهز')}
-                    className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>الطلب جاهز للتسليم (طاولة {selectedOrder.table})</span>
-                    <CheckCircle2 size={16} />
-                  </button>
-                )}
-
-                {selectedOrder.status === 'جاهز' && (
-                  <button
-                    onClick={() => updateOrderStatus(selectedOrder.id, 'تم التسليم')}
-                    className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>تم التسليم بنجاح وإغلاق الطلب</span>
-                    <Check size={16} />
-                  </button>
-                )}
-
-                {selectedOrder.status === 'تم التسليم' && (
-                  <div className="text-center py-2 bg-slate-100 rounded-xl text-xs sm:text-sm font-black text-slate-500">
-                    تم تسليم هذا الطلب بنجاح ✓
-                  </div>
-                )}
-              </div>
-
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-slate-200/80 p-6 text-center text-slate-400 text-xs">
-              اختر طلباً من القائمة لعرض تفاصيله
-            </div>
-          )}
+        {/* Selected Order Inspector / Action Pane (Desktop Only - Left Column 5 Cols) */}
+        <div className="hidden lg:block lg:col-span-5 sticky top-1">
+          {renderInspectorContent(selectedOrder, false)}
         </div>
 
       </div>
+
+      {/* Mobile Drawer / Bottom Sheet for Order Inspector */}
+      <AnimatePresence>
+        {isMobileDetailOpen && selectedOrder && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDetailOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative bg-white w-full max-h-[85vh] rounded-t-3xl shadow-2xl z-10 overflow-hidden flex flex-col border-t border-slate-100"
+            >
+              {/* Drawer Handle */}
+              <div 
+                className="pt-3 pb-1 flex justify-center cursor-pointer"
+                onClick={() => setIsMobileDetailOpen(false)}
+              >
+                <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+              </div>
+              
+              <div className="p-4 overflow-y-auto">
+                {renderInspectorContent(selectedOrder, true)}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

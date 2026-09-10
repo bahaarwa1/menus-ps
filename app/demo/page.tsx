@@ -212,7 +212,8 @@ export default function DemoHubPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold">
               <tr>
@@ -244,6 +245,33 @@ export default function DemoHubPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden space-y-2">
+          {mockRecentOrders.map((order, idx) => (
+            <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-slate-900 text-xs">{order.id}</span>
+                  <span className="bg-slate-900 text-white font-black text-[10px] px-2 py-0.5 rounded-md">
+                    {order.table}
+                  </span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${order.color}`}>
+                  {order.status}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 font-bold truncate">{order.items}</p>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
+                <span className="font-black text-orange-600">{order.total}</span>
+                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
+                  <Clock size={11} />
+                  <span>{order.time}</span>
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

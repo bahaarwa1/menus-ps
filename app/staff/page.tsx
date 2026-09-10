@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   Clock, CheckCircle2, UtensilsCrossed, AlertCircle, 
   Bell, BellOff, Check, RotateCcw, LogOut, ChefHat,
-  Undo2, History, X, Minus, Square, Search
+  Undo2, History, X, Minus, Square
 } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 
