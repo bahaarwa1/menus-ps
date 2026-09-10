@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Clock, CheckCircle2, UtensilsCrossed, AlertCircle, 
   Bell, BellOff, Check, RotateCcw, LogOut, ChefHat,
-  Undo2, History, X
+  Undo2, History, X, Minus, Square, Search
 } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 
@@ -258,6 +259,30 @@ export default function StaffProtectedOrdersPage() {
     setUndoToast(prev => ({ ...prev, show: false }));
   };
 
+  // Windows 11 OS Desktop state for Staff POS
+  const [liveTime, setLiveTime] = useState('');
+  const [startMenuOpen, setStartMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setLiveTime(now.toLocaleTimeString('ar-PS', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (typeof document !== 'undefined') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  };
+
   // Status transitions with safety & realtime sync
   const startCooking = (id: string) => {
     const order = orders.find(o => o.id === id);
@@ -339,11 +364,51 @@ export default function StaffProtectedOrdersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-orange-500 selection:text-white" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-orange-500 selection:text-white pb-14" dir="rtl">
       
-      {/* 1. Industrial Kitchen Header Bar */}
+      {/* 1. Industrial Kitchen Header Bar with Windows 11 Title Bar */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        {/* Windows 11 Mica Title Bar */}
+        <div className="bg-slate-950 px-3 sm:px-4 py-1.5 border-b border-slate-800/80 flex items-center justify-between text-xs select-none">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+              🪟
+            </div>
+            <span className="font-extrabold text-white text-[11px] sm:text-xs truncate">
+              Menus.ps POS Pro — شاشة المطبخ وإعداد الطلبات (KDS) — Burger House نابلس
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              نظام الطهاة النشط
+            </span>
+          </div>
+
+          {/* Windows Controls */}
+          <div className="flex items-center gap-1 shrink-0 -ml-1 sm:ml-0">
+            <button 
+              title="تصغير"
+              className="w-7 h-5 flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white rounded text-xs transition-colors"
+            >
+              <Minus size={12} />
+            </button>
+            <button 
+              onClick={toggleFullscreen}
+              title="ملء الشاشة (F11 للتابلت والمطبخ)"
+              className="w-7 h-5 flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white rounded text-xs transition-colors"
+            >
+              <Square size={10} />
+            </button>
+            <Link 
+              href="/demo"
+              title="إغلاق والعودة للإدارة"
+              className="w-7 h-5 flex items-center justify-center hover:bg-rose-600 text-slate-400 hover:text-white rounded text-xs transition-colors"
+            >
+              <X size={13} />
+            </Link>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           
           <div className="flex items-center gap-3">
             <Logo size="sm" href="/staff" />
@@ -780,6 +845,157 @@ export default function StaffProtectedOrdersPage() {
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* ============================================================
+          5. WINDOWS 11 TASKBAR FOR STAFF KDS (شريط مهام ويندوز 11 للمطبخ)
+      ============================================================ */}
+      <footer className="fixed bottom-0 inset-x-0 z-40 h-11 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-3 sm:px-4 flex items-center justify-between text-white shadow-2xl select-none">
+        
+        {/* Right: Start Button + Pinned Apps */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setStartMenuOpen(!startMenuOpen)}
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-black transition-all active:scale-95 shadow-xs ${
+              startMenuOpen 
+                ? 'bg-sky-500 text-white ring-2 ring-sky-400/30' 
+                : 'bg-sky-600 hover:bg-sky-500 text-white'
+            }`}
+          >
+            <span>🪟</span>
+            <span className="hidden sm:inline">ابدأ</span>
+          </button>
+
+          <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
+
+          <div className="flex items-center gap-1">
+            <span className="relative px-2.5 py-1 rounded-lg bg-white/15 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs">
+              <span>👨‍🍳</span>
+              <span className="hidden sm:inline text-[11px]">شاشة المطبخ (نشط)</span>
+              <span className="absolute -bottom-1 inset-x-2 h-0.5 bg-sky-400 rounded-full" />
+            </span>
+
+            <Link 
+              href="/demo" 
+              className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-1.5"
+              title="لوحة الإدارة الرئيسية"
+            >
+              <span>🏠</span>
+              <span className="hidden md:inline text-[11px]">لوحة الإدارة</span>
+            </Link>
+
+            <Link 
+              href="/m" 
+              target="_blank"
+              className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-1.5"
+              title="معاينة منيو الجوال"
+            >
+              <span>📱</span>
+              <span className="hidden md:inline text-[11px]">منيو الزبون</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Left: System Tray (الصوت، ملء الشاشة، الساعة الحية) */}
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <button
+            onClick={() => {
+              setSoundEnabled(!soundEnabled);
+              if (!soundEnabled) playOrderChime();
+            }}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-colors ${
+              soundEnabled ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-400'
+            }`}
+            title="تفعيل أو كتم التنبيه الصوتي"
+          >
+            <span>{soundEnabled ? '🔔 رنين الطلبات' : '🔕 صامت'}</span>
+          </button>
+
+          <button
+            onClick={toggleFullscreen}
+            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors hidden sm:flex items-center"
+            title="وضع ملء الشاشة للمطبخ (F11)"
+          >
+            <Square size={13} />
+          </button>
+
+          <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+
+          <span className="hidden sm:inline text-[11px] text-emerald-400 font-bold">🟢 سحابي نشط</span>
+
+          <div className="text-left font-mono text-[11px] text-white font-bold px-1">
+            {liveTime || '12:00:00 م'}
+          </div>
+        </div>
+      </footer>
+
+      {/* Start Menu for Staff */}
+      {startMenuOpen && (
+        <div 
+          onClick={() => setStartMenuOpen(false)}
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="fixed bottom-13 right-4 sm:right-6 w-[90vw] sm:w-[360px] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl p-4 text-white font-sans text-right animate-in fade-in slide-in-from-bottom-2 duration-150"
+          >
+            <div className="flex items-center justify-between text-xs font-black text-slate-400 mb-3 px-1">
+              <span>نظام تشغيل المطبخ وإدارة الطلبات</span>
+              <span className="text-[10px] text-sky-400">Burger House</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center mb-4">
+              <button 
+                onClick={() => { setStartMenuOpen(false); setActiveTab('active'); }}
+                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">👨‍🍳</span>
+                <span className="text-xs font-bold">الطلبات النشطة ({activeOrders.length})</span>
+              </button>
+
+              <button 
+                onClick={() => { setStartMenuOpen(false); setActiveTab('new'); }}
+                className="p-3 rounded-xl bg-rose-950/40 hover:bg-rose-950/70 border border-rose-900/60 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">🛎️</span>
+                <span className="text-xs font-bold text-rose-300">طلبات جديدة ({newOrders.length})</span>
+              </button>
+
+              <Link 
+                href="/demo" 
+                onClick={() => setStartMenuOpen(false)}
+                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">🏠</span>
+                <span className="text-xs font-bold">لوحة الإدارة</span>
+              </Link>
+
+              <Link 
+                href="/m" 
+                target="_blank"
+                onClick={() => setStartMenuOpen(false)}
+                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">📱</span>
+                <span className="text-xs font-bold">منيو الجوال</span>
+              </Link>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-[11px] text-slate-400">طاقم التجهيز والمطبخ</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-rose-400 hover:text-rose-300 flex items-center gap-1 text-[11px] font-bold"
+              >
+                <span>خروج</span>
+                <LogOut size={13} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
