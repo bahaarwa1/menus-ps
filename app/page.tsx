@@ -15,6 +15,7 @@ export default function HomePage() {
   const isScrollingRef = useRef(false);
 
   // Showcase state
+  const [activeSlide, setActiveSlide] = useState(0);
   const [activeTab, setActiveTab] = useState<'menu' | 'kitchen' | 'dashboard'>('menu');
   const [demoCartCount, setDemoCartCount] = useState(2);
   const [demoCartTotal, setDemoCartTotal] = useState(64);
