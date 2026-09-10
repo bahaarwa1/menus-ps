@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  Clock, CheckCircle2, UtensilsCrossed, AlertCircle, 
+  Clock, CheckCircle2, UtensilsCrossed, 
   Bell, BellOff, Check, RotateCcw, LogOut, ChefHat,
-  Undo2, History, X, Minus, Square
+  Undo2, X, Armchair, LayoutGrid,
+  Sun, Moon
 } from 'lucide-react';
 
 // Audio chime using Web Audio API (zero external asset dependencies)
@@ -31,21 +32,7 @@ function playOrderChime() {
   }
 }
 
-// Food images for rapid visual recognition in the kitchen
-const foodImages: Record<string, string> = {
-  'دبل سماش برغر': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
-  'تشيز فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&q=80',
-  'تشيز بيكون فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&q=80',
-  'كلاسيك برغر فاخر': 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=400&q=80',
-  'وجبة أطفال': 'https://images.unsplash.com/photo-1625937759403-1c39050d276c?w=400&q=80',
-  'بيتزا مارغريتا': 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',
-  'عصير برتقال': 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&q=80',
-  'تشيكن كريسبي': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400&q=80',
-  'بطاطا ودجز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&q=80',
-  'كولا': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&q=80',
-};
-
-interface OrderItem {
+export interface OrderItem {
   name: string;
   qty: number;
   notes?: string;
@@ -53,252 +40,110 @@ interface OrderItem {
   done?: boolean;
 }
 
-interface KitchenOrder {
-  id: string;
-  table: number;
-  time: string;
-  elapsedMinutes: number;
-  status: 'new' | 'cooking' | 'ready' | 'completed';
+export interface TableItem {
+  id: number;
+  seats: number;
+  status: 'فارغة' | 'جديد' | 'قيد التحضير' | 'جاهز' | 'محجوزة' | 'تم التسليم';
+  orderId?: string;
+  time?: string;
+  elapsedMinutes?: number;
+  items?: OrderItem[];
   customerNote?: string;
-  items: OrderItem[];
   completedAt?: string;
 }
 
-const initialKitchenOrders: KitchenOrder[] = [
+// Initial 15 tables - Covering ALL tables in the restaurant
+const initialTablesData: TableItem[] = [
   {
-    id: '#1048',
-    table: 4,
-    time: '14:32',
-    elapsedMinutes: 2,
-    status: 'new',
+    id: 1, seats: 2, status: 'قيد التحضير', orderId: '#1041', time: '14:22', elapsedMinutes: 10,
+    items: [
+      { name: 'كلاسيك برغر فاخر', qty: 2 },
+      { name: 'بطاطا مقلية', qty: 2 },
+      { name: 'كولا', qty: 2 }
+    ]
+  },
+  {
+    id: 2, seats: 4, status: 'جديد', orderId: '#1050', time: '14:38', elapsedMinutes: 1,
+    customerNote: 'أرجو تحميص أطراف البيتزا قليلاً',
+    items: [
+      { name: 'بيتزا مارغريتا', qty: 1, extras: ['ريحان طازج'] },
+      { name: 'عصير برتقال', qty: 2, notes: 'بدون سكر' }
+    ]
+  },
+  { id: 3, seats: 2, status: 'فارغة' },
+  {
+    id: 4, seats: 6, status: 'جديد', orderId: '#1048', time: '14:32', elapsedMinutes: 2,
     customerNote: 'بدون بصل في أحد البرغرين، صوص خارجي حار',
     items: [
       { name: 'دبل سماش برغر', qty: 2, notes: 'لحم مستوي ميديوم', extras: ['جبنة شيدر إضافية'] },
       { name: 'تشيز فرايز', qty: 1 },
-      { name: 'كولا', qty: 2, notes: 'مع ثلج وليمون' },
-    ],
+      { name: 'كولا', qty: 2, notes: 'مع ثلج وليمون' }
+    ]
   },
+  { id: 5, seats: 4, status: 'فارغة' },
   {
-    id: '#1049',
-    table: 12,
-    time: '14:35',
-    elapsedMinutes: 6,
-    status: 'cooking',
-    customerNote: 'اللحم مستوي جيداً من أجل طفل صغير',
+    id: 6, seats: 2, status: 'جاهز', orderId: '#1045', time: '14:20', elapsedMinutes: 18,
     items: [
-      { name: 'كلاسيك برغر فاخر', qty: 1, notes: 'بدون مخلل' },
-      { name: 'وجبة أطفال', qty: 1, notes: 'عصير برتقال طبيعي' },
-    ],
+      { name: 'دبل سماش برغر', qty: 1 },
+      { name: 'كولا', qty: 1 }
+    ]
   },
   {
-    id: '#1050',
-    table: 2,
-    time: '14:38',
-    elapsedMinutes: 1,
-    status: 'new',
-    customerNote: 'أرجو تحميص أطراف البيتزا قليلاً',
+    id: 7, seats: 4, status: 'قيد التحضير', orderId: '#1046', time: '14:25', elapsedMinutes: 14,
     items: [
-      { name: 'بيتزا مارغريتا', qty: 1, extras: ['ريحان طازج'] },
-      { name: 'عصير برتقال', qty: 2, notes: 'بدون سكر' },
-    ],
+      { name: 'تشيكن كريسبي', qty: 2 },
+      { name: 'تشيز فرايز', qty: 1 }
+    ]
   },
   {
-    id: '#1051',
-    table: 8,
-    time: '14:41',
-    elapsedMinutes: 12,
-    status: 'cooking',
+    id: 8, seats: 8, status: 'قيد التحضير', orderId: '#1051', time: '14:41', elapsedMinutes: 12,
     customerNote: 'الصلصات منفصلة في علب خارجية',
     items: [
       { name: 'تشيكن كريسبي', qty: 3, notes: 'حار جداً سبايسي' },
-      { name: 'بطاطا ودجز', qty: 2, extras: ['صوص ثوم'] },
-    ],
+      { name: 'بطاطا ودجز', qty: 2, extras: ['صوص ثوم'] }
+    ]
   },
+  { id: 9, seats: 2, status: 'فارغة' },
+  { id: 10, seats: 4, status: 'فارغة' },
+  { id: 11, seats: 6, status: 'محجوزة' },
   {
-    id: '#1045',
-    table: 6,
-    time: '14:20',
-    elapsedMinutes: 18,
-    status: 'ready',
+    id: 12, seats: 4, status: 'قيد التحضير', orderId: '#1049', time: '14:35', elapsedMinutes: 6,
+    customerNote: 'اللحم مستوي جيداً من أجل طفل صغير',
+    items: [
+      { name: 'كلاسيك برغر فاخر', qty: 1, notes: 'بدون مخلل' },
+      { name: 'وجبة أطفال', qty: 1, notes: 'عصير برتقال طبيعي' }
+    ]
+  },
+  { id: 13, seats: 2, status: 'فارغة' },
+  {
+    id: 14, seats: 4, status: 'جديد', orderId: '#1052', time: '14:44', elapsedMinutes: 3,
     items: [
       { name: 'دبل سماش برغر', qty: 1 },
-      { name: 'كولا', qty: 1 },
-    ],
+      { name: 'عصير برتقال', qty: 1 }
+    ]
   },
-  {
-    id: '#1042',
-    table: 3,
-    time: '14:05',
-    elapsedMinutes: 35,
-    status: 'completed',
-    completedAt: '14:25',
-    items: [
-      { name: 'تشيكن كريسبي', qty: 2 },
-      { name: 'عصير برتقال', qty: 2 },
-    ],
-  },
+  { id: 15, seats: 6, status: 'فارغة' }
 ];
 
 export default function StaffProtectedOrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<KitchenOrder[]>(initialKitchenOrders);
-  const [activeTab, setActiveTab] = useState<'active' | 'new' | 'cooking' | 'ready' | 'archive'>('active');
+  const [tables, setTables] = useState<TableItem[]>(initialTablesData);
+  const [viewMode, setViewMode] = useState<'all_tables' | 'kitchen_cards'>('all_tables');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'cooking' | 'ready' | 'empty'>('all');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
-
-  // Mobile Touch Swipe Gesture between Tabs
-  const tabList: Array<'active' | 'new' | 'cooking' | 'ready' | 'archive'> = ['active', 'new', 'cooking', 'ready', 'archive'];
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
-    setTouchStartY(e.touches[0].clientY);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null || touchStartY === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const diffX = touchStartX - touchEndX;
-    const diffY = touchStartY - touchEndY;
-
-    // Only trigger horizontal swipe when horizontal movement is greater than vertical & exceeds 40px
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
-      const currentIndex = tabList.indexOf(activeTab);
-      if (diffX > 0) {
-        // Swiped left (in RTL: next tab)
-        if (currentIndex < tabList.length - 1) {
-          const nextTab = tabList[currentIndex + 1];
-          setActiveTab(nextTab);
-          document.getElementById(`staff-tab-${nextTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-      } else {
-        // Swiped right (in RTL: prev tab)
-        if (currentIndex > 0) {
-          const prevTab = tabList[currentIndex - 1];
-          setActiveTab(prevTab);
-          document.getElementById(`staff-tab-${prevTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-      }
-    }
-    setTouchStartX(null);
-    setTouchStartY(null);
-  };
-
-  // Connect to SSE Realtime stream
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    try {
-      eventSource = new EventSource('/api/v1/orders/stream');
-
-      eventSource.addEventListener('connected', () => {
-        setIsRealtimeConnected(true);
-      });
-
-      eventSource.addEventListener('order', (e: MessageEvent) => {
-        try {
-          const payload = JSON.parse(e.data);
-          if (payload.eventType === 'ORDER_CREATED') {
-            const incoming = payload.order;
-            setOrders(prev => {
-              const alreadyExists = prev.some(o => o.id === incoming.orderNumber || o.id === incoming.id);
-              if (alreadyExists) return prev;
-              const newKOrder: KitchenOrder = {
-                id: incoming.orderNumber || incoming.id,
-                table: incoming.tableNumber || 12,
-                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                elapsedMinutes: 0,
-                status: 'new',
-                customerNote: incoming.customerNote,
-                items: (incoming.items || []).map((i: { itemName: string; quantity: number; notes?: string; selectedExtras?: Array<{ name: string }> }) => ({
-                  name: i.itemName,
-                  qty: i.quantity,
-                  notes: i.notes,
-                  extras: (i.selectedExtras || []).map((ext) => ext.name || String(ext)),
-                })),
-              };
-              return [newKOrder, ...prev];
-            });
-
-            if (soundEnabled) {
-              playOrderChime();
-            }
-          } else if (payload.eventType === 'ORDER_STATUS_CHANGED') {
-            const incoming = payload.order;
-            const statusMapReverse: Record<string, KitchenOrder['status']> = {
-              'جديد': 'new',
-              'قيد التحضير': 'cooking',
-              'جاهز': 'ready',
-              'تم التسليم': 'completed',
-              new: 'new',
-              cooking: 'cooking',
-              ready: 'ready',
-              completed: 'completed',
-            };
-            const mapped = statusMapReverse[incoming.status];
-            if (mapped) {
-              setOrders(prev => prev.map(o => (o.id === incoming.orderNumber || o.id === incoming.id) ? { ...o, status: mapped } : o));
-            }
-          }
-        } catch (err) {
-          console.error('Error parsing SSE order event:', err);
-        }
-      });
-
-      eventSource.onerror = () => {
-        setIsRealtimeConnected(false);
-      };
-    } catch {
-      setIsRealtimeConnected(false);
-    }
-
-    return () => {
-      eventSource?.close();
-    };
-  }, [soundEnabled]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login?role=staff');
-      router.refresh();
-    } catch {
-      router.push('/login?role=staff');
-    }
-  };
-
-  // Safety Undo Toast state
+  const [selectedTableModal, setSelectedTableModal] = useState<TableItem | null>(null);
+  
+  // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
     show: boolean;
     message: string;
-    orderId: string;
-    prevStatus: KitchenOrder['status'];
-  }>({ show: false, message: '', orderId: '', prevStatus: 'new' });
+    tableId: number;
+    prevStatus: TableItem['status'];
+  }>({ show: false, message: '', tableId: 0, prevStatus: 'فارغة' });
 
-  // Confirmation modal state for closing order
-  const [confirmCompleteId, setConfirmCompleteId] = useState<string | null>(null);
-
-  const showUndo = (orderId: string, prevStatus: KitchenOrder['status'], message: string) => {
-    setUndoToast({
-      show: true,
-      message,
-      orderId,
-      prevStatus,
-    });
-    // Auto-hide toast after 8 seconds
-    setTimeout(() => {
-      setUndoToast(prev => ({ ...prev, show: false }));
-    }, 8000);
-  };
-
-  const handleUndo = () => {
-    if (!undoToast.orderId) return;
-    setOrders(prev => prev.map(o => o.id === undoToast.orderId ? { ...o, status: undoToast.prevStatus } : o));
-    setUndoToast(prev => ({ ...prev, show: false }));
-  };
-
-  // Windows 11 OS Desktop state for Staff POS
+  // Windows taskbar state
   const [liveTime, setLiveTime] = useState('');
   const [startMenuOpen, setStartMenuOpen] = useState(false);
 
@@ -312,6 +157,57 @@ export default function StaffProtectedOrdersPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Realtime SSE listener
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/v1/orders/stream');
+      eventSource.addEventListener('connected', () => setIsRealtimeConnected(true));
+      eventSource.addEventListener('order', (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.eventType === 'ORDER_CREATED') {
+            const incoming = payload.order;
+            const tableNum = incoming.tableNumber || 1;
+            setTables(prev => prev.map(t => {
+              if (t.id === tableNum) {
+                return {
+                  ...t,
+                  status: 'جديد',
+                  orderId: incoming.orderNumber || incoming.id,
+                  time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                  elapsedMinutes: 0,
+                  customerNote: incoming.customerNote,
+                  items: (incoming.items || []).map((i: { itemName: string; quantity: number; notes?: string }) => ({
+                    name: i.itemName,
+                    qty: i.quantity,
+                    notes: i.notes,
+                  }))
+                };
+              }
+              return t;
+            }));
+            if (soundEnabled) playOrderChime();
+          }
+        } catch {}
+      });
+      eventSource.onerror = () => setIsRealtimeConnected(false);
+    } catch {
+      setIsRealtimeConnected(false);
+    }
+    return () => eventSource?.close();
+  }, [soundEnabled]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login?role=staff');
+      router.refresh();
+    } catch {
+      router.push('/login?role=staff');
+    }
+  };
+
   const toggleFullscreen = () => {
     if (typeof document !== 'undefined') {
       if (!document.fullscreenElement) {
@@ -322,725 +218,803 @@ export default function StaffProtectedOrdersPage() {
     }
   };
 
-  // Status transitions with safety & realtime sync
-  const startCooking = (id: string) => {
-    const order = orders.find(o => o.id === id);
-    if (!order) return;
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'cooking' } : o));
-    showUndo(id, 'new', `تم نقل طلب طاولة ${order.table} إلى (قيد التحضير)`);
-    fetch(`/api/v1/orders/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'cooking' }),
-    }).catch(() => {});
+  const showUndo = (tableId: number, prevStatus: TableItem['status'], message: string) => {
+    setUndoToast({ show: true, message, tableId, prevStatus });
+    setTimeout(() => setUndoToast(prev => ({ ...prev, show: false })), 7000);
   };
 
-  const markReady = (id: string) => {
-    const order = orders.find(o => o.id === id);
-    if (!order) return;
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'ready' } : o));
-    showUndo(id, 'cooking', `تم نقل طلب طاولة ${order.table} إلى (جاهز للتسليم)`);
-    fetch(`/api/v1/orders/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'ready' }),
-    }).catch(() => {});
+  const handleUndo = () => {
+    if (!undoToast.tableId) return;
+    setTables(prev => prev.map(t => t.id === undoToast.tableId ? { ...t, status: undoToast.prevStatus } : t));
+    setUndoToast(prev => ({ ...prev, show: false }));
   };
 
-  const moveBackStep = (id: string) => {
-    setOrders(prev => prev.map(o => {
-      if (o.id !== id) return o;
-      if (o.status === 'cooking') return { ...o, status: 'new' };
-      if (o.status === 'ready') return { ...o, status: 'cooking' };
-      if (o.status === 'completed') return { ...o, status: 'ready' };
-      return o;
-    }));
+  // Status transitions
+  const startCooking = (tableId: number) => {
+    const t = tables.find(item => item.id === tableId);
+    if (!t) return;
+    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'قيد التحضير' } : item));
+    showUndo(tableId, t.status, `تم بدء تحضير طلب طاولة ${tableId}`);
+    if (selectedTableModal?.id === tableId) {
+      setSelectedTableModal(prev => prev ? { ...prev, status: 'قيد التحضير' } : null);
+    }
   };
 
-  const confirmAndComplete = (id: string) => {
-    const order = orders.find(o => o.id === id);
-    if (!order) return;
+  const markReady = (tableId: number) => {
+    const t = tables.find(item => item.id === tableId);
+    if (!t) return;
+    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'جاهز' } : item));
+    showUndo(tableId, t.status, `تم تجهيز طلب طاولة ${tableId} (نداء الويتر)`);
+    if (selectedTableModal?.id === tableId) {
+      setSelectedTableModal(prev => prev ? { ...prev, status: 'جاهز' } : null);
+    }
+  };
+
+  const completeAndDeliver = (tableId: number) => {
+    const t = tables.find(item => item.id === tableId);
+    if (!t) return;
     const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'completed', completedAt: nowTime } : o));
-    setConfirmCompleteId(null);
-    showUndo(id, 'ready', `تم تسليم طلب طاولة ${order.table} وحفظه في الأرشيف`);
-    fetch(`/api/v1/orders/${encodeURIComponent(id)}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'completed' }),
-    }).catch(() => {});
+    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'تم التسليم', completedAt: nowTime } : item));
+    showUndo(tableId, t.status, `تم تسليم طلب طاولة ${tableId} للويتر`);
+    if (selectedTableModal?.id === tableId) {
+      setSelectedTableModal(prev => prev ? { ...prev, status: 'تم التسليم' } : null);
+    }
   };
 
-  const restoreFromArchive = (id: string) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'cooking' } : o));
+  const clearTable = (tableId: number) => {
+    const t = tables.find(item => item.id === tableId);
+    if (!t) return;
+    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'فارغة', items: [], orderId: undefined } : item));
+    showUndo(tableId, t.status, `تم تفريغ طاولة ${tableId}`);
+    if (selectedTableModal?.id === tableId) {
+      setSelectedTableModal(null);
+    }
   };
 
-  const toggleItemDone = (orderId: string, itemIdx: number) => {
-    setOrders(prev => prev.map(o => {
-      if (o.id !== orderId) return o;
-      const updatedItems = [...o.items];
-      updatedItems[itemIdx] = {
-        ...updatedItems[itemIdx],
-        done: !updatedItems[itemIdx].done
-      };
-      return { ...o, items: updatedItems };
+  const toggleItemDone = (tableId: number, itemIdx: number) => {
+    setTables(prev => prev.map(t => {
+      if (t.id !== tableId || !t.items) return t;
+      const updated = [...t.items];
+      updated[itemIdx] = { ...updated[itemIdx], done: !updated[itemIdx].done };
+      return { ...t, items: updated };
     }));
+    if (selectedTableModal?.id === tableId && selectedTableModal.items) {
+      const updated = [...selectedTableModal.items];
+      updated[itemIdx] = { ...updated[itemIdx], done: !updated[itemIdx].done };
+      setSelectedTableModal({ ...selectedTableModal, items: updated });
+    }
   };
 
   // Counts
-  const newOrders = orders.filter(o => o.status === 'new');
-  const cookingOrders = orders.filter(o => o.status === 'cooking');
-  const readyOrders = orders.filter(o => o.status === 'ready');
-  const activeOrders = orders.filter(o => o.status !== 'completed');
-  const completedOrders = orders.filter(o => o.status === 'completed');
+  const occupiedTables = tables.filter(t => t.status !== 'فارغة');
+  const newCount = tables.filter(t => t.status === 'جديد').length;
+  const cookingCount = tables.filter(t => t.status === 'قيد التحضير').length;
+  const readyCount = tables.filter(t => t.status === 'جاهز').length;
+  const emptyCount = tables.filter(t => t.status === 'فارغة').length;
 
-  const displayedOrders = orders.filter(o => {
-    if (activeTab === 'new') return o.status === 'new';
-    if (activeTab === 'cooking') return o.status === 'cooking';
-    if (activeTab === 'ready') return o.status === 'ready';
-    if (activeTab === 'archive') return o.status === 'completed';
-    return o.status !== 'completed'; // 'active'
+  const filteredTables = tables.filter(t => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'new') return t.status === 'جديد';
+    if (statusFilter === 'cooking') return t.status === 'قيد التحضير';
+    if (statusFilter === 'ready') return t.status === 'جاهز';
+    if (statusFilter === 'empty') return t.status === 'فارغة';
+    return true;
   });
 
+  const activeOrdersForKitchen = tables.filter(t => t.status === 'جديد' || t.status === 'قيد التحضير' || t.status === 'جاهز');
+
+  // Status style helper
+  const getStatusBadge = (status: TableItem['status']) => {
+    switch (status) {
+      case 'جديد':
+        return { bg: 'bg-rose-500 text-white', border: 'border-rose-300 ring-rose-400', label: 'طلب جديد', dot: 'bg-rose-500 animate-pulse' };
+      case 'قيد التحضير':
+        return { bg: 'bg-amber-500 text-slate-950', border: 'border-amber-300 ring-amber-400', label: 'قيد التحضير', dot: 'bg-amber-500 animate-spin' };
+      case 'جاهز':
+        return { bg: 'bg-emerald-500 text-white', border: 'border-emerald-300 ring-emerald-400', label: 'جاهز للتقديم', dot: 'bg-emerald-400' };
+      case 'محجوزة':
+        return { bg: 'bg-sky-500 text-white', border: 'border-sky-300 ring-sky-400', label: 'محجوزة', dot: 'bg-sky-400' };
+      case 'تم التسليم':
+        return { bg: 'bg-indigo-600 text-white', border: 'border-indigo-300 ring-indigo-400', label: 'تم التسليم', dot: 'bg-indigo-400' };
+      case 'فارغة':
+      default:
+        return { bg: 'bg-slate-200 text-slate-700', border: 'border-slate-200 ring-slate-300', label: 'فارغة', dot: 'bg-slate-400' };
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-orange-500 selection:text-white pb-6 md:pb-14" dir="rtl">
+    <div className={`min-h-screen font-sans flex flex-col selection:bg-orange-500 selection:text-white transition-colors duration-200 ${
+      isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+    }`} dir="rtl">
       
-      {/* 1. Industrial Kitchen Header Bar - Windows 11 on Desktop, Clean App Bar on Mobile */}
-      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl">
-        {/* Windows 11 Mica Title Bar (Desktop Only) */}
-        <div className="hidden md:flex bg-slate-950 px-4 py-1.5 border-b border-slate-800/80 items-center justify-between text-xs select-none">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
-              🪟
-            </div>
-            <span className="font-extrabold text-white text-xs truncate">
-              Menus.ps POS Pro — شاشة المطبخ وإعداد الطلبات (KDS) — Burger House نابلس
-            </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              نظام الطهاة النشط
+      {/* 1. Ultra-Clean Top Bar */}
+      <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors ${
+        isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/90'
+      } backdrop-blur-md`}>
+        
+        {/* Mica Bar for Desktop */}
+        <div className={`hidden md:flex px-4 py-1.5 border-b items-center justify-between text-xs select-none ${
+          isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🪟</span>
+            <span className="font-extrabold text-xs">Menus.ps POS Pro — إدارة الصالة وشاشة المطبخ (15 طاولة)</span>
+            <span className={`font-bold text-[11px] flex items-center gap-1 ${isRealtimeConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              {isRealtimeConnected ? 'مباشر سحابياً' : 'إعادة اتصال...'}
             </span>
           </div>
-
-          {/* Windows Controls */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button 
-              title="تصغير"
-              className="w-7 h-5 flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white rounded text-xs transition-colors"
-            >
-              <Minus size={12} />
-            </button>
-            <button 
+          <div className="flex items-center gap-2">
+            <span>فرع نابلس الرئيسي</span>
+            <span>•</span>
+            <span>15 طاولة</span>
+            <button
               onClick={toggleFullscreen}
-              title="ملء الشاشة (F11 للتابلت والمطبخ)"
-              className="w-7 h-5 flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white rounded text-xs transition-colors"
+              className="px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-[10px] font-bold"
+              title="ملء الشاشة"
             >
-              <Square size={10} />
+              ملء الشاشة ⛶
             </button>
-            <Link 
-              href="/demo" 
-              title="إغلاق والعودة للإدارة"
-              className="w-7 h-5 flex items-center justify-center hover:bg-rose-600 text-slate-400 hover:text-white rounded text-xs transition-colors"
-            >
-              <X size={13} />
-            </Link>
           </div>
         </div>
 
-        {/* Compact Kitchen App Bar */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+        {/* Primary Header Strip */}
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-2 flex items-center justify-between gap-1.5">
           
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-sm sm:text-lg shadow-md shadow-orange-500/20 shrink-0">
+          {/* Logo & Quick Stats */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
               👨‍🍳
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-xs sm:text-base font-black text-white leading-none">
-                  شاشة المطبخ (KDS)
+                <h1 className="text-xs sm:text-base font-black truncate">
+                  شاشة الطاولات والمطبخ
                 </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold mt-0.5">فرع نابلس • مزامنة فورية</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold truncate">
+                {tables.length} طاولات • {occupiedTables.length} مشغولة • {readyCount} جاهزة
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Realtime Live Status Badge */}
-            <div className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-black flex items-center gap-1 border ${
-              isRealtimeConnected
-                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+          {/* Action Tools */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* View Mode Toggle: All Tables vs Kitchen Cards */}
+            <div className={`p-0.5 rounded-xl border flex items-center ${
+              isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
-              <span>{isRealtimeConnected ? 'مباشر' : 'إعادة اتصال...'}</span>
+              <button
+                onClick={() => setViewMode('all_tables')}
+                className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                  viewMode === 'all_tables'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-orange-500'
+                }`}
+                title="عرض جميع الـ 15 طاولة في الصالة"
+              >
+                <LayoutGrid size={13} />
+                <span className="hidden xs:inline sm:inline">كل الطاولات ({tables.length})</span>
+                <span className="xs:hidden sm:hidden">الطاولات</span>
+              </button>
+
+              <button
+                onClick={() => setViewMode('kitchen_cards')}
+                className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                  viewMode === 'kitchen_cards'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-orange-500'
+                }`}
+                title="عرض طلبات المطبخ النشطة"
+              >
+                <ChefHat size={13} />
+                <span className="hidden xs:inline sm:inline">المطبخ ({activeOrdersForKitchen.length})</span>
+                <span className="xs:hidden sm:hidden">المطبخ</span>
+              </button>
             </div>
 
-            {/* Sound alert toggle */}
+            {/* Sound alert */}
             <button
               onClick={() => {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playOrderChime();
               }}
-              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all border ${
-                soundEnabled 
-                  ? 'bg-orange-500/20 text-orange-400 border-orange-500/40' 
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
+                soundEnabled
+                  ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
+                  : 'bg-white text-slate-400 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
               }`}
-              title="تفعيل/كتم التنبيه الصوتي"
+              title="تفعيل/كتم الصوت"
             >
-              {soundEnabled ? <Bell size={13} className="text-orange-400" /> : <BellOff size={13} />}
-              <span className="hidden sm:inline text-[11px]">{soundEnabled ? 'الجرس' : 'مكتوم'}</span>
+              {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
             </button>
 
-            {/* Fullscreen F11 - Desktop only */}
+            {/* Light / Dark Mode Toggle */}
             <button
-              onClick={toggleFullscreen}
-              className="hidden sm:flex p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
-              title="ملء الشاشة"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
+                isDarkMode
+                  ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
+                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+              }`}
+              title="تبديل المظهر النهاري/الليلي"
             >
-              <Square size={13} />
-            </button>
-
-            {/* Reset - Desktop only */}
-            <button
-              onClick={() => setOrders(initialKitchenOrders)}
-              className="hidden sm:flex p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
-              title="إعادة تعيين"
-            >
-              <RotateCcw size={13} />
+              {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-1.5 sm:px-2.5 sm:py-1 text-xs font-bold text-slate-300 hover:text-rose-400 bg-slate-800 hover:bg-rose-950/50 rounded-lg transition-colors flex items-center gap-1 border border-slate-700"
+              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
               title="تسجيل خروج"
             >
-              <LogOut size={13} />
+              <LogOut size={15} />
             </button>
           </div>
 
         </div>
+
+        {/* 2. Quick Status Filters Strip */}
+        <div className={`px-2.5 sm:px-4 py-1.5 border-t flex items-center justify-between gap-1 overflow-x-auto scrollbar-none text-xs font-black ${
+          isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200/70'
+        }`}>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                statusFilter === 'all'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+              }`}
+            >
+              الكل ({tables.length})
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('new')}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                statusFilter === 'new'
+                  ? 'bg-rose-500 text-white shadow-xs'
+                  : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>جديد ({newCount})</span>
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('cooking')}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                statusFilter === 'cooking'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span>بالطهي ({cookingCount})</span>
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('ready')}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                statusFilter === 'ready'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>جاهز ({readyCount})</span>
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('empty')}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                statusFilter === 'empty'
+                  ? 'bg-slate-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300'
+              }`}
+            >
+              <span>فارغة ({emptyCount})</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setTables(initialTablesData)}
+            className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center gap-0.5 shrink-0 px-1"
+            title="إعادة تعيين الطاولات"
+          >
+            <RotateCcw size={11} />
+            <span className="hidden sm:inline">إعادة ضبط</span>
+          </button>
+        </div>
+
       </header>
 
-      {/* 2. Order Filter Tabs */}
-      <div className="bg-slate-900/90 border-b border-slate-800 px-3 sm:px-4 py-2 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-0.5 scrollbar-none">
-            {/* Active All */}
-            <button
-              id="staff-tab-active"
-              onClick={() => setActiveTab('active')}
-              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'active'
-                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/25 ring-1 ring-orange-400/30'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <span>النشطة</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'active' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                {activeOrders.length}
+      {/* 3. MAIN CONTENT: ALL TABLES MATRIX (15 TABLES) OR 2-COLUMN KITCHEN CARDS */}
+      <main className="max-w-7xl mx-auto p-2 sm:p-4 w-full flex-1 pb-16">
+        
+        {/* =========================================================================
+            MODE 1: ALL 15 TABLES FLOOR MATRIX (شبكة جميع طاولات المطعم الـ 15 معاً)
+        ========================================================================= */}
+        {viewMode === 'all_tables' && (
+          <div>
+            {/* Quick Helper Subtitle */}
+            <div className="flex items-center justify-between mb-2 px-1 text-xs">
+              <span className="font-extrabold text-slate-700 dark:text-slate-300">
+                جميع طاولات الصالة الـ 15 (اضغط أي طاولة لعرض تفاصيلها):
               </span>
-            </button>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                {filteredTables.length} طاولة معروضة
+              </span>
+            </div>
 
-            {/* New */}
-            <button
-              id="staff-tab-new"
-              onClick={() => setActiveTab('new')}
-              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'new'
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-1 ring-rose-500/30'
-                  : 'bg-rose-950/40 text-rose-300 hover:bg-rose-900/50 border border-rose-800/60'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
-              <span>جديدة ({newOrders.length})</span>
-            </button>
+            {/* Responsive Multi-Column Matrix: 3 cols on mobile, 5 cols on tablet/desktop */}
+            {/* IN 3 to 5 COLUMNS, ALL 15 TABLES FIT RIGHT ON YOUR SCREEN! */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+              {filteredTables.map((table) => {
+                const badge = getStatusBadge(table.status);
+                const isOccupied = table.status !== 'فارغة';
+                const itemsCount = table.items?.reduce((sum, i) => sum + i.qty, 0) || 0;
 
-            {/* Cooking */}
-            <button
-              id="staff-tab-cooking"
-              onClick={() => setActiveTab('cooking')}
-              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'cooking'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-1 ring-amber-500/30'
-                  : 'bg-amber-950/40 text-amber-300 hover:bg-amber-900/50 border border-amber-800/60'
-              }`}
-            >
-              <UtensilsCrossed size={12} />
-              <span>طهي ({cookingOrders.length})</span>
-            </button>
+                return (
+                  <div
+                    key={table.id}
+                    onClick={() => setSelectedTableModal(table)}
+                    className={`rounded-xl sm:rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between relative shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
+                      isDarkMode ? 'bg-slate-900 hover:border-orange-500/70' : 'bg-white hover:border-orange-400'
+                    } ${
+                      table.status === 'جديد'
+                        ? 'border-rose-400/80 ring-2 ring-rose-400/20'
+                        : table.status === 'قيد التحضير'
+                        ? 'border-amber-400/80 ring-2 ring-amber-400/20'
+                        : table.status === 'جاهز'
+                        ? 'border-emerald-400/80 ring-2 ring-emerald-400/20'
+                        : isDarkMode ? 'border-slate-800' : 'border-slate-200'
+                    }`}
+                  >
+                    {/* Table Header: Number & Seats */}
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs sm:text-sm flex items-center justify-center">
+                          {table.id}
+                        </span>
+                        <span className="font-black text-xs sm:text-sm leading-none">
+                          طاولة {table.id}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-0.5 text-[10px] text-slate-400 font-bold">
+                        <Armchair size={11} />
+                        <span>{table.seats}</span>
+                      </div>
+                    </div>
 
-            {/* Ready */}
-            <button
-              id="staff-tab-ready"
-              onClick={() => setActiveTab('ready')}
-              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'ready'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-500/30'
-                  : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50 border border-emerald-800/60'
-              }`}
-            >
-              <CheckCircle2 size={12} />
-              <span>جاهزة ({readyOrders.length})</span>
-            </button>
-
-            {/* Archive */}
-            <button
-              id="staff-tab-archive"
-              onClick={() => setActiveTab('archive')}
-              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'archive'
-                  ? 'bg-slate-700 text-white shadow-md'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
-            >
-              <History size={12} />
-              <span>أرشيف ({completedOrders.length})</span>
-            </button>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 shrink-0">
-            <span className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-xs">
-              <Clock size={12} className="text-orange-400" />
-              <span>متوسط: <strong>8 د</strong></span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Main Orders Area with Swipe Touch Gesture */}
-      <main 
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="max-w-7xl mx-auto p-2.5 sm:p-4 w-full flex-1 pb-20 touch-pan-y"
-      >
-        {displayedOrders.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 max-w-sm mx-auto my-8 shadow-xs">
-            <ChefHat size={40} className="mx-auto mb-2 text-orange-500 opacity-60" />
-            <h3 className="text-sm sm:text-base font-black text-white mb-1">
-              {activeTab === 'archive' ? 'لا توجد طلبات في سجل اليوم بعد' : 'لا توجد طلبات في هذا القسم'}
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              {activeTab === 'archive' ? 'الطلبات المكتملة تظهر هنا' : 'الطلبات الحية ستظهر فور إرسالها من الطاولات'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 items-start">
-            {displayedOrders.map((order) => {
-              const isNew = order.status === 'new';
-              const isCooking = order.status === 'cooking';
-              const isReady = order.status === 'ready';
-              const isCompleted = order.status === 'completed';
-
-              return (
-                <div
-                  key={order.id}
-                  className={`bg-slate-900 rounded-2xl sm:rounded-3xl border transition-all shadow-md flex flex-col justify-between overflow-hidden relative ${
-                    isNew
-                      ? 'border-rose-500/80 shadow-rose-950/20'
-                      : isCooking
-                      ? 'border-amber-500/80 shadow-amber-950/20'
-                      : isReady
-                      ? 'border-emerald-500/80 shadow-emerald-950/20'
-                      : 'border-slate-800 bg-slate-900/60 opacity-80'
-                  }`}
-                >
-                  
-                  {/* Card Header: Table Number & Status */}
-                  <div className={`px-2.5 py-2 sm:px-3.5 sm:py-2.5 border-b flex items-center justify-between ${
-                    isNew 
-                      ? 'bg-rose-950/50 border-rose-900/50 text-rose-200' 
-                      : isCooking 
-                      ? 'bg-amber-950/50 border-amber-900/50 text-amber-200' 
-                      : isReady 
-                      ? 'bg-emerald-950/50 border-emerald-900/50 text-emerald-200'
-                      : 'bg-slate-800/80 border-slate-700 text-slate-300'
-                  }`}>
-                    {/* Compact Table Badge */}
-                    <div className="flex items-center gap-2">
-                      <span className={`font-black text-xs sm:text-sm px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg shadow-xs ${
-                        isNew
-                          ? 'bg-rose-500 text-white'
-                          : isCooking
-                          ? 'bg-amber-500 text-slate-950'
-                          : isReady
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'bg-slate-800 text-slate-300'
-                      }`}>
-                        طاولة {order.table}
-                      </span>
-                      <span className="font-mono font-bold text-white text-xs">{order.id}</span>
-                      <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                        <Clock size={10} />
-                        {isCompleted ? order.completedAt : `${order.time} (${order.elapsedMinutes}د)`}
+                    {/* Status Pill */}
+                    <div className="my-1">
+                      <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-black w-full justify-center ${badge.bg}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                        <span className="truncate">{badge.label}</span>
                       </span>
                     </div>
 
-                    {/* Status Pill & Undo Button */}
-                    <div className="flex items-center gap-1">
-                      {(isCooking || isReady) && (
-                        <button
-                          onClick={() => moveBackStep(order.id)}
-                          className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[10px] font-bold flex items-center gap-0.5 active:scale-95 transition-all"
-                          title="تراجع خطوة للوراء"
-                        >
-                          <Undo2 size={10} />
-                          <span>تراجع</span>
-                        </button>
-                      )}
-
-                      {isNew && (
-                        <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                          جديد
-                        </span>
-                      )}
-                      {isCooking && (
-                        <span className="bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
-                          <UtensilsCrossed size={11} />
-                          قيد الطهي
-                        </span>
-                      )}
-                      {isReady && (
-                        <span className="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
-                          <CheckCircle2 size={11} />
-                          جاهز
-                        </span>
-                      )}
-                      {isCompleted && (
-                        <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          ✓ تم التسليم
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Items Checklist - High Density */}
-                  <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5 flex-1">
-                    {order.items.map((item, idx) => {
-                      const img = foodImages[item.name];
-                      return (
-                        <div
-                          key={idx}
-                          onClick={() => !isCompleted && toggleItemDone(order.id, idx)}
-                          className={`px-2 py-1.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
-                            isCompleted
-                              ? 'bg-slate-950/40 border-slate-800/60'
-                              : item.done 
-                              ? 'bg-slate-950/40 border-slate-800/80 opacity-40 line-through cursor-pointer' 
-                              : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700 cursor-pointer shadow-inner'
-                          }`}
-                          title={!isCompleted ? "اضغط للشطب بعد التجهيز" : undefined}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            {/* Quantity Badge */}
-                            <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md font-black text-[11px] sm:text-xs flex items-center justify-center shrink-0 border ${
-                              item.done 
-                                ? 'bg-slate-800 text-slate-500 border-slate-700' 
-                                : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                            }`}>
-                              {item.qty}×
-                            </span>
-
-                            {/* Food Photo - Desktop/Tablet only */}
-                            {img && (
-                              <div className="w-6 h-6 rounded overflow-hidden shrink-0 border border-slate-700 bg-slate-900 hidden sm:block">
-                                <img src={img} alt={item.name} className="w-full h-full object-cover" />
-                              </div>
-                            )}
-
-                            {/* Details */}
-                            <div className="min-w-0">
-                              <p className="font-black text-xs text-white leading-tight truncate">
-                                {item.name}
-                              </p>
-                              {(item.notes || (item.extras && item.extras.length > 0)) && (
-                                <p className="text-[10px] text-orange-400 font-bold truncate mt-0.5">
-                                  {item.notes && <span>• {item.notes} </span>}
-                                  {item.extras && item.extras.length > 0 && <span>• + {item.extras.join('، ')}</span>}
-                                </p>
-                              )}
-                            </div>
+                    {/* Quick Info & Items Count */}
+                    <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-[10px] sm:text-[11px]">
+                      {isOccupied ? (
+                        <div className="space-y-0.5">
+                          <div className="flex justify-between font-bold text-slate-600 dark:text-slate-300">
+                            <span className="truncate">{table.orderId || 'طلب نشط'}</span>
+                            <span className="text-orange-500 font-black">{itemsCount} أصناف</span>
                           </div>
-
-                          {!isCompleted && (
-                            <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                              item.done ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700 bg-slate-900'
-                            }`}>
-                              {item.done && <Check size={11} strokeWidth={3} />}
+                          {table.time && (
+                            <div className="flex items-center gap-0.5 text-slate-400">
+                              <Clock size={9} />
+                              <span>{table.time} ({table.elapsedMinutes || 1}د)</span>
                             </div>
                           )}
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <div className="text-center text-slate-400 py-1 font-bold">
+                          جاهزة للاستقبال
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Customer Notes Alert */}
-                    {order.customerNote && (
-                      <div className="mt-1 bg-amber-950/40 border border-amber-600/50 rounded-lg px-2 py-1 text-[10px] sm:text-[11px] font-bold text-amber-200 flex items-start gap-1">
-                        <AlertCircle size={12} className="text-amber-400 shrink-0 mt-0.5" />
-                        <p className="leading-tight"><span className="text-amber-400 font-black">ملاحظة:</span> {order.customerNote}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            MODE 2: KITCHEN ORDER CARDS (عالية الكثافة - عمودين على الموبايل 2-Columns)
+        ========================================================================= */}
+        {viewMode === 'kitchen_cards' && (
+          <div>
+            {/* Quick Strip for All 15 Tables at Top of Kitchen View */}
+            <div className={`p-2 rounded-xl mb-3 border flex items-center justify-between gap-1 overflow-x-auto scrollbar-none ${
+              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <span className="text-xs font-black text-slate-500 shrink-0 ml-1">كل الطاولات (15):</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {tables.map(t => {
+                  const b = getStatusBadge(t.status);
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTableModal(t)}
+                      className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all ${
+                        t.status === 'جديد'
+                          ? 'bg-rose-500 text-white shadow-xs animate-pulse'
+                          : t.status === 'قيد التحضير'
+                          ? 'bg-amber-500 text-slate-950 font-black'
+                          : t.status === 'جاهز'
+                          ? 'bg-emerald-500 text-white'
+                          : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
+                      }`}
+                      title={`طاولة ${t.id}: ${b.label}`}
+                    >
+                      {t.id}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Kitchen Orders Grid: 2 COLUMNS ON MOBILE (GRID-COLS-2) */}
+            {activeOrdersForKitchen.length === 0 ? (
+              <div className={`border rounded-2xl p-8 text-center max-w-sm mx-auto my-8 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
+              }`}>
+                <ChefHat size={40} className="mx-auto mb-2 text-orange-500 opacity-60" />
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white mb-1">
+                  لا توجد طلبات معلقة في المطبخ الآن 🎉
+                </h3>
+                <p className="text-xs text-slate-400">
+                  جميع الطلبات تم تجهيزها وتسليمها بالكامل
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 items-start">
+                {activeOrdersForKitchen.map((order) => {
+                  const isNew = order.status === 'جديد';
+                  const isCooking = order.status === 'قيد التحضير';
+                  const isReady = order.status === 'جاهز';
+
+                  return (
+                    <div
+                      key={order.id}
+                      className={`rounded-xl sm:rounded-2xl border transition-all shadow-xs flex flex-col justify-between overflow-hidden relative ${
+                        isDarkMode ? 'bg-slate-900' : 'bg-white'
+                      } ${
+                        isNew
+                          ? 'border-rose-400 shadow-rose-500/10'
+                          : isCooking
+                          ? 'border-amber-400 shadow-amber-500/10'
+                          : 'border-emerald-400 shadow-emerald-500/10'
+                      }`}
+                    >
+                      {/* Ticket Header: Table Number & Status */}
+                      <div className={`px-2 py-1.5 sm:px-2.5 sm:py-2 border-b flex items-center justify-between ${
+                        isNew
+                          ? 'bg-rose-500 text-white border-rose-600'
+                          : isCooking
+                          ? 'bg-amber-400 text-slate-950 border-amber-500'
+                          : 'bg-emerald-500 text-white border-emerald-600'
+                      }`}>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <span className="font-black text-xs sm:text-sm truncate">
+                            طاولة {order.id}
+                          </span>
+                          <span className="text-[10px] opacity-90 font-mono hidden sm:inline">
+                            {order.orderId}
+                          </span>
+                        </div>
+                        
+                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-black/20 shrink-0">
+                          {isNew ? 'جديد' : isCooking ? 'طهي' : 'جاهز'}
+                        </span>
                       </div>
-                    )}
+
+                      {/* Ticket Time & Note */}
+                      <div className="px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <span className="flex items-center gap-0.5">
+                          <Clock size={9} />
+                          <span>{order.time} ({order.elapsedMinutes || 1}د)</span>
+                        </span>
+                        <span className="font-mono text-[9px] sm:hidden">{order.orderId}</span>
+                      </div>
+
+                      {/* Items List - Touch to Strike Checkmarks */}
+                      <div className="p-2 space-y-1 flex-1">
+                        {order.items?.map((item, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => toggleItemDone(order.id, idx)}
+                            className={`p-1.5 rounded-lg border text-[11px] transition-all flex items-center justify-between gap-1 cursor-pointer ${
+                              item.done
+                                ? 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-40 line-through'
+                                : 'bg-slate-50/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 hover:border-orange-400'
+                            }`}
+                            title="اضغط للشطب"
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="w-4 h-4 rounded bg-orange-500 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                                {item.qty}
+                              </span>
+                              <span className="font-bold leading-tight truncate text-slate-800 dark:text-slate-200">
+                                {item.name}
+                              </span>
+                            </div>
+                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                              item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'
+                            }`}>
+                              {item.done && <Check size={9} strokeWidth={3} />}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Customer note if any */}
+                        {order.customerNote && (
+                          <div className="p-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
+                            <span className="text-amber-600 dark:text-amber-400 font-black">ملاحظة: </span>
+                            {order.customerNote}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 1-Tap Action Button */}
+                      <div className="p-1.5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800">
+                        {isNew && (
+                          <button
+                            onClick={() => startCooking(order.id)}
+                            className="w-full py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                          >
+                            <UtensilsCrossed size={12} />
+                            <span>بدء الطهي 🔥</span>
+                          </button>
+                        )}
+
+                        {isCooking && (
+                          <button
+                            onClick={() => markReady(order.id)}
+                            className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>جاهز للتقديم ✅</span>
+                          </button>
+                        )}
+
+                        {isReady && (
+                          <button
+                            onClick={() => completeAndDeliver(order.id)}
+                            className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                          >
+                            <Check size={12} />
+                            <span>تسليم للويتر 🚀</span>
+                          </button>
+                        )}
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+      </main>
+
+      {/* =========================================================================
+          4. TABLE DETAILS MODAL / BOTTOM SHEET (نافذة تفاصيل الطاولة السريعة)
+      ========================================================================= */}
+      {selectedTableModal && (
+        <div 
+          onClick={() => setSelectedTableModal(null)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-4 shadow-2xl border transition-all animate-in slide-in-from-bottom-5 duration-200 ${
+              isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-orange-500 text-white font-black text-sm flex items-center justify-center">
+                  {selectedTableModal.id}
+                </span>
+                <div>
+                  <h3 className="font-black text-base leading-none">
+                    تفاصيل طاولة {selectedTableModal.id}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold mt-0.5">
+                    السعة: {selectedTableModal.seats} مقاعد • {selectedTableModal.status}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedTableModal(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="py-3 space-y-3 max-h-[60vh] overflow-y-auto">
+              {selectedTableModal.status === 'فارغة' ? (
+                <div className="text-center py-6 text-slate-400">
+                  <Armchair size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                  <p className="font-bold text-sm">هذه الطاولة فارغة حالياً</p>
+                  <p className="text-xs mt-1">يمكن للزبون مسح كود QR والطلب مباشرة</p>
+                  <button
+                    onClick={() => {
+                      setTables(prev => prev.map(t => t.id === selectedTableModal.id ? { ...t, status: 'جديد', orderId: '#ORD-NEW', time: 'الآن', items: [{ name: 'دبل سماش برغر', qty: 1 }, { name: 'كولا', qty: 1 }] } : t));
+                      setSelectedTableModal(null);
+                    }}
+                    className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black"
+                  >
+                    + فتح طلب جديد للطاولة
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl">
+                    <div>
+                      <span className="text-slate-400">رقم الطلب: </span>
+                      <span className="font-mono font-bold text-orange-500">{selectedTableModal.orderId}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">وقت الطلب: </span>
+                      <span className="font-bold">{selectedTableModal.time}</span>
+                    </div>
                   </div>
 
-                  {/* Card Action Section */}
-                  <div className="p-2 sm:p-2.5 bg-slate-950/90 border-t border-slate-800">
-                    {/* State 1: New -> Start Cooking */}
-                    {isNew && (
+                  {/* Customer note if any */}
+                  {selectedTableModal.customerNote && (
+                    <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">
+                      <span className="font-black text-amber-600 dark:text-amber-400">ملاحظة الزبون: </span>
+                      {selectedTableModal.customerNote}
+                    </div>
+                  )}
+
+                  {/* Items List */}
+                  <div>
+                    <h4 className="text-xs font-black text-slate-400 mb-1.5">الأصناف المطلوبة:</h4>
+                    <div className="space-y-1.5">
+                      {selectedTableModal.items?.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => toggleItemDone(selectedTableModal.id, idx)}
+                          className={`p-2 rounded-xl border flex items-center justify-between text-xs cursor-pointer ${
+                            item.done
+                              ? 'bg-slate-100 dark:bg-slate-800 opacity-40 line-through'
+                              : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded bg-orange-500 text-white font-black text-xs flex items-center justify-center">
+                              {item.qty}
+                            </span>
+                            <span className="font-bold">{item.name}</span>
+                          </div>
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                            item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'
+                          }`}>
+                            {item.done && <Check size={11} />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions in Modal */}
+                  <div className="pt-2 flex flex-col gap-2">
+                    {selectedTableModal.status === 'جديد' && (
                       <button
-                        onClick={() => startCooking(order.id)}
-                        className="w-full py-2 sm:py-2.5 px-3 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5"
+                        onClick={() => startCooking(selectedTableModal.id)}
+                        className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <UtensilsCrossed size={14} />
-                        <span>بدء التحضير 🔥</span>
+                        <span>بدء تحضير الطلب في المطبخ 🔥</span>
                       </button>
                     )}
 
-                    {/* State 2: Cooking -> Mark Ready */}
-                    {isCooking && (
+                    {selectedTableModal.status === 'قيد التحضير' && (
                       <button
-                        onClick={() => markReady(order.id)}
-                        className="w-full py-2 sm:py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5"
+                        onClick={() => markReady(selectedTableModal.id)}
+                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle2 size={14} />
                         <span>جاهز للتقديم (نداء الويتر) ✅</span>
                       </button>
                     )}
 
-                    {/* State 3: Ready -> Confirm Handover */}
-                    {isReady && (
-                      <div>
-                        {confirmCompleteId === order.id ? (
-                          <div className="bg-emerald-950/80 border border-emerald-500/80 rounded-xl p-1.5 text-center animate-in fade-in duration-200">
-                            <p className="text-[11px] font-black text-emerald-200 mb-1">
-                              تأكيد استلام الويتر لطاولة {order.table}؟
-                            </p>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => confirmAndComplete(order.id)}
-                                className="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-black"
-                              >
-                                نعم، تم التسليم ✓
-                              </button>
-                              <button
-                                onClick={() => setConfirmCompleteId(null)}
-                                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold"
-                              >
-                                إلغاء
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setConfirmCompleteId(order.id)}
-                            className="w-full py-2 sm:py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5"
-                          >
-                            <span>تسليم للويتر وأرشفة</span>
-                            <Check size={14} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {/* State 4: Completed (In Archive) -> Restore Option */}
-                    {isCompleted && (
+                    {selectedTableModal.status === 'جاهز' && (
                       <button
-                        onClick={() => restoreFromArchive(order.id)}
-                        className="w-full py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1 border border-slate-700"
-                        title="استرجاع الطلب للمطبخ"
+                        onClick={() => completeAndDeliver(selectedTableModal.id)}
+                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
-                        <Undo2 size={12} />
-                        <span>استرجاع للمطبخ</span>
+                        <Check size={14} />
+                        <span>تسليم للويتر وأرشفة 🚀</span>
                       </button>
                     )}
 
+                    <button
+                      onClick={() => clearTable(selectedTableModal.id)}
+                      className="w-full py-2 border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold text-xs"
+                    >
+                      تفريغ الطاولة وإنهاء الجلسة
+                    </button>
                   </div>
+                </>
+              )}
+            </div>
 
-                </div>
-              );
-            })}
           </div>
-        )}
-      </main>
+        </div>
+      )}
 
-      {/* 4. Safety Floating Undo Toast */}
+      {/* 5. Undo Floating Toast */}
       {undoToast.show && (
-        <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-300 max-w-lg w-[94%] sm:w-auto">
+        <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-3 sm:px-5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200 max-w-lg w-[94%] sm:w-auto">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-            <span className="text-xs sm:text-sm font-black truncate">{undoToast.message}</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-xs font-black truncate">{undoToast.message}</span>
           </div>
 
           <button
             onClick={handleUndo}
-            className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg sm:rounded-xl text-xs font-black flex items-center gap-1 shrink-0 shadow-xs transition-all"
+            className="px-3 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-xs font-black flex items-center gap-1 shrink-0"
           >
-            <Undo2 size={13} />
-            <span>تراجع (Undo)</span>
+            <Undo2 size={12} />
+            <span>تراجع</span>
           </button>
 
           <button 
             onClick={() => setUndoToast(prev => ({ ...prev, show: false }))}
             className="text-slate-400 hover:text-white p-1"
           >
-            <X size={13} />
+            <X size={12} />
           </button>
         </div>
       )}
 
-      {/* ============================================================
-          5. WINDOWS 11 TASKBAR FOR STAFF KDS (شريط مهام ويندوز 11 للمطبخ - للشاشات الكبيرة فقط)
-      ============================================================ */}
-      <footer className="hidden md:flex fixed bottom-0 inset-x-0 z-40 h-11 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-3 sm:px-4 items-center justify-between text-white shadow-2xl select-none">
-        
-        {/* Right: Start Button + Pinned Apps */}
+      {/* 6. Windows Taskbar for Desktop */}
+      <footer className="hidden md:flex fixed bottom-0 inset-x-0 z-40 h-11 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-4 items-center justify-between text-white shadow-2xl select-none">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setStartMenuOpen(!startMenuOpen)}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-black transition-all active:scale-95 shadow-xs ${
-              startMenuOpen 
-                ? 'bg-sky-500 text-white ring-2 ring-sky-400/30' 
-                : 'bg-sky-600 hover:bg-sky-500 text-white'
-            }`}
+            className="px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-black bg-sky-600 hover:bg-sky-500 text-white"
           >
             <span>🪟</span>
-            <span className="hidden sm:inline">ابدأ</span>
+            <span>ابدأ</span>
           </button>
-
-          <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
-
-          <div className="flex items-center gap-1">
-            <span className="relative px-2.5 py-1 rounded-lg bg-white/15 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs">
-              <span>👨‍🍳</span>
-              <span className="hidden sm:inline text-[11px]">شاشة المطبخ (نشط)</span>
-              <span className="absolute -bottom-1 inset-x-2 h-0.5 bg-sky-400 rounded-full" />
-            </span>
-
-            <Link 
-              href="/demo" 
-              className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-1.5"
-              title="لوحة الإدارة الرئيسية"
-            >
-              <span>🏠</span>
-              <span className="hidden md:inline text-[11px]">لوحة الإدارة</span>
-            </Link>
-
-            <Link 
-              href="/m" 
-              target="_blank"
-              className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-1.5"
-              title="معاينة منيو الجوال"
-            >
-              <span>📱</span>
-              <span className="hidden md:inline text-[11px]">منيو الزبون</span>
-            </Link>
-          </div>
+          <div className="h-4 w-px bg-slate-800 mx-1" />
+          <span className="px-2.5 py-1 rounded-lg bg-white/15 text-white font-bold text-xs flex items-center gap-1.5">
+            <span>👨‍🍳</span>
+            <span>الصالة والمطبخ (15 طاولة)</span>
+          </span>
+          <Link href="/demo" className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs">
+            <span>🏠 لوحة الإدارة</span>
+          </Link>
+          <Link href="/m" target="_blank" className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs">
+            <span>📱 منيو الزبون</span>
+          </Link>
         </div>
 
-        {/* Left: System Tray (الصوت، ملء الشاشة، الساعة الحية) */}
         <div className="flex items-center gap-2 text-xs text-slate-400">
-          <button
-            onClick={() => {
-              setSoundEnabled(!soundEnabled);
-              if (!soundEnabled) playOrderChime();
-            }}
-            className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-colors ${
-              soundEnabled ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-400'
-            }`}
-            title="تفعيل أو كتم التنبيه الصوتي"
-          >
-            <span>{soundEnabled ? '🔔 رنين الطلبات' : '🔕 صامت'}</span>
-          </button>
-
-          <button
-            onClick={toggleFullscreen}
-            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors hidden sm:flex items-center"
-            title="وضع ملء الشاشة للمطبخ (F11)"
-          >
-            <Square size={13} />
-          </button>
-
-          <div className="h-4 w-px bg-slate-800 hidden sm:block" />
-
-          <span className="hidden sm:inline text-[11px] text-emerald-400 font-bold">🟢 سحابي نشط</span>
-
-          <div className="text-left font-mono text-[11px] text-white font-bold px-1">
+          <span className="text-emerald-400 font-bold">🟢 سحابي نشط</span>
+          <div className="text-left font-mono text-xs text-white font-bold px-1">
             {liveTime || '12:00:00 م'}
           </div>
         </div>
       </footer>
-
-      {/* Start Menu for Staff */}
-      {startMenuOpen && (
-        <div 
-          onClick={() => setStartMenuOpen(false)}
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="fixed bottom-13 right-4 sm:right-6 w-[90vw] sm:w-[360px] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl p-4 text-white font-sans text-right animate-in fade-in slide-in-from-bottom-2 duration-150"
-          >
-            <div className="flex items-center justify-between text-xs font-black text-slate-400 mb-3 px-1">
-              <span>نظام تشغيل المطبخ وإدارة الطلبات</span>
-              <span className="text-[10px] text-sky-400">Burger House</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-center mb-4">
-              <button 
-                onClick={() => { setStartMenuOpen(false); setActiveTab('active'); }}
-                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">👨‍🍳</span>
-                <span className="text-xs font-bold">الطلبات النشطة ({activeOrders.length})</span>
-              </button>
-
-              <button 
-                onClick={() => { setStartMenuOpen(false); setActiveTab('new'); }}
-                className="p-3 rounded-xl bg-rose-950/40 hover:bg-rose-950/70 border border-rose-900/60 flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">🛎️</span>
-                <span className="text-xs font-bold text-rose-300">طلبات جديدة ({newOrders.length})</span>
-              </button>
-
-              <Link 
-                href="/demo" 
-                onClick={() => setStartMenuOpen(false)}
-                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">🏠</span>
-                <span className="text-xs font-bold">لوحة الإدارة</span>
-              </Link>
-
-              <Link 
-                href="/m" 
-                target="_blank"
-                onClick={() => setStartMenuOpen(false)}
-                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">📱</span>
-                <span className="text-xs font-bold">منيو الجوال</span>
-              </Link>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[11px] text-slate-400">طاقم التجهيز والمطبخ</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-rose-400 hover:text-rose-300 flex items-center gap-1 text-[11px] font-bold"
-              >
-                <span>خروج</span>
-                <LogOut size={13} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
