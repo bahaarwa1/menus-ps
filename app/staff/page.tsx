@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   Clock, CheckCircle2, UtensilsCrossed, 
   Bell, BellOff, Check, RotateCcw, LogOut, ChefHat,
@@ -10,7 +9,7 @@ import {
   Sun, Moon
 } from 'lucide-react';
 
-// Audio chime using Web Audio API (zero external asset dependencies)
+// Audio chime using Web Audio API
 function playOrderChime() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -27,9 +26,7 @@ function playOrderChime() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.45);
-  } catch {
-    // Graceful fallback if autoplay blocked
-  }
+  } catch {}
 }
 
 export interface OrderItem {
@@ -143,9 +140,8 @@ export default function StaffProtectedOrdersPage() {
     prevStatus: TableItem['status'];
   }>({ show: false, message: '', tableId: 0, prevStatus: 'فارغة' });
 
-  // Windows taskbar state
+  // Clock state
   const [liveTime, setLiveTime] = useState('');
-  const [startMenuOpen, setStartMenuOpen] = useState(false);
 
   useEffect(() => {
     const update = () => {
@@ -198,77 +194,107 @@ export default function StaffProtectedOrdersPage() {
     return () => eventSource?.close();
   }, [soundEnabled]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login?role=staff');
-      router.refresh();
-    } catch {
-      router.push('/login?role=staff');
-    }
-  };
-
   const toggleFullscreen = () => {
-    if (typeof document !== 'undefined') {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
     }
   };
 
-  const showUndo = (tableId: number, prevStatus: TableItem['status'], message: string) => {
-    setUndoToast({ show: true, message, tableId, prevStatus });
-    setTimeout(() => setUndoToast(prev => ({ ...prev, show: false })), 7000);
+  const handleLogout = () => {
+    router.push('/staff/login');
   };
 
-  const handleUndo = () => {
-    if (!undoToast.tableId) return;
-    setTables(prev => prev.map(t => t.id === undoToast.tableId ? { ...t, status: undoToast.prevStatus } : t));
-    setUndoToast(prev => ({ ...prev, show: false }));
-  };
-
-  // Status transitions
+  // Actions with Undo capability
   const startCooking = (tableId: number) => {
-    const t = tables.find(item => item.id === tableId);
-    if (!t) return;
-    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'قيد التحضير' } : item));
-    showUndo(tableId, t.status, `تم بدء تحضير طلب طاولة ${tableId}`);
+    const target = tables.find(t => t.id === tableId);
+    if (!target) return;
+    const prevStatus = target.status;
+
+    setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'قيد التحضير' } : t));
+    setUndoToast({
+      show: true,
+      message: `بدأ تحضير طاولة ${tableId} في المطبخ 🔥`,
+      tableId,
+      prevStatus
+    });
+    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
     if (selectedTableModal?.id === tableId) {
       setSelectedTableModal(prev => prev ? { ...prev, status: 'قيد التحضير' } : null);
     }
   };
 
   const markReady = (tableId: number) => {
-    const t = tables.find(item => item.id === tableId);
-    if (!t) return;
-    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'جاهز' } : item));
-    showUndo(tableId, t.status, `تم تجهيز طلب طاولة ${tableId} (نداء الويتر)`);
+    const target = tables.find(t => t.id === tableId);
+    if (!target) return;
+    const prevStatus = target.status;
+
+    setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'جاهز' } : t));
+    if (soundEnabled) playOrderChime();
+
+    setUndoToast({
+      show: true,
+      message: `طاولة ${tableId} جاهزة للتقديم للزبون! 🔔`,
+      tableId,
+      prevStatus
+    });
+    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
     if (selectedTableModal?.id === tableId) {
       setSelectedTableModal(prev => prev ? { ...prev, status: 'جاهز' } : null);
     }
   };
 
   const completeAndDeliver = (tableId: number) => {
-    const t = tables.find(item => item.id === tableId);
-    if (!t) return;
-    const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'تم التسليم', completedAt: nowTime } : item));
-    showUndo(tableId, t.status, `تم تسليم طلب طاولة ${tableId} للويتر`);
+    const target = tables.find(t => t.id === tableId);
+    if (!target) return;
+    const prevStatus = target.status;
+
+    setTables(prev => prev.map(t => t.id === tableId ? { 
+      ...t, 
+      status: 'تم التسليم',
+      completedAt: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    } : t));
+
+    setUndoToast({
+      show: true,
+      message: `تم تسليم طلب طاولة ${tableId} وأرشفته بنجاح ✅`,
+      tableId,
+      prevStatus
+    });
+    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
     if (selectedTableModal?.id === tableId) {
-      setSelectedTableModal(prev => prev ? { ...prev, status: 'تم التسليم' } : null);
+      setSelectedTableModal(null);
     }
   };
 
   const clearTable = (tableId: number) => {
-    const t = tables.find(item => item.id === tableId);
-    if (!t) return;
-    setTables(prev => prev.map(item => item.id === tableId ? { ...item, status: 'فارغة', items: [], orderId: undefined } : item));
-    showUndo(tableId, t.status, `تم تفريغ طاولة ${tableId}`);
+    const target = tables.find(t => t.id === tableId);
+    if (!target) return;
+    const prevStatus = target.status;
+
+    setTables(prev => prev.map(t => t.id === tableId ? {
+      id: tableId,
+      seats: t.seats,
+      status: 'فارغة'
+    } : t));
+
+    setUndoToast({
+      show: true,
+      message: `تم تفريغ طاولة ${tableId} وأصبحت جاهزة للزبائن الجدد 🪑`,
+      tableId,
+      prevStatus
+    });
+    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
     if (selectedTableModal?.id === tableId) {
       setSelectedTableModal(null);
     }
+  };
+
+  const handleUndo = () => {
+    if (!undoToast.tableId) return;
+    setTables(prev => prev.map(t => t.id === undoToast.tableId ? { ...t, status: undoToast.prevStatus } : t));
+    setUndoToast({ show: false, message: '', tableId: 0, prevStatus: 'فارغة' });
   };
 
   const toggleItemDone = (tableId: number, itemIdx: number) => {
@@ -307,111 +333,121 @@ export default function StaffProtectedOrdersPage() {
   const getStatusBadge = (status: TableItem['status']) => {
     switch (status) {
       case 'جديد':
-        return { bg: 'bg-rose-500 text-white', border: 'border-rose-300 ring-rose-400', label: 'طلب جديد', dot: 'bg-rose-500 animate-pulse' };
+        return { 
+          bg: 'bg-rose-50 text-rose-700 border border-rose-200/80', 
+          border: 'border-rose-400', 
+          label: 'طلب جديد', 
+          dot: 'bg-rose-500 animate-pulse' 
+        };
       case 'قيد التحضير':
-        return { bg: 'bg-amber-500 text-slate-950', border: 'border-amber-300 ring-amber-400', label: 'قيد التحضير', dot: 'bg-amber-500 animate-spin' };
+        return { 
+          bg: 'bg-amber-50 text-amber-800 border border-amber-200/80', 
+          border: 'border-amber-400', 
+          label: 'قيد التحضير', 
+          dot: 'bg-amber-500 animate-spin' 
+        };
       case 'جاهز':
-        return { bg: 'bg-emerald-500 text-white', border: 'border-emerald-300 ring-emerald-400', label: 'جاهز للتقديم', dot: 'bg-emerald-400' };
+        return { 
+          bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', 
+          border: 'border-emerald-400', 
+          label: 'جاهز للتقديم', 
+          dot: 'bg-emerald-500' 
+        };
       case 'محجوزة':
-        return { bg: 'bg-sky-500 text-white', border: 'border-sky-300 ring-sky-400', label: 'محجوزة', dot: 'bg-sky-400' };
+        return { 
+          bg: 'bg-sky-50 text-sky-700 border border-sky-200/80', 
+          border: 'border-sky-400', 
+          label: 'محجوزة', 
+          dot: 'bg-sky-500' 
+        };
       case 'تم التسليم':
-        return { bg: 'bg-indigo-600 text-white', border: 'border-indigo-300 ring-indigo-400', label: 'تم التسليم', dot: 'bg-indigo-400' };
+        return { 
+          bg: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80', 
+          border: 'border-indigo-400', 
+          label: 'تم التسليم', 
+          dot: 'bg-indigo-500' 
+        };
       case 'فارغة':
       default:
-        return { bg: 'bg-slate-200 text-slate-700', border: 'border-slate-200 ring-slate-300', label: 'فارغة', dot: 'bg-slate-400' };
+        return { 
+          bg: 'bg-slate-100 text-slate-500 border border-slate-200/80', 
+          border: 'border-slate-200', 
+          label: 'فارغة', 
+          dot: 'bg-slate-400' 
+        };
     }
   };
 
   return (
     <div className={`min-h-screen font-sans flex flex-col selection:bg-orange-500 selection:text-white transition-colors duration-200 ${
-      isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+      isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F8FAFC] text-slate-900'
     }`} dir="rtl">
       
-      {/* 1. Ultra-Clean Top Bar */}
-      <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors ${
+      {/* 1. Professional Modern Restaurant POS Top Bar */}
+      <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
         isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/90'
-      } backdrop-blur-md`}>
-        
-        {/* Mica Bar for Desktop */}
-        <div className={`hidden md:flex px-4 py-1.5 border-b items-center justify-between text-xs select-none ${
-          isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
-        }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-base">🪟</span>
-            <span className="font-extrabold text-xs">Menus.ps POS Pro — إدارة الصالة وشاشة المطبخ (15 طاولة)</span>
-            <span className={`font-bold text-[11px] flex items-center gap-1 ${isRealtimeConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              {isRealtimeConnected ? 'مباشر سحابياً' : 'إعادة اتصال...'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>فرع نابلس الرئيسي</span>
-            <span>•</span>
-            <span>15 طاولة</span>
-            <button
-              onClick={toggleFullscreen}
-              className="px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-[10px] font-bold"
-              title="ملء الشاشة"
-            >
-              ملء الشاشة ⛶
-            </button>
-          </div>
-        </div>
-
-        {/* Primary Header Strip */}
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-2 flex items-center justify-between gap-1.5">
+      }`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2">
           
-          {/* Logo & Quick Stats */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
-              👨‍🍳
+          {/* Brand & Live Connection Beacon */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-sm shadow-orange-500/20 shrink-0">
+              <ChefHat size={18} />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xs sm:text-base font-black truncate">
-                  شاشة الطاولات والمطبخ
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                  Menus.ps POS
                 </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  isRealtimeConnected 
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' 
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  <span className="hidden xs:inline">{isRealtimeConnected ? 'مباشر سحابياً' : 'إعادة اتصال...'}</span>
+                </span>
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold truncate">
-                {tables.length} طاولات • {occupiedTables.length} مشغولة • {readyCount} جاهزة
+              <p className="text-xs text-slate-400 font-medium truncate">
+                {tables.length} طاولة · {occupiedTables.length} مشغولة · نابلس
               </p>
             </div>
           </div>
 
-          {/* Action Tools */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            {/* View Mode Toggle: All Tables vs Kitchen Cards */}
-            <div className={`p-0.5 rounded-xl border flex items-center ${
-              isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'
-            }`}>
-              <button
-                onClick={() => setViewMode('all_tables')}
-                className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
-                  viewMode === 'all_tables'
-                    ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-orange-500'
-                }`}
-                title="عرض جميع الـ 15 طاولة في الصالة"
-              >
-                <LayoutGrid size={13} />
-                <span className="hidden xs:inline sm:inline">كل الطاولات ({tables.length})</span>
-                <span className="xs:hidden sm:hidden">الطاولات</span>
-              </button>
+          {/* Center Mode Switch */}
+          <div className={`p-1 rounded-xl border flex items-center ${
+            isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200/80'
+          }`}>
+            <button
+              onClick={() => setViewMode('all_tables')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === 'all_tables'
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <LayoutGrid size={14} />
+              <span>الطاولات ({tables.length})</span>
+            </button>
 
-              <button
-                onClick={() => setViewMode('kitchen_cards')}
-                className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
-                  viewMode === 'kitchen_cards'
-                    ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-orange-500'
-                }`}
-                title="عرض طلبات المطبخ النشطة"
-              >
-                <ChefHat size={13} />
-                <span className="hidden xs:inline sm:inline">المطبخ ({activeOrdersForKitchen.length})</span>
-                <span className="xs:hidden sm:hidden">المطبخ</span>
-              </button>
+            <button
+              onClick={() => setViewMode('kitchen_cards')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === 'kitchen_cards'
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <ChefHat size={14} />
+              <span>المطبخ ({activeOrdersForKitchen.length})</span>
+            </button>
+          </div>
+
+          {/* Right Action Tools & Clock */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Live Clock on Desktop */}
+            <div className="hidden md:flex items-center font-mono text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+              {liveTime || '12:00:00 م'}
             </div>
 
             {/* Sound alert */}
@@ -420,12 +456,12 @@ export default function StaffProtectedOrdersPage() {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playOrderChime();
               }}
-              className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold transition-all ${
                 soundEnabled
                   ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
                   : 'bg-white text-slate-400 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
               }`}
-              title="تفعيل/كتم الصوت"
+              title={soundEnabled ? 'كتم التنبيه الصوتي' : 'تفعيل التنبيه الصوتي'}
             >
               {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
             </button>
@@ -433,20 +469,29 @@ export default function StaffProtectedOrdersPage() {
             {/* Light / Dark Mode Toggle */}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold transition-all ${
                 isDarkMode
                   ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
-                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
               }`}
               title="تبديل المظهر النهاري/الليلي"
             >
               {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
+            {/* Fullscreen */}
+            <button
+              onClick={toggleFullscreen}
+              className="hidden sm:flex p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-bold"
+              title="ملء الشاشة"
+            >
+              ⛶
+            </button>
+
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
               title="تسجيل خروج"
             >
               <LogOut size={15} />
@@ -456,16 +501,16 @@ export default function StaffProtectedOrdersPage() {
         </div>
 
         {/* 2. Quick Status Filters Strip */}
-        <div className={`px-2.5 sm:px-4 py-1.5 border-t flex items-center justify-between gap-1 overflow-x-auto scrollbar-none text-xs font-black ${
-          isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200/70'
+        <div className={`px-3 sm:px-5 py-2 border-t flex items-center justify-between gap-1 overflow-x-auto hide-scrollbar text-xs font-bold ${
+          isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-100'
         }`}>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               الكل ({tables.length})
@@ -473,10 +518,10 @@ export default function StaffProtectedOrdersPage() {
 
             <button
               onClick={() => setStatusFilter('new')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                 statusFilter === 'new'
                   ? 'bg-rose-500 text-white shadow-xs'
-                  : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100'
+                  : 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 border border-rose-200/80'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
@@ -485,10 +530,10 @@ export default function StaffProtectedOrdersPage() {
 
             <button
               onClick={() => setStatusFilter('cooking')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                 statusFilter === 'cooking'
-                  ? 'bg-amber-500 text-slate-950 shadow-xs'
-                  : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 border border-amber-200/80'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -497,10 +542,10 @@ export default function StaffProtectedOrdersPage() {
 
             <button
               onClick={() => setStatusFilter('ready')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                 statusFilter === 'ready'
                   ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100'
+                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200/80'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -509,10 +554,10 @@ export default function StaffProtectedOrdersPage() {
 
             <button
               onClick={() => setStatusFilter('empty')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                 statusFilter === 'empty'
                   ? 'bg-slate-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300'
+                  : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200/80'
               }`}
             >
               <span>فارغة ({emptyCount})</span>
@@ -521,37 +566,35 @@ export default function StaffProtectedOrdersPage() {
 
           <button
             onClick={() => setTables(initialTablesData)}
-            className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center gap-0.5 shrink-0 px-1"
-            title="إعادة تعيين الطاولات"
+            className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="إعادة ضبط الطاولات"
           >
-            <RotateCcw size={11} />
+            <RotateCcw size={13} />
             <span className="hidden sm:inline">إعادة ضبط</span>
           </button>
         </div>
-
       </header>
 
-      {/* 3. MAIN CONTENT: ALL TABLES MATRIX (15 TABLES) OR 2-COLUMN KITCHEN CARDS */}
-      <main className="max-w-7xl mx-auto p-2 sm:p-4 w-full flex-1 pb-16">
+      {/* 3. MAIN CONTENT: ALL TABLES MATRIX (15 TABLES) OR KITCHEN TICKETS */}
+      <main className="max-w-7xl mx-auto p-3 sm:p-5 w-full flex-1 pb-16">
         
         {/* =========================================================================
-            MODE 1: ALL 15 TABLES FLOOR MATRIX (شبكة جميع طاولات المطعم الـ 15 معاً)
+            MODE 1: ALL 15 TABLES FLOOR MATRIX
         ========================================================================= */}
         {viewMode === 'all_tables' && (
           <div>
-            {/* Quick Helper Subtitle */}
-            <div className="flex items-center justify-between mb-2 px-1 text-xs">
-              <span className="font-extrabold text-slate-700 dark:text-slate-300">
-                جميع طاولات الصالة الـ 15 (اضغط أي طاولة لعرض تفاصيلها):
+            {/* Quick Header */}
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                طاولات الصالة (اضغط على الطاولة للتفاصيل الكاملة):
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                {filteredTables.length} طاولة معروضة
+              <span className="text-xs text-slate-400">
+                {filteredTables.length} طاولة
               </span>
             </div>
 
-            {/* Responsive Multi-Column Matrix: 3 cols on mobile, 5 cols on tablet/desktop */}
-            {/* IN 3 to 5 COLUMNS, ALL 15 TABLES FIT RIGHT ON YOUR SCREEN! */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+            {/* Responsive Multi-Column Matrix: 3 cols on mobile, 4 on tablet, 5 on desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
               {filteredTables.map((table) => {
                 const badge = getStatusBadge(table.status);
                 const isOccupied = table.status !== 'فارغة';
@@ -561,64 +604,108 @@ export default function StaffProtectedOrdersPage() {
                   <div
                     key={table.id}
                     onClick={() => setSelectedTableModal(table)}
-                    className={`rounded-xl sm:rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between relative shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
-                      isDarkMode ? 'bg-slate-900 hover:border-orange-500/70' : 'bg-white hover:border-orange-400'
+                    className={`rounded-2xl p-3 border transition-all cursor-pointer flex flex-col justify-between relative shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] ${
+                      isDarkMode ? 'bg-slate-900 hover:border-orange-500/70' : 'bg-white hover:border-orange-300'
                     } ${
                       table.status === 'جديد'
-                        ? 'border-rose-400/80 ring-2 ring-rose-400/20'
+                        ? 'border-rose-300 ring-2 ring-rose-400/15'
                         : table.status === 'قيد التحضير'
-                        ? 'border-amber-400/80 ring-2 ring-amber-400/20'
+                        ? 'border-amber-300 ring-2 ring-amber-400/15'
                         : table.status === 'جاهز'
-                        ? 'border-emerald-400/80 ring-2 ring-emerald-400/20'
-                        : isDarkMode ? 'border-slate-800' : 'border-slate-200'
+                        ? 'border-emerald-300 ring-2 ring-emerald-400/15'
+                        : isDarkMode ? 'border-slate-800' : 'border-slate-200/80'
                     }`}
                   >
-                    {/* Table Header: Number & Seats */}
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1">
-                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs sm:text-sm flex items-center justify-center">
-                          {table.id}
-                        </span>
-                        <span className="font-black text-xs sm:text-sm leading-none">
-                          طاولة {table.id}
+                    <div>
+                      {/* Card Header: Table Number & Seats */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs flex items-center justify-center">
+                            {table.id}
+                          </span>
+                          <span className="font-bold text-xs sm:text-sm leading-none text-slate-900 dark:text-white">
+                            طاولة {table.id}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
+                          <Armchair size={12} />
+                          <span>{table.seats}</span>
+                        </div>
+                      </div>
+
+                      {/* Status Pill */}
+                      <div className="mb-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold w-full justify-center ${badge.bg}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                          <span className="truncate">{badge.label}</span>
                         </span>
                       </div>
-                      
-                      <div className="flex items-center gap-0.5 text-[10px] text-slate-400 font-bold">
-                        <Armchair size={11} />
-                        <span>{table.seats}</span>
-                      </div>
-                    </div>
 
-                    {/* Status Pill */}
-                    <div className="my-1">
-                      <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-black w-full justify-center ${badge.bg}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                        <span className="truncate">{badge.label}</span>
-                      </span>
-                    </div>
-
-                    {/* Quick Info & Items Count */}
-                    <div className="mt-1 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-[10px] sm:text-[11px]">
-                      {isOccupied ? (
-                        <div className="space-y-0.5">
-                          <div className="flex justify-between font-bold text-slate-600 dark:text-slate-300">
-                            <span className="truncate">{table.orderId || 'طلب نشط'}</span>
-                            <span className="text-orange-500 font-black">{itemsCount} أصناف</span>
-                          </div>
-                          {table.time && (
-                            <div className="flex items-center gap-0.5 text-slate-400">
-                              <Clock size={9} />
-                              <span>{table.time} ({table.elapsedMinutes || 1}د)</span>
+                      {/* Summary Info */}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                        {isOccupied ? (
+                          <div className="space-y-1">
+                            <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
+                              <span className="truncate font-mono">{table.orderId}</span>
+                              <span className="text-orange-600 font-extrabold">{itemsCount} أصناف</span>
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-center text-slate-400 py-1 font-bold">
-                          جاهزة للاستقبال
-                        </div>
-                      )}
+                            {table.time && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                                <Clock size={11} />
+                                <span>{table.time} ({table.elapsedMinutes || 1} دقيقة)</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-center text-slate-400 py-1 font-medium text-xs">
+                            جاهزة للاستقبال
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Quick 1-Click Action Button on Card (Fitts's Law) */}
+                    {isOccupied && (
+                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        {table.status === 'جديد' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startCooking(table.id);
+                            }}
+                            className="w-full py-1.5 px-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
+                          >
+                            <UtensilsCrossed size={12} />
+                            <span>بدء الطهي 🔥</span>
+                          </button>
+                        )}
+                        {table.status === 'قيد التحضير' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markReady(table.id);
+                            }}
+                            className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>جاهز للتقديم ✅</span>
+                          </button>
+                        )}
+                        {table.status === 'جاهز' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              completeAndDeliver(table.id);
+                            }}
+                            className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
+                          >
+                            <Check size={12} />
+                            <span>تسليم للويتر 🚀</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                   </div>
                 );
@@ -628,32 +715,31 @@ export default function StaffProtectedOrdersPage() {
         )}
 
         {/* =========================================================================
-            MODE 2: KITCHEN ORDER CARDS (عالية الكثافة - عمودين على الموبايل 2-Columns)
+            MODE 2: KITCHEN ORDER TICKETS
         ========================================================================= */}
         {viewMode === 'kitchen_cards' && (
           <div>
             {/* Quick Strip for All 15 Tables at Top of Kitchen View */}
-            <div className={`p-2 rounded-xl mb-3 border flex items-center justify-between gap-1 overflow-x-auto scrollbar-none ${
-              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+            <div className={`p-2.5 rounded-2xl mb-4 border flex items-center justify-between gap-1.5 overflow-x-auto hide-scrollbar ${
+              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/80'
             }`}>
-              <span className="text-xs font-black text-slate-500 shrink-0 ml-1">كل الطاولات (15):</span>
+              <span className="text-xs font-bold text-slate-500 shrink-0 ml-1">كل الطاولات:</span>
               <div className="flex items-center gap-1 shrink-0">
                 {tables.map(t => {
-                  const b = getStatusBadge(t.status);
                   return (
                     <button
                       key={t.id}
                       onClick={() => setSelectedTableModal(t)}
-                      className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all ${
+                      className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                         t.status === 'جديد'
                           ? 'bg-rose-500 text-white shadow-xs animate-pulse'
                           : t.status === 'قيد التحضير'
-                          ? 'bg-amber-500 text-slate-950 font-black'
+                          ? 'bg-amber-500 text-white font-bold'
                           : t.status === 'جاهز'
                           ? 'bg-emerald-500 text-white'
                           : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
                       }`}
-                      title={`طاولة ${t.id}: ${b.label}`}
+                      title={`طاولة ${t.id}: ${t.status}`}
                     >
                       {t.id}
                     </button>
@@ -662,116 +748,117 @@ export default function StaffProtectedOrdersPage() {
               </div>
             </div>
 
-            {/* Kitchen Orders Grid: 2 COLUMNS ON MOBILE (GRID-COLS-2) */}
+            {/* Kitchen Orders Grid */}
             {activeOrdersForKitchen.length === 0 ? (
-              <div className={`border rounded-2xl p-8 text-center max-w-sm mx-auto my-8 ${
+              <div className={`border rounded-2xl p-10 text-center max-w-sm mx-auto my-8 ${
                 isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
               }`}>
-                <ChefHat size={40} className="mx-auto mb-2 text-orange-500 opacity-60" />
-                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white mb-1">
+                <ChefHat size={44} className="mx-auto mb-2 text-orange-500 opacity-60" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
                   لا توجد طلبات معلقة في المطبخ الآن 🎉
                 </h3>
                 <p className="text-xs text-slate-400">
-                  جميع الطلبات تم تجهيزها وتسليمها بالكامل
+                  جميع الوجبات تم تجهيزها وتسليمها بالكامل
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
                 {activeOrdersForKitchen.map((order) => {
                   const isNew = order.status === 'جديد';
                   const isCooking = order.status === 'قيد التحضير';
-                  const isReady = order.status === 'جاهز';
 
                   return (
                     <div
                       key={order.id}
-                      className={`rounded-xl sm:rounded-2xl border transition-all shadow-xs flex flex-col justify-between overflow-hidden relative ${
+                      className={`rounded-2xl border transition-all shadow-xs flex flex-col justify-between overflow-hidden relative ${
                         isDarkMode ? 'bg-slate-900' : 'bg-white'
                       } ${
                         isNew
-                          ? 'border-rose-400 shadow-rose-500/10'
+                          ? 'border-rose-300'
                           : isCooking
-                          ? 'border-amber-400 shadow-amber-500/10'
-                          : 'border-emerald-400 shadow-emerald-500/10'
+                          ? 'border-amber-300'
+                          : 'border-emerald-300'
                       }`}
                     >
                       {/* Ticket Header: Table Number & Status */}
-                      <div className={`px-2 py-1.5 sm:px-2.5 sm:py-2 border-b flex items-center justify-between ${
+                      <div className={`px-3 py-2 border-b flex items-center justify-between ${
                         isNew
-                          ? 'bg-rose-500 text-white border-rose-600'
+                          ? 'bg-rose-50 border-rose-200 text-rose-800'
                           : isCooking
-                          ? 'bg-amber-400 text-slate-950 border-amber-500'
-                          : 'bg-emerald-500 text-white border-emerald-600'
+                          ? 'bg-amber-50 border-amber-200 text-amber-900'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                       }`}>
-                        <div className="flex items-center gap-1 min-w-0">
-                          <span className="font-black text-xs sm:text-sm truncate">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-sm">
                             طاولة {order.id}
                           </span>
-                          <span className="text-[10px] opacity-90 font-mono hidden sm:inline">
+                          <span className="text-xs font-mono opacity-80">
                             {order.orderId}
                           </span>
                         </div>
                         
-                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-black/20 shrink-0">
-                          {isNew ? 'جديد' : isCooking ? 'طهي' : 'جاهز'}
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/80">
+                          {isNew ? 'طلب جديد' : isCooking ? 'قيد الطهي' : 'جاهز'}
                         </span>
                       </div>
 
                       {/* Ticket Time & Note */}
-                      <div className="px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                        <span className="flex items-center gap-0.5">
-                          <Clock size={9} />
-                          <span>{order.time} ({order.elapsedMinutes || 1}د)</span>
+                      <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} />
+                          <span>{order.time} ({order.elapsedMinutes || 1} دقيقة)</span>
                         </span>
-                        <span className="font-mono text-[9px] sm:hidden">{order.orderId}</span>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                          {order.items?.length || 0} أطباق
+                        </span>
                       </div>
 
-                      {/* Items List - Touch to Strike Checkmarks */}
-                      <div className="p-2 space-y-1 flex-1">
+                      {/* Items List */}
+                      <div className="p-3 space-y-1.5 flex-1">
                         {order.items?.map((item, idx) => (
                           <div
                             key={idx}
                             onClick={() => toggleItemDone(order.id, idx)}
-                            className={`p-1.5 rounded-lg border text-[11px] transition-all flex items-center justify-between gap-1 cursor-pointer ${
+                            className={`p-2 rounded-xl border text-xs transition-all flex items-center justify-between gap-1.5 cursor-pointer ${
                               item.done
                                 ? 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-40 line-through'
                                 : 'bg-slate-50/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 hover:border-orange-400'
                             }`}
-                            title="اضغط للشطب"
+                            title="اضغط لتأكيد تجهيز الصنف"
                           >
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="w-4 h-4 rounded bg-orange-500 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-5 h-5 rounded-md bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
                                 {item.qty}
                               </span>
-                              <span className="font-bold leading-tight truncate text-slate-800 dark:text-slate-200">
+                              <span className="font-bold truncate text-slate-800 dark:text-slate-200">
                                 {item.name}
                               </span>
                             </div>
-                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                               item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'
                             }`}>
-                              {item.done && <Check size={9} strokeWidth={3} />}
+                              {item.done && <Check size={11} strokeWidth={3} />}
                             </div>
                           </div>
                         ))}
 
                         {/* Customer note if any */}
                         {order.customerNote && (
-                          <div className="p-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
-                            <span className="text-amber-600 dark:text-amber-400 font-black">ملاحظة: </span>
+                          <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300 leading-tight">
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">ملاحظة: </span>
                             {order.customerNote}
                           </div>
                         )}
                       </div>
 
                       {/* 1-Tap Action Button */}
-                      <div className="p-1.5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800">
                         {isNew && (
                           <button
                             onClick={() => startCooking(order.id)}
-                            className="w-full py-1.5 px-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                            className="w-full py-2 px-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
                           >
-                            <UtensilsCrossed size={12} />
+                            <UtensilsCrossed size={14} />
                             <span>بدء الطهي 🔥</span>
                           </button>
                         )}
@@ -779,19 +866,19 @@ export default function StaffProtectedOrdersPage() {
                         {isCooking && (
                           <button
                             onClick={() => markReady(order.id)}
-                            className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                            className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
                           >
-                            <CheckCircle2 size={12} />
+                            <CheckCircle2 size={14} />
                             <span>جاهز للتقديم ✅</span>
                           </button>
                         )}
 
-                        {isReady && (
+                        {order.status === 'جاهز' && (
                           <button
                             onClick={() => completeAndDeliver(order.id)}
-                            className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg font-black text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                            className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
                           >
-                            <Check size={12} />
+                            <Check size={14} />
                             <span>تسليم للويتر 🚀</span>
                           </button>
                         )}
@@ -808,7 +895,7 @@ export default function StaffProtectedOrdersPage() {
       </main>
 
       {/* =========================================================================
-          4. TABLE DETAILS MODAL / BOTTOM SHEET (نافذة تفاصيل الطاولة السريعة)
+          4. TABLE DETAILS MODAL / BOTTOM SHEET
       ========================================================================= */}
       {selectedTableModal && (
         <div 
@@ -817,21 +904,21 @@ export default function StaffProtectedOrdersPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-4 shadow-2xl border transition-all animate-in slide-in-from-bottom-5 duration-200 ${
+            className={`w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border transition-all animate-in slide-in-from-bottom-5 duration-200 ${
               isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
             }`}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-xl bg-orange-500 text-white font-black text-sm flex items-center justify-center">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-orange-500 text-white font-bold text-sm flex items-center justify-center">
                   {selectedTableModal.id}
                 </span>
                 <div>
-                  <h3 className="font-black text-base leading-none">
+                  <h3 className="font-bold text-base leading-none">
                     تفاصيل طاولة {selectedTableModal.id}
                   </h3>
-                  <p className="text-xs text-slate-400 font-bold mt-0.5">
+                  <p className="text-xs text-slate-400 font-medium mt-1">
                     السعة: {selectedTableModal.seats} مقاعد • {selectedTableModal.status}
                   </p>
                 </div>
@@ -846,28 +933,34 @@ export default function StaffProtectedOrdersPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="py-3 space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="py-4 space-y-3.5 max-h-[60vh] overflow-y-auto">
               {selectedTableModal.status === 'فارغة' ? (
                 <div className="text-center py-6 text-slate-400">
                   <Armchair size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                  <p className="font-bold text-sm">هذه الطاولة فارغة حالياً</p>
-                  <p className="text-xs mt-1">يمكن للزبون مسح كود QR والطلب مباشرة</p>
+                  <p className="font-bold text-sm text-slate-700 dark:text-slate-300">هذه الطاولة فارغة حالياً</p>
+                  <p className="text-xs text-slate-400 mt-1">يمكن للزبون مسح كود QR والطلب مباشرة</p>
                   <button
                     onClick={() => {
-                      setTables(prev => prev.map(t => t.id === selectedTableModal.id ? { ...t, status: 'جديد', orderId: '#ORD-NEW', time: 'الآن', items: [{ name: 'دبل سماش برغر', qty: 1 }, { name: 'كولا', qty: 1 }] } : t));
+                      setTables(prev => prev.map(t => t.id === selectedTableModal.id ? { 
+                        ...t, 
+                        status: 'جديد', 
+                        orderId: '#ORD-NEW', 
+                        time: 'الآن', 
+                        items: [{ name: 'دبل سماش برغر', qty: 1 }, { name: 'كولا', qty: 1 }] 
+                      } : t));
                       setSelectedTableModal(null);
                     }}
-                    className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black"
+                    className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold shadow-xs"
                   >
                     + فتح طلب جديد للطاولة
                   </button>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl">
+                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800 p-3 rounded-xl">
                     <div>
                       <span className="text-slate-400">رقم الطلب: </span>
-                      <span className="font-mono font-bold text-orange-500">{selectedTableModal.orderId}</span>
+                      <span className="font-mono font-bold text-orange-600">{selectedTableModal.orderId}</span>
                     </div>
                     <div>
                       <span className="text-slate-400">وقت الطلب: </span>
@@ -877,31 +970,31 @@ export default function StaffProtectedOrdersPage() {
 
                   {/* Customer note if any */}
                   {selectedTableModal.customerNote && (
-                    <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">
-                      <span className="font-black text-amber-600 dark:text-amber-400">ملاحظة الزبون: </span>
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">
+                      <span className="font-bold text-amber-600 dark:text-amber-400">ملاحظة الزبون: </span>
                       {selectedTableModal.customerNote}
                     </div>
                   )}
 
                   {/* Items List */}
                   <div>
-                    <h4 className="text-xs font-black text-slate-400 mb-1.5">الأصناف المطلوبة:</h4>
-                    <div className="space-y-1.5">
+                    <h4 className="text-xs font-bold text-slate-400 mb-2">الأصناف المطلوبة:</h4>
+                    <div className="space-y-2">
                       {selectedTableModal.items?.map((item, idx) => (
                         <div
                           key={idx}
                           onClick={() => toggleItemDone(selectedTableModal.id, idx)}
-                          className={`p-2 rounded-xl border flex items-center justify-between text-xs cursor-pointer ${
+                          className={`p-2.5 rounded-xl border flex items-center justify-between text-xs cursor-pointer ${
                             item.done
                               ? 'bg-slate-100 dark:bg-slate-800 opacity-40 line-through'
                               : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded bg-orange-500 text-white font-black text-xs flex items-center justify-center">
+                            <span className="w-5 h-5 rounded bg-orange-500 text-white font-bold text-xs flex items-center justify-center">
                               {item.qty}
                             </span>
-                            <span className="font-bold">{item.name}</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{item.name}</span>
                           </div>
                           <div className={`w-4 h-4 rounded border flex items-center justify-center ${
                             item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'
@@ -918,7 +1011,7 @@ export default function StaffProtectedOrdersPage() {
                     {selectedTableModal.status === 'جديد' && (
                       <button
                         onClick={() => startCooking(selectedTableModal.id)}
-                        className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
+                        className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <UtensilsCrossed size={14} />
                         <span>بدء تحضير الطلب في المطبخ 🔥</span>
@@ -928,7 +1021,7 @@ export default function StaffProtectedOrdersPage() {
                     {selectedTableModal.status === 'قيد التحضير' && (
                       <button
                         onClick={() => markReady(selectedTableModal.id)}
-                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
+                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle2 size={14} />
                         <span>جاهز للتقديم (نداء الويتر) ✅</span>
@@ -938,7 +1031,7 @@ export default function StaffProtectedOrdersPage() {
                     {selectedTableModal.status === 'جاهز' && (
                       <button
                         onClick={() => completeAndDeliver(selectedTableModal.id)}
-                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <Check size={14} />
                         <span>تسليم للويتر وأرشفة 🚀</span>
@@ -947,7 +1040,7 @@ export default function StaffProtectedOrdersPage() {
 
                     <button
                       onClick={() => clearTable(selectedTableModal.id)}
-                      className="w-full py-2 border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold text-xs"
+                      className="w-full py-2.5 border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold text-xs"
                     >
                       تفريغ الطاولة وإنهاء الجلسة
                     </button>
@@ -962,17 +1055,17 @@ export default function StaffProtectedOrdersPage() {
 
       {/* 5. Undo Floating Toast */}
       {undoToast.show && (
-        <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-3 sm:px-5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200 max-w-lg w-[94%] sm:w-auto">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200 max-w-md w-[92%] sm:w-auto">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-xs font-black truncate">{undoToast.message}</span>
+            <span className="text-xs font-bold truncate">{undoToast.message}</span>
           </div>
 
           <button
             onClick={handleUndo}
-            className="px-3 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-xs font-black flex items-center gap-1 shrink-0"
+            className="px-3 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center gap-1 shrink-0"
           >
-            <Undo2 size={12} />
+            <Undo2 size={13} />
             <span>تراجع</span>
           </button>
 
@@ -980,41 +1073,10 @@ export default function StaffProtectedOrdersPage() {
             onClick={() => setUndoToast(prev => ({ ...prev, show: false }))}
             className="text-slate-400 hover:text-white p-1"
           >
-            <X size={12} />
+            <X size={13} />
           </button>
         </div>
       )}
-
-      {/* 6. Windows Taskbar for Desktop */}
-      <footer className="hidden md:flex fixed bottom-0 inset-x-0 z-40 h-11 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-4 items-center justify-between text-white shadow-2xl select-none">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setStartMenuOpen(!startMenuOpen)}
-            className="px-2.5 py-1 rounded-lg flex items-center gap-1 text-xs font-black bg-sky-600 hover:bg-sky-500 text-white"
-          >
-            <span>🪟</span>
-            <span>ابدأ</span>
-          </button>
-          <div className="h-4 w-px bg-slate-800 mx-1" />
-          <span className="px-2.5 py-1 rounded-lg bg-white/15 text-white font-bold text-xs flex items-center gap-1.5">
-            <span>👨‍🍳</span>
-            <span>الصالة والمطبخ (15 طاولة)</span>
-          </span>
-          <Link href="/demo" className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs">
-            <span>🏠 لوحة الإدارة</span>
-          </Link>
-          <Link href="/m" target="_blank" className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white font-bold text-xs">
-            <span>📱 منيو الزبون</span>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="text-emerald-400 font-bold">🟢 سحابي نشط</span>
-          <div className="text-left font-mono text-xs text-white font-bold px-1">
-            {liveTime || '12:00:00 م'}
-          </div>
-        </div>
-      </footer>
 
     </div>
   );
