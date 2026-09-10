@@ -81,11 +81,11 @@ export default function DemoHubPage() {
     <div className="space-y-6 max-w-7xl mx-auto pb-10 font-sans text-slate-800" dir="rtl">
       
       {/* Clean Balanced Header */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl md:text-2xl font-black text-slate-900">مرحباً بك في Burger House نابلس 👋</h1>
-            <span className="bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
+            <h1 className="text-lg md:text-2xl font-black text-slate-900">مرحباً بك في Burger House نابلس 👋</h1>
+            <span className="bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
               المطعم مفتوح الآن
             </span>
           </div>
@@ -95,7 +95,7 @@ export default function DemoHubPage() {
         <Link
           href="/m"
           target="_blank"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all shrink-0"
         >
           <span>📱 فتح منيو الزبون المباشر للجوال</span>
           <ExternalLink size={14} />
@@ -103,94 +103,96 @@ export default function DemoHubPage() {
       </div>
 
       {/* Separation Banner */}
-      <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl shrink-0">
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-lg sm:text-xl shrink-0">
             👨‍🍳
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black">شاشة مخصصة لموظفي المطبخ والتجهيز (مستقلة تماماً)</h3>
-              <span className="bg-white/25 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                بدون أسعار أو تقارير مالية
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-xs sm:text-sm font-black">شاشة موظفي المطبخ والتجهيز (KDS)</h3>
+              <span className="bg-white/25 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                مستقلة وبدون أسعار
               </span>
             </div>
-            <p className="text-xs text-white/90 mt-0.5">
-              تم فصل العمليات التشغيلية عن لوحة الإدارة — الموظف يرى تفاصيل الأصناف، الطاولات، والملاحظات فقط دون الوصول للمبيعات والتحليلات.
+            <p className="text-[11px] sm:text-xs text-white/90 mt-0.5 line-clamp-1 sm:line-clamp-none">
+              فصل العمليات التشغيلية عن الإدارة — يرى الموظف تفاصيل الأصناف والطاولات فقط.
             </p>
           </div>
         </div>
         <Link
           href="/staff"
           target="_blank"
-          className="px-4 py-2 bg-white text-slate-900 hover:bg-slate-50 active:scale-95 rounded-xl font-black text-xs shadow-sm transition-all shrink-0 flex items-center gap-1.5"
+          className="w-full md:w-auto text-center justify-center px-3.5 py-2 bg-white text-slate-900 hover:bg-slate-50 active:scale-95 rounded-xl font-black text-xs shadow-sm transition-all shrink-0 flex items-center gap-1.5"
         >
           <span>فتح شاشة الموظفين</span>
           <ExternalLink size={13} />
         </Link>
       </div>
 
-      {/* 4 KPIs Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 4 KPIs Cards - 2 Columns on Mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
         {kpis.map((kpi, idx) => (
           <motion.div 
             key={idx}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs"
+            className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600">
-                <kpi.icon size={20} />
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-orange-50 text-orange-600">
+                <kpi.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+              <span className={`text-[10px] sm:text-[11px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                 {kpi.change}
               </span>
             </div>
-            <h3 className="text-slate-400 text-xs font-medium mb-1">{kpi.title}</h3>
-            <p className="text-2xl font-black text-slate-900">{kpi.value}</p>
+            <div>
+              <h3 className="text-slate-400 text-[11px] sm:text-xs font-medium mb-0.5 truncate">{kpi.title}</h3>
+              <p className="text-lg sm:text-2xl font-black text-slate-900">{kpi.value}</p>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {/* 6 Perfectly Balanced Quick Actions (3 x 2 Grid) */}
+      {/* 6 Perfectly Balanced Quick Actions (2 col mobile, 3 col desktop) */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-black text-slate-900">أقسام لوحة التحكم</h2>
-          <span className="text-xs text-slate-400">الوصول السريع لجميع الأدوات</span>
+        <div className="flex items-center justify-between mb-2.5">
+          <h2 className="text-sm sm:text-base font-black text-slate-900">أقسام لوحة التحكم</h2>
+          <span className="text-[11px] sm:text-xs text-slate-400">الوصول السريع لجميع الأدوات</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3.5">
           {quickActions.map((action, idx) => (
             <Link 
               href={action.href} 
               key={idx}
               target={action.targetBlank ? '_blank' : undefined}
             >
-              <div className="bg-white border border-slate-200/80 hover:border-orange-500 rounded-2xl p-4 transition-all group cursor-pointer h-full shadow-xs hover:shadow-md flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2.5 rounded-xl ${action.bg} ${action.color} shrink-0`}>
-                    <action.icon size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <h3 className="text-sm font-black text-slate-900 group-hover:text-orange-600 transition-colors truncate">
-                        {action.title}
-                      </h3>
-                      {action.badge && (
-                        <span className="text-[10px] bg-rose-500 text-white font-extrabold px-1.5 py-0.5 rounded-md animate-pulse">
-                          {action.badge}
-                        </span>
-                      )}
+              <div className="bg-white border border-slate-200/80 hover:border-orange-500 rounded-2xl p-3 sm:p-4 transition-all group cursor-pointer h-full shadow-xs hover:shadow-md flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-2">
+                    <div className={`p-2 sm:p-2.5 rounded-xl ${action.bg} ${action.color} shrink-0`}>
+                      <action.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{action.desc}</p>
+                    {action.badge && (
+                      <span className="text-[9px] sm:text-[10px] bg-rose-500 text-white font-extrabold px-1.5 py-0.5 rounded-md animate-pulse">
+                        {action.badge}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 group-hover:text-orange-600 transition-colors mb-0.5 truncate">
+                      {action.title}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-500 leading-tight line-clamp-2">{action.desc}</p>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-orange-600">
-                  <span>فتح القسم</span>
-                  <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-orange-600">
+                  <span>فتح</span>
+                  <ChevronLeft size={13} className="group-hover:-translate-x-1 transition-transform" />
                 </div>
               </div>
             </Link>

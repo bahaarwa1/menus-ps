@@ -43,6 +43,52 @@ function FastFrictionlessMenuContent() {
   const [waiterCalled, setWaiterCalled] = useState(false);
   const [liveOrderStatus, setLiveOrderStatus] = useState<'new' | 'cooking' | 'ready' | 'completed'>('new');
 
+  // Touch swipe between categories
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [touchEndY, setTouchEndY] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null || touchStartY === null || touchEndY === null) return;
+    const diffX = touchStartX - touchEndX;
+    const diffY = touchStartY - touchEndY;
+    // Trigger if horizontal swipe is dominant and significant
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+      const currentIdx = categories.findIndex(c => c.id === activeCategory);
+      if (diffX > 0 && currentIdx < categories.length - 1) {
+        // Swipe left -> next category
+        setActiveCategory(categories[currentIdx + 1].id);
+        setSearchQuery('');
+      } else if (diffX < 0 && currentIdx > 0) {
+        // Swipe right -> prev category
+        setActiveCategory(categories[currentIdx - 1].id);
+        setSearchQuery('');
+      }
+    }
+    setTouchStartX(null);
+    setTouchEndX(null);
+    setTouchStartY(null);
+    setTouchEndY(null);
+  };
+
+  useEffect(() => {
+    const activeBtn = document.getElementById(`cat-btn-${activeCategory}`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeCategory]);
+
   // Realtime order status tracking
   useEffect(() => {
     if (!isOrderSubmitted || !submittedOrderId) return;
@@ -308,17 +354,18 @@ function FastFrictionlessMenuContent() {
           </div>
 
           {/* Categories Pill Slider (مثبت دائمًا بالقمة تحت شريط البحث) */}
-          <div className="px-2.5 py-2 bg-slate-900 border-t border-white/5 flex gap-1.5 overflow-x-auto hide-scrollbar">
+          <div className="px-2 py-1.5 bg-slate-900 border-t border-white/5 flex gap-1 overflow-x-auto hide-scrollbar">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id && !searchQuery;
               return (
                 <button
                   key={cat.id}
+                  id={`cat-btn-${cat.id}`}
                   onClick={() => {
                     setActiveCategory(cat.id);
                     setSearchQuery('');
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-black whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
                     isActive
                       ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/30 scale-105'
                       : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-800'
@@ -329,6 +376,14 @@ function FastFrictionlessMenuContent() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Touch Swipe Guide Banner */}
+          <div className="bg-slate-950/90 text-slate-400 text-[10px] font-bold py-1 px-3 border-t border-white/5 flex items-center justify-between select-none">
+            <span className="flex items-center gap-1 text-slate-400">
+              <span>👈 اسحب للشمال/اليمين للتنقل بين الأقسام 👉</span>
+            </span>
+            <span className="text-orange-400 font-black">{categories.find(c => c.id === activeCategory)?.name}</span>
           </div>
 
           {/* Waiter Alert Toast Notification */}
@@ -363,14 +418,19 @@ function FastFrictionlessMenuContent() {
         </header>
 
         {/* ============================================================
-            2. MAIN MENU FEED (CARDS & ITEMS)
+            2. MAIN MENU FEED WITH TOUCH SWIPE (CARDS & ITEMS)
         ============================================================ */}
-        <main className="flex-1 p-3.5 space-y-3 pb-36 bg-slate-50">
+        <main 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="flex-1 p-2.5 space-y-2 pb-32 bg-slate-50 touch-pan-y"
+        >
           {filteredItems.length === 0 ? (
-            <div className="py-24 text-center text-slate-400">
-              <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />
-              <p className="text-sm font-black text-slate-700">لم يتم العثور على أطباق مطابقة</p>
-              <p className="text-xs text-slate-400 mt-1">جرّب البحث باسم آخر أو تصفح بقية الأقسام</p>
+            <div className="py-20 text-center text-slate-400">
+              <Utensils size={36} className="mx-auto mb-2 opacity-30 text-orange-500" />
+              <p className="text-xs font-black text-slate-700">لم يتم العثور على أطباق مطابقة</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">جرّب البحث باسم آخر أو تصفح بقية الأقسام</p>
             </div>
           ) : (
             filteredItems.map((item: MenuItem) => {
@@ -382,58 +442,58 @@ function FastFrictionlessMenuContent() {
                 <div
                   key={item.id}
                   onClick={() => openProductModal(item)}
-                  className={`bg-white rounded-3xl p-3.5 border transition-all flex items-center justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer relative ${
+                  className={`bg-white rounded-2xl p-2.5 border transition-all flex items-center justify-between gap-2.5 shadow-2xs hover:shadow-md cursor-pointer relative ${
                     qty > 0 ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/15' : 'border-slate-200/80 hover:border-orange-200'
                   }`}
                 >
                   {/* Left (RTL Right): Details & Pricing */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                      <h3 className="font-black text-sm text-slate-900 leading-snug">
+                    <div className="flex items-center gap-1 mb-0.5 flex-wrap">
+                      <h3 className="font-black text-xs sm:text-sm text-slate-900 leading-snug">
                         {item.name}
                       </h3>
                       {item.popular && (
-                        <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                          <Flame size={10} className="text-amber-600" /> الأكثر طلباً
+                        <span className="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Flame size={9} className="text-amber-600" /> الأكثر طلباً
                         </span>
                       )}
                       {item.spicy && (
-                        <span className="text-[11px]" title="حار وسبايسي">🌶️</span>
+                        <span className="text-[10px]" title="حار وسبايسي">🌶️</span>
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-2.5">
+                    <p className="text-[11px] text-slate-500 font-medium line-clamp-1 leading-normal mb-2">
                       {item.description}
                     </p>
 
-                    <div className="flex items-center gap-3">
-                      <div className="bg-slate-100 px-2.5 py-1 rounded-lg">
-                        <span className="font-black text-sm text-slate-900">{item.price}</span>
-                        <span className="text-xs text-orange-600 font-bold mr-1">₪</span>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-slate-100 px-2 py-0.5 rounded-md">
+                        <span className="font-black text-xs text-slate-900">{item.price}</span>
+                        <span className="text-[10px] text-orange-600 font-bold mr-0.5">₪</span>
                       </div>
 
                       {/* Customization label if active */}
                       {(note || extras.length > 0) && (
-                        <span className="text-[10px] font-black text-orange-700 bg-orange-100/70 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <Edit3 size={10} />
-                          <span>مخصص ({extras.length > 0 ? `+${extras.length} إضافات` : 'ملاحظة'})</span>
+                        <span className="text-[9px] font-black text-orange-700 bg-orange-100/70 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Edit3 size={9} />
+                          <span>مخصص ({extras.length > 0 ? `+${extras.length}` : 'ملاحظة'})</span>
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Right (RTL Left): Food Image & Quick Action */}
-                  <div className="flex flex-col items-center gap-2 shrink-0">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 relative group">
+                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 relative group">
                       {item.imageUrl ? (
                         <img 
                           src={item.imageUrl} 
                           alt={item.name} 
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl bg-orange-50">
+                        <div className="w-full h-full flex items-center justify-center text-2xl bg-orange-50">
                           {item.image}
                         </div>
                       )}
@@ -443,25 +503,25 @@ function FastFrictionlessMenuContent() {
                     {qty === 0 ? (
                       <button
                         onClick={(e) => addOne(item.id, e)}
-                        className="w-full py-1.5 px-3.5 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-md shadow-orange-500/25 transition-all"
+                        className="w-full py-1 px-3 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-lg text-[11px] font-black flex items-center justify-center gap-0.5 shadow-xs transition-all"
                       >
-                        <Plus size={14} strokeWidth={3} />
+                        <Plus size={12} strokeWidth={3} />
                         <span>أضف</span>
                       </button>
                     ) : (
-                      <div className="flex items-center gap-1 bg-orange-500 text-white p-1 rounded-xl shadow-md shadow-orange-500/25">
+                      <div className="flex items-center gap-1 bg-orange-500 text-white p-0.5 rounded-lg shadow-xs">
                         <button
                           onClick={(e) => removeOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
+                          className="w-5 h-5 rounded bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
                         >
-                          <Minus size={13} strokeWidth={3} />
+                          <Minus size={11} strokeWidth={3} />
                         </button>
-                        <span className="font-black text-xs min-w-[18px] text-center">{qty}</span>
+                        <span className="font-black text-[11px] min-w-[16px] text-center">{qty}</span>
                         <button
                           onClick={(e) => addOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
+                          className="w-5 h-5 rounded bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
                         >
-                          <Plus size={13} strokeWidth={3} />
+                          <Plus size={11} strokeWidth={3} />
                         </button>
                       </div>
                     )}
@@ -473,28 +533,34 @@ function FastFrictionlessMenuContent() {
         </main>
 
         {/* ============================================================
-            3. LUXURY STICKY FLOATING CART BAR
+            3. LUXURY STICKY FLOATING CART BAR WITH PULL HANDLE
         ============================================================ */}
-        <div className="fixed bottom-0 inset-x-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-3.5 z-30 shadow-[0_-10px_35px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 inset-x-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-2.5 z-30 shadow-[0_-10px_35px_rgba(0,0,0,0.1)]">
+          {/* Pull / Swipe Up Bar Handle */}
+          <div 
+            onClick={() => totalCount > 0 && setIsReviewOpen(true)}
+            className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2 cursor-pointer hover:bg-slate-400 transition-colors" 
+          />
+
           {totalCount === 0 ? (
-            <div className="text-center py-2 text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
-              <ShoppingBag size={15} className="text-slate-300" />
+            <div className="text-center py-1.5 text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
+              <ShoppingBag size={14} className="text-slate-300" />
               <span>انقر على زر (+) بجانب أي وجبة لإضافتها لطلبك</span>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               {/* Order total info */}
               <button 
                 onClick={() => setIsReviewOpen(true)}
                 className="text-right shrink-0"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="bg-orange-100 text-orange-700 text-[11px] font-black px-2 py-0.5 rounded-md">
+                  <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-1.5 py-0.5 rounded">
                     {totalCount} أصناف
                   </span>
-                  <span className="text-[11px] text-slate-400 font-bold">طاولة {tableNumber}</span>
+                  <span className="text-[10px] text-slate-400 font-bold">طاولة {tableNumber}</span>
                 </div>
-                <div className="text-lg font-black text-slate-900 mt-0.5 leading-none">
+                <div className="text-base font-black text-slate-900 mt-0.5 leading-none">
                   {totalAmount} <span className="text-xs text-orange-600 font-bold">₪</span>
                 </div>
               </button>
@@ -502,10 +568,10 @@ function FastFrictionlessMenuContent() {
               {/* Direct Review & Send Button */}
               <button
                 onClick={() => setIsReviewOpen(true)}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white h-12 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white h-10 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
               >
-                <span>مراجعة وإرسال الطلب</span>
-                <ArrowLeft size={16} />
+                <span>مراجعة وإرسال الطلب (سحب للأعلى)</span>
+                <ArrowLeft size={14} />
               </button>
             </div>
           )}

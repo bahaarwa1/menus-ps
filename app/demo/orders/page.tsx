@@ -90,7 +90,7 @@ export default function OrdersManagementPage() {
   const readyCount = ordersList.filter(o => o.status === 'جاهز').length;
 
   return (
-    <div className="space-y-2.5 max-w-7xl mx-auto font-sans text-slate-800 [zoom:0.8]" dir="rtl">
+    <div className="space-y-2.5 max-w-7xl mx-auto font-sans text-slate-800 text-xs sm:text-sm" dir="rtl">
       
       {/* Header Bar - Slim & High Density */}
       <div className="bg-white border border-slate-200/80 rounded-xl px-3 py-2 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2">

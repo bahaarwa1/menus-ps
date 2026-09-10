@@ -147,6 +147,46 @@ export default function StaffProtectedOrdersPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
 
+  // Mobile Touch Swipe Gesture between Tabs
+  const tabList: Array<'active' | 'new' | 'cooking' | 'ready' | 'archive'> = ['active', 'new', 'cooking', 'ready', 'archive'];
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = touchStartX - touchEndX;
+    const diffY = touchStartY - touchEndY;
+
+    // Only trigger horizontal swipe when horizontal movement is greater than vertical & exceeds 40px
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+      const currentIndex = tabList.indexOf(activeTab);
+      if (diffX > 0) {
+        // Swiped left (in RTL: next tab)
+        if (currentIndex < tabList.length - 1) {
+          const nextTab = tabList[currentIndex + 1];
+          setActiveTab(nextTab);
+          document.getElementById(`staff-tab-${nextTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      } else {
+        // Swiped right (in RTL: prev tab)
+        if (currentIndex > 0) {
+          const prevTab = tabList[currentIndex - 1];
+          setActiveTab(prevTab);
+          document.getElementById(`staff-tab-${prevTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+  };
+
   // Connect to SSE Realtime stream
   useEffect(() => {
     let eventSource: EventSource | null = null;
@@ -482,14 +522,15 @@ export default function StaffProtectedOrdersPage() {
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
             {/* Active All */}
             <button
+              id="staff-tab-active"
               onClick={() => setActiveTab('active')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === 'active'
                   ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25 ring-2 ring-orange-400/30'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              <span>كل الطلبات النشطة</span>
+              <span>كل النشطة</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'active' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
                 {activeOrders.length}
               </span>
@@ -497,8 +538,9 @@ export default function StaffProtectedOrdersPage() {
 
             {/* New */}
             <button
+              id="staff-tab-new"
               onClick={() => setActiveTab('new')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === 'new'
                   ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30 ring-2 ring-rose-500/30'
                   : 'bg-rose-950/40 text-rose-300 hover:bg-rose-900/50 border border-rose-800/60'
@@ -510,8 +552,9 @@ export default function StaffProtectedOrdersPage() {
 
             {/* Cooking */}
             <button
+              id="staff-tab-cooking"
               onClick={() => setActiveTab('cooking')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === 'cooking'
                   ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30 ring-2 ring-amber-500/30'
                   : 'bg-amber-950/40 text-amber-300 hover:bg-amber-900/50 border border-amber-800/60'
@@ -523,42 +566,53 @@ export default function StaffProtectedOrdersPage() {
 
             {/* Ready */}
             <button
+              id="staff-tab-ready"
               onClick={() => setActiveTab('ready')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === 'ready'
                   ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-500/30'
                   : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50 border border-emerald-800/60'
               }`}
             >
               <CheckCircle2 size={14} />
-              <span>جاهزة للتقديم ({readyOrders.length})</span>
+              <span>جاهزة ({readyOrders.length})</span>
             </button>
 
             {/* Archive */}
             <button
+              id="staff-tab-archive"
               onClick={() => setActiveTab('archive')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === 'archive'
                   ? 'bg-slate-700 text-white shadow-md'
                   : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
               }`}
             >
               <History size={14} />
-              <span>أرشيف اليوم ({completedOrders.length})</span>
+              <span>أرشيف ({completedOrders.length})</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
-            <span className="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 text-xs font-bold text-slate-400">
+            {/* Mobile swipe hint */}
+            <span className="md:hidden text-[10px] text-slate-400 flex items-center gap-1 font-normal">
+              <span>👈 اسحب لليمين/اليسار للتبديل 👉</span>
+            </span>
+
+            <span className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px] sm:text-xs">
               <Clock size={13} className="text-orange-400" />
-              <span>متوسط وقت التحضير: <strong>8 دقائق</strong></span>
+              <span>متوسط التحضير: <strong>8 دقائق</strong></span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* 3. Main Orders Area */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-5 w-full flex-1 pb-24">
+      {/* 3. Main Orders Area with Swipe Touch Gesture */}
+      <main 
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="max-w-7xl mx-auto p-3 sm:p-5 w-full flex-1 pb-24 touch-pan-y"
+      >
         {displayedOrders.length === 0 ? (
           <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center text-slate-400 max-w-md mx-auto my-12 shadow-xs">
             <ChefHat size={48} className="mx-auto mb-3 opacity-40 text-orange-500" />
