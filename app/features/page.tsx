@@ -70,15 +70,15 @@ const features = [
 export default function FeaturesPage() {
   return (
     <PublicLayout>
-      <div className="py-20 px-4 md:px-8 max-w-7xl mx-auto">
+      <div className="py-10 md:py-20 px-4 md:px-8 max-w-7xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-10 md:mb-16"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">كل اللي بتحتاجه بمكان واحد</h1>
-          <p className="text-xl text-slate-600">مميزات Menus.ps المصممة خصيصًا لمطاعم فلسطين</p>
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3">كل اللي بتحتاجه بمكان واحد</h1>
+          <p className="text-sm sm:text-base text-slate-600">مميزات Menus.ps المصممة خصيصًا لمطاعم فلسطين</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

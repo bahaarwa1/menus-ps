@@ -30,13 +30,13 @@ export default function ContactPage() {
 
   return (
     <PublicLayout>
-      <div className="bg-[#f8fafc] min-h-screen pt-32 pb-20 px-4">
+      <div className="bg-[#f8fafc] min-h-screen pt-12 sm:pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10 sm:mb-12">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-black text-slate-900 mb-4"
+              className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3"
             >
               ابدأ تجربتك المجانية
             </motion.h1>
@@ -44,7 +44,7 @@ export default function ContactPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-lg text-slate-600"
+              className="text-sm sm:text-base text-slate-600"
             >
               سجّل بيانات مطعمك الآن واستلم حسابك التجريبي الفوري لمدة 14 يوم
             </motion.p>

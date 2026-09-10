@@ -68,7 +68,7 @@ export default function PricingPage() {
 
   return (
     <PublicLayout>
-      <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] pt-20 pb-8 px-4 flex flex-col justify-center">
+      <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] pt-10 sm:pt-20 pb-12 px-4 flex flex-col justify-center">
         <div className="container mx-auto max-w-6xl">
           
           {/* Header & Billing Toggle */}
@@ -76,11 +76,11 @@ export default function PricingPage() {
             <motion.h1 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-4xl font-black text-slate-900 mb-2"
+              className="text-2xl sm:text-4xl font-black text-slate-900 mb-2"
             >
               خطط أسعار واضحة بدون عمولات خفية
             </motion.h1>
-            <p className="text-sm md:text-base text-slate-600 mb-4 max-w-xl mx-auto">
+            <p className="text-xs sm:text-base text-slate-600 mb-4 max-w-xl mx-auto">
               اختر الخطة المناسبة لحجم مطعمك وابدأ فوراً بتجربة مجانية كاملة لمدة 14 يوم.
             </p>
 

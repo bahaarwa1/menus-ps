@@ -245,122 +245,70 @@ function FastFrictionlessMenuContent() {
       <div className="w-full max-w-lg bg-white min-h-screen shadow-xl flex flex-col relative pb-32">
 
         {/* ============================================================
-            1. HERO RESTAURANT HEADER
+            1. FIXED STICKY APP BAR & CATEGORY BAR (لا يختفي أبدًا عند السحب)
         ============================================================ */}
-        <header className="relative bg-slate-950 text-white shrink-0 overflow-hidden">
-          {/* Cover Photo */}
-          <div className="relative h-32 sm:h-36 w-full overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80" 
-              alt="Burger House Nablus" 
-              className="w-full h-full object-cover opacity-60 scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
-            
-            {/* Top Bar Floating Buttons */}
-            <div className="absolute top-2.5 inset-x-3 flex items-center justify-between z-10">
-              <div className="bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1.5 text-[11px] font-black shadow-lg">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-emerald-300">مفتوح الآن</span>
+        <header className="sticky top-0 z-40 bg-slate-950 text-white border-b border-white/10 shadow-lg shrink-0">
+          {/* Top Row: Brand + Table + Waiter */}
+          <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-orange-500 text-white font-black flex items-center justify-center text-xs shadow-md shrink-0">
+                BH
               </div>
-
-              {/* Waiter Alert & Table Badge */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleCallWaiter}
-                  className="bg-slate-900/80 hover:bg-orange-600 active:scale-90 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-black flex items-center gap-1.5 shadow-lg transition-all"
-                >
-                  <Bell size={13} className="text-orange-400" />
-                  <span>نداء الويتر</span>
-                </button>
-
-                <div className="bg-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-lg flex items-center gap-1 border border-orange-400">
-                  <ShieldCheck size={14} className={isTokenVerified ? 'text-emerald-300' : 'text-white'} />
-                  <span>طاولة {tableNumber}</span>
+              <div className="truncate">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-xs font-black text-white truncate">Burger House نابلس</h1>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
                 </div>
+                <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                  <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                    <Star size={10} fill="currentColor" /> 4.9
+                  </span>
+                  <span>· رفيديا</span>
+                </p>
               </div>
             </div>
 
-            {/* Restaurant Info Bottom of Banner */}
-            <div className="absolute bottom-3 right-4 left-4 z-10 flex items-end justify-between">
-              <div>
-                <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2 drop-shadow-md">
-                  Burger House نابلس
-                  <span className="text-xs bg-orange-500/30 text-orange-300 font-bold px-2 py-0.5 rounded-md border border-orange-400/30">
-                    رفيديا
-                  </span>
-                </h1>
-                <p className="text-xs text-slate-300 font-medium flex items-center gap-2 mt-0.5">
-                  <span className="flex items-center gap-1 text-amber-400 font-bold">
-                    <Star size={12} fill="currentColor" /> 4.9 (420+ تقييم)
-                  </span>
-                  <span>•</span>
-                  <span>برغر وفاست فود فاخر</span>
-                </p>
-              </div>
+            {/* Quick Actions */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleCallWaiter}
+                className="bg-slate-900 hover:bg-orange-600 active:scale-90 px-2.5 py-1.5 rounded-xl border border-white/10 text-white text-[11px] font-black flex items-center gap-1 shadow-xs transition-all"
+              >
+                <Bell size={12} className="text-orange-400" />
+                <span>الويتر</span>
+              </button>
 
-              <div className="w-12 h-12 rounded-2xl bg-white p-1.5 shadow-xl shrink-0 border border-slate-200">
-                <div className="w-full h-full rounded-xl bg-orange-500 text-white font-black flex items-center justify-center text-lg shadow-inner">
-                  BH
-                </div>
+              <div className="bg-orange-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-black shadow-xs flex items-center gap-1 border border-orange-400">
+                <ShieldCheck size={12} className={isTokenVerified ? 'text-emerald-200' : 'text-white'} />
+                <span>طاولة {tableNumber}</span>
               </div>
             </div>
           </div>
 
-          {/* Waiter Alert Toast Notification */}
-          <AnimatePresence>
-            {waiterCalled && (
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-emerald-500 text-white px-4 py-2.5 text-xs font-black flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Check size={16} strokeWidth={3} />
-                <span>تم إشعار الويتر بنجاح، وسيحضر إلى طاولة {tableNumber} فوراً!</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Table Token Error */}
-          <AnimatePresence>
-            {tokenError && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-rose-600 text-white px-4 py-2 text-xs font-black flex items-center justify-center gap-1.5"
-              >
-                <AlertCircle size={14} />
-                <span>{tokenError}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Search Input */}
-          <div className="p-3 bg-slate-950 border-t border-white/5">
+          <div className="px-3 pb-2 pt-0.5">
             <div className="relative">
-              <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text"
-                placeholder="ابحث عن وجبة، صوص، أو إضافة مميزة..."
+                placeholder="ابحث عن وجبة، صوص، أو عصير..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-10 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
+                className="w-full pl-8 pr-9 py-1.5 bg-slate-900/90 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Categories Pill Slider */}
-          <div className="px-3 pb-3 bg-slate-950 flex gap-1.5 overflow-x-auto hide-scrollbar">
+          {/* Categories Pill Slider (مثبت دائمًا بالقمة تحت شريط البحث) */}
+          <div className="px-2.5 py-2 bg-slate-900 border-t border-white/5 flex gap-1.5 overflow-x-auto hide-scrollbar">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id && !searchQuery;
               return (
@@ -372,8 +320,8 @@ function FastFrictionlessMenuContent() {
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                     isActive
-                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/20'
-                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/30 scale-105'
+                      : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-800'
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -382,12 +330,42 @@ function FastFrictionlessMenuContent() {
               );
             })}
           </div>
+
+          {/* Waiter Alert Toast Notification */}
+          <AnimatePresence>
+            {waiterCalled && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-emerald-500 text-white px-3 py-1.5 text-xs font-black flex items-center justify-center gap-1.5 shadow-lg"
+              >
+                <Check size={14} strokeWidth={3} />
+                <span>تم إشعار الويتر، وسيحضر إلى طاولة {tableNumber} فوراً!</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Table Token Error */}
+          <AnimatePresence>
+            {tokenError && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-rose-600 text-white px-3 py-1.5 text-xs font-black flex items-center justify-center gap-1.5"
+              >
+                <AlertCircle size={14} />
+                <span>{tokenError}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </header>
 
         {/* ============================================================
             2. MAIN MENU FEED (CARDS & ITEMS)
         ============================================================ */}
-        <main className="flex-1 overflow-y-auto p-3.5 space-y-3 pb-36 bg-slate-50">
+        <main className="flex-1 p-3.5 space-y-3 pb-36 bg-slate-50">
           {filteredItems.length === 0 ? (
             <div className="py-24 text-center text-slate-400">
               <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />

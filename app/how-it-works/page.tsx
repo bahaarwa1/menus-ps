@@ -15,13 +15,13 @@ export default function HowItWorksPage() {
 
   return (
     <PublicLayout>
-      <div className="bg-[#f8fafc] min-h-screen pt-32 pb-20 px-4">
+      <div className="bg-[#f8fafc] min-h-screen pt-12 sm:pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-5xl">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-black text-slate-900 mb-4"
+              className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3"
             >
               كيف يعمل النظام؟
             </motion.h1>
@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-lg text-slate-600"
+              className="text-sm sm:text-base text-slate-600"
             >
               خطوات بسيطة وسلسة لتجربة مستخدم مميزة للزبون ولإدارة المطعم
             </motion.p>

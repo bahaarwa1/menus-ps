@@ -68,11 +68,11 @@ export default function HomePage() {
   return (
     <PublicLayout>
       {/* =========================================================================
-          FULL-PAGE SNAP SCROLLING CONTAINER (نظام السحب والشاشات الكاملة الأصلي فائق السلاسة)
+          RESPONSIVE SCROLLING CONTAINER (طبيعي ومريح على الجوال + سناب أنيق على الديسكتوب)
       ========================================================================= */}
       <div 
         ref={containerRef}
-        className="h-[calc(100dvh-3.5rem)] w-full overflow-y-auto snap-y snap-mandatory scroll-smooth relative hide-scrollbar selection:bg-orange-500 selection:text-white bg-slate-50"
+        className="w-full overflow-y-auto scroll-smooth relative selection:bg-orange-500 selection:text-white bg-slate-50 md:h-[calc(100dvh-3.5rem)] md:snap-y md:snap-mandatory hide-scrollbar"
         dir="rtl"
       >
 
@@ -80,7 +80,7 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 1: HERO SECTION (سلايد 1: البداية والعرض الرئيسي)
         ========================================================================= */}
-        <section className="h-[calc(100dvh-3.5rem)] min-h-[580px] w-full snap-start snap-always relative flex items-center justify-center overflow-hidden bg-gradient-to-b from-orange-50/50 via-white to-slate-50">
+        <section className="w-full relative flex items-center justify-center overflow-hidden py-8 sm:py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always bg-gradient-to-b from-orange-50/50 via-white to-slate-50">
           {/* Subtle Ambient Light */}
           <div className="absolute top-0 right-1/2 translate-x-1/2 -mt-32 w-[600px] sm:w-[900px] h-[400px] bg-gradient-to-tr from-orange-400/15 to-amber-200/20 blur-[130px] rounded-full pointer-events-none -z-10"></div>
 
@@ -290,201 +290,253 @@ export default function HomePage() {
 
 
         {/* =========================================================================
-            SLIDE 2: INTERACTIVE LIVE SHOWCASE (سلايد 2: محاكي المنتج الحي التفاعلي)
+            SLIDE 2: WINDOWS 11 DESKTOP SIMULATOR (سلايد 2: محاكي نظام ويندوز المتطور)
         ========================================================================= */}
-        <section className="h-[calc(100dvh-3.5rem)] min-h-[580px] w-full snap-start snap-always relative flex flex-col justify-center items-center bg-slate-900 text-white overflow-hidden p-4 sm:p-6">
+        <section className="w-full relative flex flex-col justify-center items-center bg-slate-950 text-white overflow-hidden py-10 sm:py-14 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always p-3 sm:p-6">
           
-          <div className="text-center max-w-2xl mx-auto mb-4 z-10">
-            <span className="bg-orange-500/20 text-orange-400 text-xs font-black px-3 py-1 rounded-full mb-2 inline-block border border-orange-500/30">
-              محاكي حي ومباشر
+          <div className="text-center max-w-2xl mx-auto mb-3 z-10">
+            <span className="bg-sky-500/20 text-sky-400 text-xs font-black px-3.5 py-1 rounded-full mb-1.5 inline-flex items-center gap-1.5 border border-sky-500/30">
+              <span>🪟</span>
+              <span>واجهة وتجربة سطح مكتب ويندوز 11 المتطورة</span>
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1">
-              شاهد كيف تعمل المنظومة في ثوانٍ
+            <h2 className="text-xl sm:text-3xl font-black mb-1">
+              نظام تشغيل متكامل لمطعمك في شاشة واحدة
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              اختر الشاشة التي تريد معاينتها الآن ولاحظ التزامن المباشر
+              تحكم بالمنيو، راقب المطبخ لحظة بلحظة، وتابع حركة الكاشير كما لو كنت على كمبيوتر ويندوز
             </p>
           </div>
 
-          {/* Tab Controls */}
-          <div className="flex items-center gap-1.5 bg-slate-800/90 p-1.5 rounded-2xl mb-4 border border-slate-700 z-10">
-            <button
-              onClick={() => setActiveTab('menu')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
-                activeTab === 'menu' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Smartphone size={15} />
-              <span>1. منيو الزبون (/m)</span>
-            </button>
+          {/* Windows 11 Application Window Frame */}
+          <div className="w-full max-w-4xl bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col z-10">
+            
+            {/* Windows 11 Title Bar */}
+            <div className="bg-slate-950 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between text-xs select-none">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-5 h-5 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center font-black text-xs shrink-0">
+                  🪟
+                </div>
+                <span className="font-extrabold text-white text-[11px] sm:text-xs truncate">
+                  Menus.ps Windows OS — مركز إدارة المطاعم الموحد (Burger House نابلس)
+                </span>
+              </div>
 
-            <button
-              onClick={() => setActiveTab('kitchen')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
-                activeTab === 'kitchen' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <ChefHat size={15} />
-              <span>2. شاشة المطبخ (/staff)</span>
-            </button>
+              {/* Windows Window Controls */}
+              <div className="flex items-center gap-1 shrink-0 -ml-1">
+                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">—</span>
+                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">🗖</span>
+                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-rose-600 hover:text-white rounded text-xs cursor-pointer">✕</span>
+              </div>
+            </div>
 
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
-                activeTab === 'dashboard' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <BarChart3 size={15} />
-              <span>3. لوحة الإدارة (/demo)</span>
-            </button>
-          </div>
+            {/* App Tabs inside the Windows Window */}
+            <div className="px-3 pt-3 bg-slate-900/90 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+              <button
+                onClick={() => setActiveTab('menu')}
+                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                  activeTab === 'menu' 
+                    ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
+                }`}
+              >
+                <Smartphone size={14} className="text-orange-400" />
+                <span>1. منيو العميل للجوال</span>
+              </button>
 
-          {/* Interactive Screen Display */}
-          <div className="w-full max-w-4xl bg-slate-950 rounded-3xl p-4 sm:p-6 border border-slate-800 shadow-2xl min-h-[340px] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {activeTab === 'menu' && (
-                <motion.div
-                  key="sim-menu"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full max-w-md bg-white text-slate-900 rounded-2xl p-4 shadow-xl text-right"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-3">
-                    <div>
-                      <h4 className="font-black text-sm text-slate-900">منيو طاولة رقم 12</h4>
-                      <p className="text-[10px] text-slate-400">اضغط زر (+) لتجربة إضافة وجبة للسلة</p>
-                    </div>
-                    <span className="bg-emerald-100 text-emerald-700 text-xs font-black px-2 py-0.5 rounded-md">
-                      متصل مباشر
-                    </span>
-                  </div>
+              <button
+                onClick={() => setActiveTab('kitchen')}
+                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                  activeTab === 'kitchen' 
+                    ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
+                }`}
+              >
+                <ChefHat size={14} className="text-amber-400" />
+                <span>2. شاشة المطبخ (KDS)</span>
+              </button>
 
-                  <div className="space-y-2.5 mb-4">
-                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
+                }`}
+              >
+                <BarChart3 size={14} className="text-emerald-400" />
+                <span>3. لوحة الكاشير والـ KPI</span>
+              </button>
+            </div>
+
+            {/* Window Content Area */}
+            <div className="p-3 sm:p-5 bg-slate-950 min-h-[290px] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {activeTab === 'menu' && (
+                  <motion.div
+                    key="sim-menu"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="w-full max-w-md bg-white text-slate-900 rounded-2xl p-3.5 shadow-xl text-right"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2.5">
                       <div>
-                        <p className="font-black text-xs text-slate-900">دبل سماش برغر فاخر</p>
-                        <span className="text-xs font-black text-orange-600">42 ₪</span>
+                        <h4 className="font-black text-xs sm:text-sm text-slate-900">منيو طاولة 12 (تجربة تفاعلية)</h4>
+                        <p className="text-[10px] text-slate-400">انقر على (+) لتجربة إضافة الوجبة للسلة فوراً</p>
                       </div>
-                      <button 
-                        onClick={() => handleAddDemoItem(42)}
-                        className="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
-                      >
-                        + أضف
-                      </button>
+                      <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        مباشر
+                      </span>
                     </div>
 
-                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <div className="space-y-2 mb-3">
+                      <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                        <div>
+                          <p className="font-black text-xs text-slate-900">دبل سماش برغر فاخر</p>
+                          <span className="text-xs font-black text-orange-600">42 ₪</span>
+                        </div>
+                        <button 
+                          onClick={() => handleAddDemoItem(42)}
+                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
+                        >
+                          + أضف
+                        </button>
+                      </div>
+
+                      <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                        <div>
+                          <p className="font-black text-xs text-slate-900">تشيز بيكون فرايز مقرمش</p>
+                          <span className="text-xs font-black text-orange-600">22 ₪</span>
+                        </div>
+                        <button 
+                          onClick={() => handleAddDemoItem(22)}
+                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
+                        >
+                          + أضف
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-2 bg-slate-100 rounded-xl flex items-center justify-between">
                       <div>
-                        <p className="font-black text-xs text-slate-900">تشيز بيكون فرايز</p>
-                        <span className="text-xs font-black text-orange-600">22 ₪</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">{demoCartCount} أصناف بالسلة</span>
+                        <span className="text-sm font-black text-slate-900">{demoCartTotal} ₪</span>
                       </div>
-                      <button 
-                        onClick={() => handleAddDemoItem(22)}
-                        className="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
+                      <Link
+                        href="/m"
+                        target="_blank"
+                        className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors shadow-xs"
                       >
-                        + أضف
-                      </button>
+                        <span>فتح المنيو الكامل</span>
+                        <ExternalLink size={12} />
+                      </Link>
                     </div>
-                  </div>
+                  </motion.div>
+                )}
 
-                  <div className="p-2.5 bg-slate-100 rounded-xl flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold block">{demoCartCount} أصناف بالسلة</span>
-                      <span className="text-sm font-black text-slate-900">{demoCartTotal} ₪</span>
-                    </div>
-                    <Link
-                      href="/m"
-                      target="_blank"
-                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors"
-                    >
-                      <span>فتح المنيو الكامل</span>
-                      <ExternalLink size={12} />
-                    </Link>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'kitchen' && (
-                <motion.div
-                  key="sim-kitchen"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full grid sm:grid-cols-3 gap-3 text-right"
-                >
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-                    <span className="text-xs font-black text-rose-400 block mb-2">جديد (2)</span>
-                    <div className="bg-slate-800 p-2.5 rounded-xl text-white">
-                      <div className="flex justify-between text-xs font-black mb-1">
-                        <span className="text-orange-400">#4241</span>
-                        <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 7</span>
+                {activeTab === 'kitchen' && (
+                  <motion.div
+                    key="sim-kitchen"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="w-full grid sm:grid-cols-3 gap-2.5 text-right"
+                  >
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                      <span className="text-xs font-black text-rose-400 block mb-1.5">جديد (2)</span>
+                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
+                        <div className="flex justify-between text-xs font-black mb-1">
+                          <span className="text-orange-400">#4241</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 7</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">2x دبل سماش برغر</p>
+                        <span className="text-[9px] text-rose-400 block mt-1">تنبيه صوتي رن 🛎️</span>
                       </div>
-                      <p className="text-[11px] text-slate-300">2x دبل سماش برغر</p>
-                      <span className="text-[9px] text-rose-400 block mt-1">تنبيه صوتي رن 🛎️</span>
                     </div>
-                  </div>
 
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-                    <span className="text-xs font-black text-amber-400 block mb-2">قيد التحضير (1)</span>
-                    <div className="bg-slate-800 p-2.5 rounded-xl text-white">
-                      <div className="flex justify-between text-xs font-black mb-1">
-                        <span className="text-orange-400">#4240</span>
-                        <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 12</span>
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                      <span className="text-xs font-black text-amber-400 block mb-1.5">قيد التحضير (1)</span>
+                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
+                        <div className="flex justify-between text-xs font-black mb-1">
+                          <span className="text-orange-400">#4240</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 12</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">1x كلاسيك برغر فاخر</p>
+                        <span className="text-[9px] text-amber-400 block mt-1">جاري الشوي</span>
                       </div>
-                      <p className="text-[11px] text-slate-300">1x كلاسيك برغر فاخر</p>
-                      <span className="text-[9px] text-amber-400 block mt-1">جاري الشوي</span>
                     </div>
-                  </div>
 
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-                    <span className="text-xs font-black text-emerald-400 block mb-2">جاهز للتسليم (1)</span>
-                    <div className="bg-slate-800 p-2.5 rounded-xl text-white">
-                      <div className="flex justify-between text-xs font-black mb-1">
-                        <span className="text-orange-400">#4239</span>
-                        <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 4</span>
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                      <span className="text-xs font-black text-emerald-400 block mb-1.5">جاهز للتسليم (1)</span>
+                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
+                        <div className="flex justify-between text-xs font-black mb-1">
+                          <span className="text-orange-400">#4239</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 4</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">3x تشيكن كريسبي</p>
+                        <span className="text-[9px] text-emerald-400 block mt-1">جاهز على الصينية</span>
                       </div>
-                      <p className="text-[11px] text-slate-300">3x تشيكن كريسبي</p>
-                      <span className="text-[9px] text-emerald-400 block mt-1">جاهز على الصينية</span>
                     </div>
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
 
-              {activeTab === 'dashboard' && (
-                <motion.div
-                  key="sim-dashboard"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 text-right"
-                >
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1">مبيعات اليوم</span>
-                    <span className="text-xl font-black text-white">3,350 ₪</span>
-                    <span className="text-[10px] text-emerald-400 font-bold block mt-1">+12.5% نمو</span>
-                  </div>
+                {activeTab === 'dashboard' && (
+                  <motion.div
+                    key="sim-dashboard"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-right"
+                  >
+                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">مبيعات اليوم</span>
+                      <span className="text-lg font-black text-white">3,350 ₪</span>
+                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">+12.5% نمو</span>
+                    </div>
 
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1">طلبات QR</span>
-                    <span className="text-xl font-black text-orange-400">72%</span>
-                    <span className="text-[10px] text-slate-400 font-bold block mt-1">43 طلب مباشر</span>
-                  </div>
+                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">طلبات QR</span>
+                      <span className="text-lg font-black text-orange-400">72%</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-1">43 طلب مباشر</span>
+                    </div>
 
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1">متوسط الطلب</span>
-                    <span className="text-xl font-black text-white">76.8 ₪</span>
-                    <span className="text-[10px] text-emerald-400 font-bold block mt-1">+18% عبر الإضافات</span>
-                  </div>
+                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">متوسط الطلب</span>
+                      <span className="text-lg font-black text-white">76.8 ₪</span>
+                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">+18% عبر الإضافات</span>
+                    </div>
 
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1">إشغال الصالة</span>
-                    <span className="text-xl font-black text-emerald-400">9 / 15</span>
-                    <span className="text-[10px] text-slate-400 font-bold block mt-1">طاولات نشطة</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">إشغال الصالة</span>
+                      <span className="text-lg font-black text-emerald-400">9 / 15</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-1">طاولات نشطة</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Windows 11 Taskbar at Bottom of Window */}
+            <div className="bg-slate-950 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-white select-none">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded-md bg-sky-600 text-white font-black text-xs flex items-center gap-1 shadow-xs">
+                  🪟 <span className="hidden sm:inline">ابدأ</span>
+                </span>
+                <span className="text-[11px] text-slate-400 font-bold hidden sm:inline">
+                  متصل بـ Burger House Nablus
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2.5 text-[11px] text-slate-400 font-medium">
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  سحابي نشط
+                </span>
+                <span>🇵🇸 فلسطين</span>
+              </div>
+            </div>
+
           </div>
 
           <button 
@@ -500,7 +552,7 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 3: HOW IT WORKS (سلايد 3: كيف يعمل النظام)
         ========================================================================= */}
-        <section className="h-[calc(100dvh-3.5rem)] min-h-[580px] w-full snap-start snap-always relative flex flex-col justify-center items-center bg-white p-4 sm:p-6 border-y border-slate-100">
+        <section className="w-full relative flex flex-col justify-center items-center bg-white py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always p-4 sm:p-6 border-y border-slate-100">
           <div className="container mx-auto max-w-6xl text-center">
             
             <div className="max-w-xl mx-auto mb-8">
@@ -582,7 +634,7 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 4: FEATURES BENTO SHOWCASE (سلايد 4: المميزات والتقنيات)
         ========================================================================= */}
-        <section className="h-[calc(100dvh-3.5rem)] min-h-[580px] w-full snap-start snap-always relative flex flex-col justify-center items-center bg-slate-950 text-white p-4 sm:p-6 overflow-hidden">
+        <section className="w-full relative flex flex-col justify-center items-center bg-slate-950 text-white p-4 sm:p-6 overflow-hidden py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always">
           
           <div className="text-center max-w-xl mx-auto mb-6 z-10">
             <span className="bg-orange-500/20 text-orange-400 text-xs font-black px-3 py-1 rounded-full mb-2 inline-block border border-orange-500/30">
@@ -659,7 +711,7 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 5: PRICING & FINAL CTA (سلايد 5: الأسعار والاشتراك النهائي)
         ========================================================================= */}
-        <section className="h-[calc(100dvh-3.5rem)] min-h-[580px] w-full snap-start snap-always relative flex flex-col justify-center items-center bg-gradient-to-b from-slate-50 to-orange-50/60 p-4 sm:p-6">
+        <section className="w-full relative flex flex-col justify-center items-center bg-gradient-to-b from-slate-50 to-orange-50/60 p-4 sm:p-6 py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always">
           <div className="container mx-auto max-w-xl text-center">
             
             <div className="bg-white rounded-3xl border-2 border-orange-500 p-6 sm:p-8 shadow-2xl relative mb-6">
