@@ -43,12 +43,12 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
       <DemoSidebar />
 
       {/* Main OS Desktop Window Container */}
-      <div className="lg:mr-64 flex flex-col min-h-screen bg-slate-100/95 pb-16">
+      <div className="lg:mr-64 flex flex-col min-h-screen bg-slate-100/95 pt-14 lg:pt-0 pb-6 lg:pb-16">
         
         {/* ============================================================
-            1. WINDOWS 11 MICA TITLE BAR (شريط عنوان نافذة ويندوز 11)
+            1. WINDOWS 11 MICA TITLE BAR (شريط عنوان نافذة ويندوز 11 - للكمبيوتر فقط)
         ============================================================ */}
-        <header className="sticky top-0 z-30 bg-slate-900 text-slate-200 border-b border-slate-800/90 px-3 sm:px-4 py-2 flex items-center justify-between shadow-md select-none">
+        <header className="hidden lg:flex sticky top-0 z-30 bg-slate-900 text-slate-200 border-b border-slate-800/90 px-4 py-2 items-center justify-between shadow-md select-none">
           <div className="flex items-center gap-2 min-w-0">
             {/* Windows Logo Icon */}
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
@@ -59,7 +59,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
               <span className="text-xs font-black text-white truncate">
                 Menus.ps OS 11 Pro — Burger House (فرع نابلس)
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 سحابي مباشر 100%
               </span>
@@ -67,7 +67,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Windows Title Bar Controls: Minimize, Maximize, Close */}
-          <div className="flex items-center gap-1 shrink-0 -ml-1 sm:ml-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button 
               title="تصغير"
               className="w-8 h-6 flex items-center justify-center hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white rounded transition-colors text-xs"
@@ -100,9 +100,9 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* ============================================================
-          3. WINDOWS 11 TASKBAR (شريط مهام ويندوز 11 التفاعلي بالأسفل)
+          3. WINDOWS 11 TASKBAR (شريط مهام ويندوز 11 التفاعلي بالأسفل - للشاشات الكبيرة فقط)
       ============================================================ */}
-      <footer className="fixed bottom-0 inset-x-0 z-50 h-12 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-3 sm:px-4 flex items-center justify-between text-white shadow-2xl select-none">
+      <footer className="hidden lg:flex fixed bottom-0 inset-x-0 z-50 h-12 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-4 items-center justify-between text-white shadow-2xl select-none">
         
         {/* Right / Center: Start Button + Pinned App Icons */}
         <div className="flex items-center gap-1 sm:gap-2">

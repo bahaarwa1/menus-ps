@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { 
   Plus, Minus, X, Check, Search, Bell, Star, 
-  ShoppingBag, Utensils,
+  Utensils,
   Edit3, AlertCircle, ShieldCheck, Flame, 
   Sparkles, ChefHat, ArrowLeft
 } from 'lucide-react';
@@ -288,7 +288,7 @@ function FastFrictionlessMenuContent() {
     <div className="min-h-screen bg-slate-100 flex justify-center text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white" dir="rtl">
       
       {/* Real Responsive Customer Menu Container */}
-      <div className="w-full max-w-lg bg-white min-h-screen shadow-xl flex flex-col relative pb-32">
+      <div className="w-full max-w-lg bg-white min-h-screen shadow-xl flex flex-col relative pb-12">
 
         {/* ============================================================
             1. FIXED STICKY APP BAR & CATEGORY BAR (لا يختفي أبدًا عند السحب)
@@ -378,13 +378,7 @@ function FastFrictionlessMenuContent() {
             })}
           </div>
 
-          {/* Touch Swipe Guide Banner */}
-          <div className="bg-slate-950/90 text-slate-400 text-[10px] font-bold py-1 px-3 border-t border-white/5 flex items-center justify-between select-none">
-            <span className="flex items-center gap-1 text-slate-400">
-              <span>👈 اسحب للشمال/اليمين للتنقل بين الأقسام 👉</span>
-            </span>
-            <span className="text-orange-400 font-black">{categories.find(c => c.id === activeCategory)?.name}</span>
-          </div>
+
 
           {/* Waiter Alert Toast Notification */}
           <AnimatePresence>
@@ -533,49 +527,34 @@ function FastFrictionlessMenuContent() {
         </main>
 
         {/* ============================================================
-            3. LUXURY STICKY FLOATING CART BAR WITH PULL HANDLE
+            3. SLEEK FLOATING CART PILL (يظهر فقط عند إضافة أصناف للسلة)
         ============================================================ */}
-        <div className="fixed bottom-0 inset-x-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-2.5 z-30 shadow-[0_-10px_35px_rgba(0,0,0,0.1)]">
-          {/* Pull / Swipe Up Bar Handle */}
-          <div 
-            onClick={() => totalCount > 0 && setIsReviewOpen(true)}
-            className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2 cursor-pointer hover:bg-slate-400 transition-colors" 
-          />
-
-          {totalCount === 0 ? (
-            <div className="text-center py-1.5 text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
-              <ShoppingBag size={14} className="text-slate-300" />
-              <span>انقر على زر (+) بجانب أي وجبة لإضافتها لطلبك</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5">
-              {/* Order total info */}
-              <button 
-                onClick={() => setIsReviewOpen(true)}
-                className="text-right shrink-0"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-1.5 py-0.5 rounded">
-                    {totalCount} أصناف
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-bold">طاولة {tableNumber}</span>
-                </div>
-                <div className="text-base font-black text-slate-900 mt-0.5 leading-none">
-                  {totalAmount} <span className="text-xs text-orange-600 font-bold">₪</span>
-                </div>
-              </button>
-
-              {/* Direct Review & Send Button */}
+        <AnimatePresence>
+          {totalCount > 0 && (
+            <motion.div 
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              className="fixed bottom-3 inset-x-3 max-w-md mx-auto z-40"
+            >
               <button
                 onClick={() => setIsReviewOpen(true)}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white h-10 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
+                className="w-full bg-slate-900/95 backdrop-blur-md text-white px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700/80 active:scale-98 transition-transform"
               >
-                <span>مراجعة وإرسال الطلب (سحب للأعلى)</span>
-                <ArrowLeft size={14} />
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                    {totalCount}
+                  </span>
+                  <span className="text-xs font-black text-white">عرض السلة ومتابعة الطلب</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-orange-400">{totalAmount} ₪</span>
+                  <ArrowLeft size={16} className="text-slate-400" />
+                </div>
               </button>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {/* ============================================================
             4. DETAILED PRODUCT & EXTRAS MODAL
