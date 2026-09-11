@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { registerNewRestaurant, RegisterRestaurantInput, RegisteredRestaurantResult } from '@/lib/db/repositories/restaurant.repository';
-import { signSession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { signSession, SESSION_COOKIE_NAME, getSessionCookieOptions } from '@/lib/auth/session';
 
 export interface RegisterActionState {
   success: boolean;
@@ -40,13 +40,11 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
     });
 
     // 3. Set secure HTTP-only cookie
-    const cookieStore = cookies();
-    cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+    const cookieStore = await cookies();
+    cookieStore.set({
+      ...getSessionCookieOptions(60 * 60 * 24 * 7),
+      name: SESSION_COOKIE_NAME,
+      value: sessionToken,
     });
 
     return {

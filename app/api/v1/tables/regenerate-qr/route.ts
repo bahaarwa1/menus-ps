@@ -2,20 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
+import { generateSecureToken } from '@/lib/security/crypto';
+import { rateLimiter } from '@/lib/security/rate-limiter';
 
 function generateQrToken(branchId: string, tableNumber: number): string {
-  const rand = Math.random().toString(36).slice(2, 10);
+  // Cryptographically secure token (16 random hex chars)
+  const rand = generateSecureToken(8);
   return `tbl_${branchId.slice(0, 8)}_${tableNumber}_${rand}`;
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const rateLimit = rateLimiter.check(`regen-qr:${ip}`, 20, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ success: false, error: 'تم تجاوز الحد المسموح به' }, { status: 429 });
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     const session = token ? await verifySession(token) : null;
 
     if (!session || !['owner', 'admin', 'branch_manager'].includes(session.role)) {
-      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
+      return NextResponse.json({ success: false, error: 'غير مصرح لك بتجديد رمز QR' }, { status: 403 });
     }
 
     const { tableId } = await request.json();

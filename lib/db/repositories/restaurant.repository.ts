@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { hashPassword, hashPin, generateSecureToken, sanitizeInput } from '@/lib/security/crypto';
 
 export interface RegisterRestaurantInput {
   name: string;
@@ -116,7 +117,7 @@ export async function isSlugAvailable(rawSlug: string): Promise<{ available: boo
 }
 
 /**
- * Registers a new restaurant with instant auto-provisioning.
+ * Registers a new restaurant with instant auto-provisioning and hardened security.
  */
 export async function registerNewRestaurant(input: RegisterRestaurantInput): Promise<RegisteredRestaurantResult> {
   const availability = await isSlugAvailable(input.slug);
@@ -125,13 +126,15 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
   }
 
   const slug = availability.slug;
-  const restaurantId = `rest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-  const branchId = `br-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const restaurantId = `rest-${Date.now()}-${generateSecureToken(4)}`;
+  const branchId = `br-${Date.now()}-${generateSecureToken(4)}`;
   const tablesCount = Math.min(Math.max(input.tablesCount || 10, 1), 50);
 
+  // Use CSPRNG for all table QR tokens
   const tables = Array.from({ length: tablesCount }, (_, i) => {
     const tableNum = i + 1;
-    const qrToken = `qr_${slug}_t${tableNum}_${Math.random().toString(36).substring(2, 8)}`;
+    const secureToken = generateSecureToken(8);
+    const qrToken = `qr_${slug}_t${tableNum}_${secureToken}`;
     return {
       id: `tbl-${tableNum}-${Date.now()}`,
       tableNumber: tableNum,
@@ -140,20 +143,28 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     };
   });
 
+  // Securely hash owner password with PBKDF2-SHA256
+  const passwordHash = input.password ? await hashPassword(input.password) : '';
+
+  const cleanName = sanitizeInput(input.name, 100);
+  const cleanPhone = sanitizeInput(input.phone, 30);
+  const cleanCity = sanitizeInput(input.city || 'نابلس', 50);
+  const cleanEmail = input.ownerEmail ? sanitizeInput(input.ownerEmail, 150).toLowerCase() : undefined;
+
   const registeredRecord: RegisteredRestaurantResult = {
     id: restaurantId,
-    name: input.name.trim(),
+    name: cleanName,
     slug,
-    phone: input.phone.trim(),
-    city: input.city.trim() || 'نابلس',
+    phone: cleanPhone,
+    city: cleanCity,
     currency: '₪',
     subdomainUrl: `https://menus-ps.vercel.app/r/${slug}`,
     branchId,
     branchName: 'الفرع الرئيسي',
     tablesCount,
     tables,
-    ownerEmail: input.ownerEmail?.trim().toLowerCase(),
-    ownerPassword: input.password || '',
+    ownerEmail: cleanEmail,
+    ownerPassword: passwordHash, // Store hash, NEVER plain text
     createdAt: new Date().toISOString(),
   };
 
@@ -165,7 +176,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     try {
       const supabase = createAdminClient();
       
-      // Insert restaurant
+      // Insert restaurant with owner auth fields
       const { data: restData, error: restErr } = await supabase
         .from('restaurants')
         .insert({
@@ -174,6 +185,8 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
           phone: registeredRecord.phone,
           city: registeredRecord.city,
           currency: '₪',
+          owner_email: cleanEmail || null,
+          owner_password_hash: passwordHash || null,
         } as never)
         .select('id')
         .single();
@@ -246,20 +259,21 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
             ] as never);
           }
 
-          // Insert staff user record for owner authentication
+          // Insert staff user record with hashed PIN
+          const staffPinHash = input.password ? await hashPin(input.password.slice(0, 6)) : await hashPin('1234');
           await supabase.from('staff_users').insert({
             branch_id: dbBranchId,
             full_name: registeredRecord.name,
             role: 'owner',
-            pin_hash: input.password || '1234',
+            pin_hash: staffPinHash,
             is_active: true,
           } as never);
 
           // Provision Supabase Auth account if email & password are provided
-          if (input.ownerEmail && input.password && input.password.length >= 6) {
+          if (cleanEmail && input.password && input.password.length >= 6) {
             try {
               await supabase.auth.admin.createUser({
-                email: input.ownerEmail.trim().toLowerCase(),
+                email: cleanEmail,
                 password: input.password,
                 email_confirm: true,
                 user_metadata: {

@@ -1,25 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateWithEmailPassword } from '@/lib/auth/service';
-import { signSession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { signSession, getSessionCookieOptions } from '@/lib/auth/session';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { sanitizeInput } from '@/lib/security/crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: max 5 login attempts per minute per IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
-    const rateLimit = rateLimiter.check(`login:${ip}`, 5, 60);
-    if (!rateLimit.allowed) {
+    const lockoutKey = `login:${ip}`;
+
+    // 1. Check progressive lockout status
+    const lockoutStatus = rateLimiter.isLockedOut(lockoutKey);
+    if (lockoutStatus.locked) {
       return NextResponse.json(
-        { success: false, error: `تم تجاوز الحد المسموح به من محاولات تسجيل الدخول. انتظر ${rateLimit.resetInSeconds} ثانية.` },
-        { status: 429, headers: { 'Retry-After': String(rateLimit.resetInSeconds) } }
+        { 
+          success: false, 
+          error: `تم قفل محاولات تسجيل الدخول مؤقتاً لتكرار المحاولات الخاطئة. انتظر ${Math.ceil(lockoutStatus.remainingSeconds / 60)} دقيقة.` 
+        },
+        { status: 429, headers: { 'Retry-After': String(lockoutStatus.remainingSeconds) } }
+      );
+    }
+
+    // 2. Sliding window check: max 5 login attempts per minute per IP
+    const rateLimit = rateLimiter.check(lockoutKey, 5, 60);
+    if (!rateLimit.allowed) {
+      // Artificial delay to thwart automated dictionary attacks
+      await new Promise(r => setTimeout(r, 1000));
+      return NextResponse.json(
+        { success: false, error: `تم تجاوز الحد المسموح به. انتظر ${rateLimit.resetInSeconds} ثانية.` },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.resetInSeconds), 'X-RateLimit-Limit': '5' } }
       );
     }
 
     const body = await request.json();
     const { email, password, redirectTo } = body;
 
-    // Basic input sanitization
-    const cleanEmail = String(email || '').trim().slice(0, 200);
+    // Input sanitization
+    const cleanEmail = sanitizeInput(String(email || ''), 200).toLowerCase();
     const cleanPassword = String(password || '').slice(0, 200);
 
     if (!cleanEmail || !cleanPassword) {
@@ -32,18 +49,23 @@ export async function POST(request: NextRequest) {
     const authResult = await authenticateWithEmailPassword(cleanEmail, cleanPassword);
 
     if (!authResult.success || !authResult.session) {
+      // Record failure for progressive lockout (5 failures -> 15 min lock)
+      rateLimiter.recordFailure(lockoutKey, 5, 15);
       return NextResponse.json(
-        { success: false, error: authResult.error || 'فشل تسجيل الدخول' },
+        { success: false, error: authResult.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
     }
 
+    // Successful login: reset failures
+    rateLimiter.recordSuccess(lockoutKey);
+
     // Generate stateless signed session token
     const token = await signSession(authResult.session);
 
-    // Determine redirect
+    // Determine safe redirect
     let target = typeof redirectTo === 'string' ? redirectTo.replace(/[^a-zA-Z0-9\/\-_?=&]/g, '') : '';
-    if (!target || !target.startsWith('/')) {
+    if (!target || !target.startsWith('/') || target.startsWith('//')) {
       target = authResult.session.role === 'staff' || authResult.session.role === 'kitchen' ? '/staff' : '/dashboard';
     }
 
@@ -61,15 +83,10 @@ export async function POST(request: NextRequest) {
       redirectTo: target,
     });
 
-    // Set secure HTTP-only cookie
+    // Set secure HTTP-only session cookie
     response.cookies.set({
-      name: SESSION_COOKIE_NAME,
+      ...getSessionCookieOptions(),
       value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
     return response;

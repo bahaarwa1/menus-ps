@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
-
-function generateSixDigitCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
+import { generateSecurePin, sanitizeInput } from '@/lib/security/crypto';
+import { rateLimiter } from '@/lib/security/rate-limiter';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const rateLimit = rateLimiter.check(`gen-staff-code:${ip}`, 20, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'تم تجاوز الحد المسموح لتوليد الرموز' },
+        { status: 429 }
+      );
+    }
+
     // 1. Verify session — must be manager or owner
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -24,7 +31,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { employeeName, role = 'staff', branchId, expiresInHours = 24 } = body;
 
-    if (!employeeName || String(employeeName).trim().length < 2) {
+    const cleanName = sanitizeInput(String(employeeName || ''), 60);
+
+    if (!cleanName || cleanName.length < 2) {
       return NextResponse.json(
         { success: false, error: 'يرجى إدخال اسم الموظف (حرفان على الأقل)' },
         { status: 400 }
@@ -49,11 +58,11 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // 2. Generate unique code (retry up to 5 times if collision)
+    // 2. Generate cryptographically secure unique code (retry up to 5 times if collision)
     let code = '';
     let attempts = 0;
     while (attempts < 5) {
-      const candidate = generateSixDigitCode();
+      const candidate = generateSecurePin(6);
       // Check uniqueness for this branch
       const { data: existing } = await (supabase as any)
         .from('staff_access_codes')
@@ -78,7 +87,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const expiresAt = new Date(Date.now() + expiresInHours * 3600 * 1000).toISOString();
+    const hours = Math.min(Math.max(1, Number(expiresInHours) || 24), 168); // Max 7 days
+    const expiresAt = new Date(Date.now() + hours * 3600 * 1000).toISOString();
 
     // 3. Insert code
     const { data: insertedCode, error: insertError } = await (supabase as any)
@@ -86,9 +96,9 @@ export async function POST(request: NextRequest) {
       .insert({
         branch_id: targetBranchId,
         code,
-        employee_name: String(employeeName).trim().slice(0, 60),
+        employee_name: cleanName,
         role,
-        created_by: session.staffUserId || null,
+        created_by: session.staffUserId || session.userId || null,
         expires_at: expiresAt,
       })
       .select('id, code, employee_name, role, expires_at')

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateOrderStatus } from '@/lib/db/repositories/order.repository';
 import { OrderStatus } from '@/types/database.types';
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { rateLimiter } from '@/lib/security/rate-limiter';
 
 const statusMap: Record<string, OrderStatus> = {
   new: 'جديد',
@@ -20,8 +23,32 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const rateLimit = rateLimiter.check(`order-status:${ip}`, 30, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'تم تجاوز معدل التعديل المسموح به' },
+        { status: 429 }
+      );
+    }
+
+    // 1. Authenticate session
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    const isDev = process.env.NODE_ENV !== 'production';
+    const isAuthorized = session && ['owner', 'admin', 'branch_manager', 'staff', 'kitchen'].includes(session.role);
+
+    if (!isAuthorized && !isDev) {
+      return NextResponse.json(
+        { success: false, error: 'غير مصرح: يتطلب صلاحيات طاقم العمل أو الإدارة لتحديث حالة الطلب' },
+        { status: 403 }
+      );
+    }
+
     const orderId = params.id;
-    if (!orderId) {
+    if (!orderId || typeof orderId !== 'string') {
       return NextResponse.json(
         { success: false, error: 'معرّف الطلب مطلوب' },
         { status: 400 }

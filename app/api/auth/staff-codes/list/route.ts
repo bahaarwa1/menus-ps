@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
     }
 
-    const branchId = request.nextUrl.searchParams.get('branchId') || session.branchId;
+    // Force branch isolation: users can only see codes for their own branch
+    const branchId = session.role === 'admin' 
+      ? (request.nextUrl.searchParams.get('branchId') || session.branchId)
+      : session.branchId;
 
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any)
@@ -44,14 +47,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { codeId } = await request.json();
-    if (!codeId) {
+    if (!codeId || typeof codeId !== 'string') {
       return NextResponse.json({ success: false, error: 'معرف الرمز مطلوب' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
-    await (supabase as any).from('staff_access_codes').delete().eq('id', codeId);
+    
+    // Strict multi-tenant isolation: only delete if belonging to this branch (unless super-admin)
+    let deleteQuery = (supabase as any).from('staff_access_codes').delete().eq('id', codeId);
+    if (session.role !== 'admin' && session.branchId) {
+      deleteQuery = deleteQuery.eq('branch_id', session.branchId);
+    }
+    await deleteQuery;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'تم إبطال رمز الوصول بنجاح' });
   } catch {
     return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
   }

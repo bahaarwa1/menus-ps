@@ -1,35 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateWithStaffPin } from '@/lib/auth/service';
-import { signSession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { signSession, getSessionCookieOptions } from '@/lib/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { sanitizeInput } from '@/lib/security/crypto';
 
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const lockoutKey = `staff-pin:${ip}`;
 
-    // Rate limit: max 10 attempts per minute per IP
-    const rateLimit = rateLimiter.check(`staff-pin:${ip}`, 10, 60);
+    // 1. Check progressive lockout status
+    const lockoutStatus = rateLimiter.isLockedOut(lockoutKey);
+    if (lockoutStatus.locked) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `تم قفل محاولات الدخول مؤقتاً لأسباب أمنية. يرجى الانتظار ${Math.ceil(lockoutStatus.remainingSeconds / 60)} دقيقة.` 
+        },
+        { status: 429, headers: { 'Retry-After': String(lockoutStatus.remainingSeconds) } }
+      );
+    }
+
+    // 2. Sliding window check: max 5 PIN attempts per minute per IP
+    const rateLimit = rateLimiter.check(lockoutKey, 5, 60);
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, error: `تم تجاوز عدد المحاولات المسموح بها. انتظر ${rateLimit.resetInSeconds} ثانية.` },
-        { status: 429 }
+        { 
+          success: false, 
+          error: `تم تجاوز عدد المحاولات المسموح بها. يرجى الانتظار ${rateLimit.resetInSeconds} ثانية.` 
+        },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.resetInSeconds) } }
       );
     }
 
     const body = await request.json();
     const { pin, branchId } = body;
 
-    if (!pin || String(pin).trim().length < 4) {
+    const pinStr = sanitizeInput(String(pin || '')).trim();
+
+    if (!pinStr || pinStr.length < 4 || pinStr.length > 8) {
       return NextResponse.json(
-        { success: false, error: 'رمز الدخول مطلوب (4 أرقام على الأقل)' },
+        { success: false, error: 'رمز الدخول مطلوب (بين 4 و 8 أرقام)' },
         { status: 400 }
       );
     }
 
-    const pinStr = String(pin).trim();
-
-    // === 6-DIGIT ACCESS CODE PATH ===
+    // === 6-DIGIT ONE-TIME ACCESS CODE PATH ===
     if (pinStr.length === 6 && /^\d{6}$/.test(pinStr)) {
       try {
         const supabase = createAdminClient();
@@ -54,11 +71,13 @@ export async function POST(request: NextRequest) {
             expires_at: string;
           };
 
-          // Mark code as used
+          // Mark code as used immediately (single-use)
           await (supabase as any)
             .from('staff_access_codes')
             .update({ is_used: true, used_at: now })
             .eq('id', record.id);
+
+          rateLimiter.recordSuccess(lockoutKey);
 
           const sessionPayload = {
             userId: record.id,
@@ -70,7 +89,7 @@ export async function POST(request: NextRequest) {
             restaurantSlug: '',
           };
 
-          const token = await signSession(sessionPayload);
+          const token = await signSession(sessionPayload, 60 * 60 * 24); // 24 hours
 
           const response = NextResponse.json({
             success: true,
@@ -84,21 +103,14 @@ export async function POST(request: NextRequest) {
           });
 
           response.cookies.set({
-            name: SESSION_COOKIE_NAME,
+            ...getSessionCookieOptions(60 * 60 * 24),
             value: token,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 60 * 60 * 24, // 24 hours for temp staff codes
           });
 
           return response;
         }
-
-        // Code not found or expired — fallback to normal PIN logic
       } catch (err) {
-        console.warn('6-digit code lookup failed, fallback to normal PIN:', err);
+        console.warn('6-digit code lookup failed, checking normal PIN:', err);
       }
     }
 
@@ -106,13 +118,18 @@ export async function POST(request: NextRequest) {
     const authResult = await authenticateWithStaffPin(pinStr, branchId);
 
     if (!authResult.success || !authResult.session) {
+      // Record failed attempt for progressive lockout (5 failures -> 15 min lock)
+      rateLimiter.recordFailure(lockoutKey, 5, 15);
       return NextResponse.json(
         { success: false, error: authResult.error || 'رمز الـ PIN غير صحيح، يرجى التأكد من الرمز المدخل' },
         { status: 401 }
       );
     }
 
-    const token = await signSession(authResult.session);
+    // Reset failure count on success
+    rateLimiter.recordSuccess(lockoutKey);
+
+    const token = await signSession(authResult.session, 60 * 60 * 24);
 
     const response = NextResponse.json({
       success: true,
@@ -126,13 +143,8 @@ export async function POST(request: NextRequest) {
     });
 
     response.cookies.set({
-      name: SESSION_COOKIE_NAME,
+      ...getSessionCookieOptions(60 * 60 * 24),
       value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;

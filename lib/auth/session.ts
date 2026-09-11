@@ -2,6 +2,7 @@ import { AuthSession } from '@/types/auth.types';
 
 export const SESSION_COOKIE_NAME = 'menus_session';
 const DEFAULT_EXPIRY_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const SHORT_SESSION_SECONDS = 60 * 60 * 24;       // 24 hours (staff)
 
 // Base64URL encoding/decoding helpers
 function base64UrlEncode(buffer: ArrayBuffer | Uint8Array): string {
@@ -15,9 +16,7 @@ function base64UrlEncode(buffer: ArrayBuffer | Uint8Array): string {
 
 function base64UrlDecode(str: string): Uint8Array {
   let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) {
-    base64 += '=';
-  }
+  while (base64.length % 4) base64 += '=';
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -34,12 +33,31 @@ function textDecode(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
+/**
+ * Returns the HMAC-SHA256 signing key.
+ * 
+ * SECURITY NOTE: Uses AUTH_SECRET exclusively (never the Supabase service role key).
+ * If AUTH_SECRET is missing in production, throws an error instead of using a weak default.
+ */
 async function getSigningKey(): Promise<CryptoKey> {
-  const secret = process.env.AUTH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'menus-ps-default-dev-secret-key-2026';
-  const keyData = textEncode(secret);
+  const secret = process.env.AUTH_SECRET;
+
+  if (!secret || secret.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[SECURITY] AUTH_SECRET is missing or too short (min 32 chars). Set it in Vercel env vars.');
+    }
+    // Dev-only fallback — never used in production
+    console.warn('[SECURITY] AUTH_SECRET not set — using dev-only fallback. DO NOT use in production.');
+  }
+
+  // Use AUTH_SECRET or a strong dev-only secret (never the Supabase key)
+  const keyMaterial = secret && secret.length >= 32
+    ? secret
+    : 'menus-ps-dev-only-secret-key-2026-CHANGE-IN-PRODUCTION-32chars+';
+
   return crypto.subtle.importKey(
     'raw',
-    keyData as unknown as BufferSource,
+    textEncode(keyMaterial) as unknown as BufferSource,
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
@@ -47,11 +65,18 @@ async function getSigningKey(): Promise<CryptoKey> {
 }
 
 /**
- * Signs an AuthSession into a stateless compact JWT-like token.
+ * Signs an AuthSession into a stateless compact JWT-like token (HMAC-SHA256).
  */
-export async function signSession(session: Omit<AuthSession, 'exp'> & { exp?: number }): Promise<string> {
-  const exp = session.exp || Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
-  const fullSession: AuthSession = { ...session, exp };
+export async function signSession(
+  session: Omit<AuthSession, 'exp'> & { exp?: number },
+  expirySeconds?: number
+): Promise<string> {
+  const ttl = expirySeconds ?? (
+    (session.role === 'staff' || session.role === 'kitchen') ? SHORT_SESSION_SECONDS : DEFAULT_EXPIRY_SECONDS
+  );
+  const exp = session.exp || Math.floor(Date.now() / 1000) + ttl;
+  const iat = Math.floor(Date.now() / 1000);
+  const fullSession: AuthSession = { ...session, exp, iat } as AuthSession & { iat: number };
 
   const header = { alg: 'HS256', typ: 'JWT' };
   const headerB64 = base64UrlEncode(textEncode(JSON.stringify(header)));
@@ -67,6 +92,7 @@ export async function signSession(session: Omit<AuthSession, 'exp'> & { exp?: nu
 
 /**
  * Verifies a token and extracts the AuthSession if valid and not expired.
+ * Uses constant-time verification to prevent timing attacks.
  */
 export async function verifySession(token: string): Promise<AuthSession | null> {
   if (!token || typeof token !== 'string') return null;
@@ -80,6 +106,8 @@ export async function verifySession(token: string): Promise<AuthSession | null> 
   try {
     const key = await getSigningKey();
     const signatureBytes = base64UrlDecode(signatureB64);
+
+    // crypto.subtle.verify is inherently constant-time
     const isValid = await crypto.subtle.verify(
       'HMAC',
       key,
@@ -99,8 +127,22 @@ export async function verifySession(token: string): Promise<AuthSession | null> 
     }
 
     return session;
-  } catch (err) {
-    console.error('Session verification error:', err);
+  } catch {
+    // Never leak error details — just return null
     return null;
   }
+}
+
+/**
+ * Returns cookie options for session cookie — secure in production.
+ */
+export function getSessionCookieOptions(maxAge?: number) {
+  return {
+    name: SESSION_COOKIE_NAME,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: maxAge ?? DEFAULT_EXPIRY_SECONDS,
+  };
 }

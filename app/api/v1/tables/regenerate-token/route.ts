@@ -1,19 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rotateTableToken } from '@/lib/tables/table-tokens';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { rateLimiter } from '@/lib/security/rate-limiter';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const rateLimit = rateLimiter.check(`table-token:${ip}`, 20, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'تم تجاوز معدل الطلبات المسموح به' },
+        { status: 429 }
+      );
+    }
+
     // Verify admin/manager session
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     const session = token ? await verifySession(token) : null;
 
-    // Allow in dev/demo or if authenticated as admin/manager
-    const isAuthorized = session?.role === 'admin' || session?.role === 'branch_manager' || !session;
+    const isDev = process.env.NODE_ENV !== 'production';
+    const isAuthorized = session && ['owner', 'admin', 'branch_manager'].includes(session.role);
 
-    if (!isAuthorized) {
+    if (!isAuthorized && !isDev) {
       return NextResponse.json(
-        { success: false, error: 'غير مصرح لك بتجديد أكواد الطاولات' },
+        { success: false, error: 'غير مصرح لك بتجديد رموز الطاولات — يتطلب حساب إداري' },
         { status: 403 }
       );
     }
