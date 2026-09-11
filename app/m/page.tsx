@@ -73,7 +73,14 @@ function FastFrictionlessMenuContent() {
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
   const restaurantParam = searchParams.get('restaurant') || '';
   const defaultSlug = 'burger-house-nablus';
-  const effectiveSlug = restaurantParam || (qrTokenParam ? '' : defaultSlug);
+
+  // Instant extraction from QR token (e.g. qr_burger-house-nablus_t2_xyz)
+  const tokenSlugMatch = qrTokenParam ? qrTokenParam.match(/^qr_([a-zA-Z0-9-]+)_t\d+/) : null;
+  const slugFromToken = tokenSlugMatch ? tokenSlugMatch[1] : '';
+  const tokenTableMatch = qrTokenParam ? qrTokenParam.match(/_t(\d+)_/) : null;
+  const tableFromToken = tokenTableMatch ? parseInt(tokenTableMatch[1], 10) : 0;
+
+  const effectiveSlug = restaurantParam || slugFromToken || (qrTokenParam ? '' : defaultSlug);
   const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
   const { direction, language } = useLanguage();
 
@@ -86,9 +93,9 @@ function FastFrictionlessMenuContent() {
   const [activeCategory, setActiveCategory] = useState(isDemo ? (initialCategories[0]?.id || 'burgers') : '');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Table verification state
-  const [tableNumber, setTableNumber] = useState<number>(0);
-  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(false);
+  // Table verification state - initialize immediately from token so it never shows Table 0
+  const [tableNumber, setTableNumber] = useState<number>(tableFromToken || (isDemo ? 1 : 0));
+  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(tableFromToken > 0 || isDemo);
   const [tokenError, setTokenError] = useState<string>('');
 
   // Cart state
@@ -154,9 +161,33 @@ function FastFrictionlessMenuContent() {
     }
   }, [activeCategory]);
 
-  // Realtime order status tracking
+  // Realtime order status tracking — Dual Mode: Polling every 2s + SSE push for instant updates
   useEffect(() => {
     if (!isOrderSubmitted || !submittedOrderId) return;
+
+    // 1. Silent Fast Polling (guaranteed across all environments including Vercel serverless)
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/v1/orders/${encodeURIComponent(submittedOrderId)}/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.order) {
+          const rawStatus = data.order.status;
+          if (rawStatus === 'cooking' || rawStatus === 'قيد التحضير') {
+            setLiveOrderStatus('cooking');
+          } else if (rawStatus === 'ready' || rawStatus === 'جاهز') {
+            setLiveOrderStatus('ready');
+          } else if (rawStatus === 'completed' || rawStatus === 'تم التسليم') {
+            setLiveOrderStatus('completed');
+          }
+        }
+      } catch {}
+    };
+
+    pollStatus();
+    const pollTimer = setInterval(pollStatus, 2000);
+
+    // 2. Server-Sent Events (SSE) for instant sub-second push
     let eventSource: EventSource | null = null;
     try {
       eventSource = new EventSource(`/api/v1/orders/stream?orderId=${encodeURIComponent(submittedOrderId)}`);
@@ -178,6 +209,7 @@ function FastFrictionlessMenuContent() {
     } catch {}
 
     return () => {
+      clearInterval(pollTimer);
       eventSource?.close();
     };
   }, [isOrderSubmitted, submittedOrderId]);
@@ -291,16 +323,20 @@ function FastFrictionlessMenuContent() {
     });
   };
 
-  // Filtered menu — from DB
+  // Filtered menu — from DB with resilient category fallback
   const filteredItems = useMemo(() => {
+    const currentCat = (activeCategory && dbCategories.some(c => c.id === activeCategory))
+      ? activeCategory
+      : (dbCategories[0]?.id || '');
+
     return dbMenuItems.filter(item => {
-      const matchCat = searchQuery ? true : item.category === activeCategory;
+      const matchCat = searchQuery ? true : (!currentCat || item.category === currentCat);
       const matchSearch = !searchQuery || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [dbMenuItems, activeCategory, searchQuery]);
+  }, [dbMenuItems, dbCategories, activeCategory, searchQuery]);
 
   // Cart summary — uses dbMenuItems
   const cartItemsList = useMemo(() => {
@@ -391,7 +427,7 @@ function FastFrictionlessMenuContent() {
         return;
       }
 
-      setSubmittedOrderId(data.order.orderNumber);
+      setSubmittedOrderId(data.order.id || data.order.orderNumber);
       setServerVerifiedTotal(data.order.totalAmount);
       setIsReviewOpen(false);
       setIsOrderSubmitted(true);

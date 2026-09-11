@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock,
   Search, Printer, Check, X, Bell, BellOff,
-  Sun, Moon, LogOut, Flame, ChefHat, RefreshCw, ChevronRight
+  Sun, Moon, LogOut, Flame, ChefHat, RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { printThermalReceipt } from '@/lib/print-utils';
@@ -17,17 +17,25 @@ function playOrderChime() {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-    osc.connect(gain);
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
+    osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.14);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.65);
+    osc1.connect(gain);
+    osc2.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.45);
+    osc1.start();
+    osc2.start(ctx.currentTime + 0.14);
+    osc1.stop(ctx.currentTime + 0.65);
+    osc2.stop(ctx.currentTime + 0.65);
   } catch {}
 }
 
@@ -67,6 +75,7 @@ export default function StaffOrdersManagementPage() {
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [branchId, setBranchId] = useState<string>('');
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [newOrderAlert, setNewOrderAlert] = useState<{ id: string; table: number; count: number; time: string } | null>(null);
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
@@ -155,6 +164,46 @@ export default function StaffOrdersManagementPage() {
       });
 
     return () => { supabase.removeChannel(channel); };
+  }, [branchId, soundEnabled]);
+
+  // Fast Background Polling every 2.5s (Guarantees instant sync even if WebSockets are blocked/serverless)
+  useEffect(() => {
+    let isMounted = true;
+    const pollTimer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/v1/orders/list${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ''}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.orders)) {
+          const fresh = data.orders.map(mapDbOrder);
+          setOrdersList((prev) => {
+            if (prev.length === 0) return fresh;
+
+            // Detect newly incoming orders
+            const prevIds = new Set(prev.map(o => o.id));
+            const newOrders = fresh.filter((o: any) => !prevIds.has(o.id));
+            if (newOrders.length > 0) {
+              const latest = newOrders[0];
+              if (soundEnabled) playOrderChime();
+              setNewOrderAlert({
+                id: latest.id,
+                table: latest.table,
+                count: latest.items.length,
+                time: latest.time,
+              });
+              setTimeout(() => setNewOrderAlert(null), 8000);
+            }
+
+            return fresh;
+          });
+        }
+      } catch {}
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollTimer);
+    };
   }, [branchId, soundEnabled]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -458,6 +507,38 @@ export default function StaffOrdersManagementPage() {
       isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F4F6F9] text-slate-900'
     }`} dir="rtl">
       
+      {/* Realtime Floating New Order Alert Banner */}
+      <AnimatePresence>
+        {newOrderAlert && (
+          <motion.div
+            initial={{ y: -60, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -60, opacity: 0, scale: 0.95 }}
+            className="fixed top-4 inset-x-4 max-w-lg mx-auto z-50 bg-gradient-to-r from-orange-600 to-amber-600 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-orange-400/40"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+                🔔
+              </span>
+              <div>
+                <p className="text-xs font-black">طلب جديد لطاولة #{newOrderAlert.table}!</p>
+                <p className="text-[11px] text-orange-100">{newOrderAlert.count} أصناف · الساعة {newOrderAlert.time}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedOrderId(newOrderAlert.id);
+                setIsMobileDetailOpen(true);
+                setNewOrderAlert(null);
+              }}
+              className="px-3.5 py-2 bg-white hover:bg-orange-50 text-orange-600 rounded-xl text-xs font-black shadow-xs cursor-pointer shrink-0 transition-all"
+            >
+              معاينة الطلب
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 1. Header Bar */}
       <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
         isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/80'
@@ -705,20 +786,23 @@ export default function StaffOrdersManagementPage() {
                         : 'bg-white border-slate-200/80 hover:border-orange-300'
                     }`}
                   >
-                    {/* Top Row: Order ID + Table badge */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                    {/* Top Row: Huge Table Pill + Time */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`font-bold text-xs sm:text-sm tracking-tight truncate ${
-                          isDarkMode ? 'text-white' : 'text-slate-900'
-                        }`}>{order.id}</span>
-                        <span className="bg-slate-900 text-amber-300 font-semibold text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md shadow-2xs shrink-0">
-                          طاولة {order.table}
+                        <span className="bg-orange-500 text-white font-black text-xs px-2.5 py-1 rounded-xl shadow-xs shrink-0 flex items-center gap-1">
+                          <span>طاولة</span>
+                          <span className="text-sm font-black underline">{order.table}</span>
+                        </span>
+                        <span className={`font-mono font-bold text-xs truncate ${
+                          isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                        }`}>
+                          {order.orderNumber || order.id}
                         </span>
                       </div>
-                      <span className={`text-[10px] sm:text-[11px] flex items-center gap-1 shrink-0 ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-400'
+                      <span className={`text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
                       }`}>
-                        <Clock size={11} />
+                        <Clock size={12} className="text-orange-500" />
                         {order.time}
                       </span>
                     </div>
@@ -728,27 +812,91 @@ export default function StaffOrdersManagementPage() {
                       {getStatusBadge(order.status)}
                     </div>
 
-                    {/* Items preview (compact) */}
-                    <p className={`text-xs line-clamp-2 mb-2 leading-relaxed ${
-                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
-                    }`}>
-                      {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
-                    </p>
+                    {/* Items preview with count */}
+                    <div className="mb-2.5 flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-slate-400">
+                          {order.items.length} أصناف
+                        </span>
+                        <span className="font-black text-sm text-orange-600 font-mono">
+                          {order.total} ₪
+                        </span>
+                      </div>
+                      <p className={`text-xs line-clamp-2 leading-relaxed ${
+                        isDarkMode ? 'text-slate-300' : 'text-slate-600'
+                      }`}>
+                        {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
+                      </p>
+                      {order.notes && (
+                        <span className="mt-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded block truncate">
+                          ⚠️ {order.notes}
+                        </span>
+                      )}
+                    </div>
 
-                    {/* Bottom Row: Total & Action Preview */}
-                    <div className={`flex items-center justify-between pt-2 border-t ${
+                    {/* Direct 1-Click Action Button Bar */}
+                    <div className={`pt-2 border-t flex items-center gap-1.5 ${
                       isDarkMode ? 'border-slate-800' : 'border-slate-100'
                     }`}>
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-bold text-orange-600 text-base">{order.total}</span>
-                        <span className="text-xs text-orange-600 font-medium">₪</span>
-                      </div>
-                      <div className={`flex items-center gap-0.5 text-xs ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-400'
-                      }`}>
-                        <span className="text-[11px] text-orange-600 font-semibold">معاينة</span>
-                        <ChevronRight size={13} className="rtl:rotate-180 text-orange-600" />
-                      </div>
+                      {order.status === 'جديد' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id, 'قيد التحضير');
+                          }}
+                          className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                        >
+                          <ChefHat size={14} />
+                          <span>بدء التحضير</span>
+                        </button>
+                      )}
+                      {order.status === 'قيد التحضير' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id, 'جاهز');
+                          }}
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                        >
+                          <Check size={14} strokeWidth={3} />
+                          <span>جاهز للتقديم ✨</span>
+                        </button>
+                      )}
+                      {order.status === 'جاهز' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id, 'تم التسليم');
+                          }}
+                          className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                        >
+                          <span>تم التسليم للزبون ✔️</span>
+                        </button>
+                      )}
+                      {order.status === 'تم التسليم' && (
+                        <span className="text-[11px] font-bold text-slate-400 py-1 flex-1 text-center">
+                          تم التسليم بنجاح
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrintReceipt(order);
+                        }}
+                        className={`p-2 rounded-xl transition-colors cursor-pointer shrink-0 ${
+                          isDarkMode
+                            ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        }`}
+                        title="طباعة البون"
+                      >
+                        <Printer size={14} />
+                      </button>
                     </div>
                   </div>
                 );

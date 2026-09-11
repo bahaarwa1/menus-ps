@@ -231,10 +231,48 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
 }
 
 /**
- * Retrieves an order by its ID.
+ * Retrieves an order by its ID or orderNumber.
  */
 export async function getOrderById(orderId: string): Promise<StoredOrder | null> {
-  return activeOrdersStore.get(orderId) || null;
+  if (!orderId) return null;
+
+  // 1. Direct in-memory lookup
+  const direct = activeOrdersStore.get(orderId);
+  if (direct) return direct;
+
+  // 2. Lookup by orderNumber in active memory
+  const byNumber = Array.from(activeOrdersStore.values()).find(
+    (o) => o.id === orderId || o.orderNumber === orderId || `#${o.orderNumber}` === orderId || o.orderNumber === orderId.replace(/^#/, '')
+  );
+  if (byNumber) return byNumber;
+
+  // 3. Fallback to Supabase if configured
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const cleanNum = orderId.replace(/^#/, '');
+      const { data } = await (supabase.from('orders') as any)
+        .select('*')
+        .or(`id.eq.${orderId},order_number.eq.${cleanNum}`)
+        .maybeSingle();
+
+      if (data) {
+        return {
+          id: data.id,
+          orderNumber: data.order_number,
+          status: data.status,
+          totalAmount: Number(data.total_amount) || 0,
+          createdAt: data.created_at,
+          branchId: data.branch_id,
+          tableId: data.table_id,
+          tableNumber: data.table_number || 0,
+          items: data.items || [],
+        };
+      }
+    } catch {}
+  }
+
+  return null;
 }
 
 /**

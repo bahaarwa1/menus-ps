@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateOrderStatus } from '@/lib/db/repositories/order.repository';
+import { updateOrderStatus, getOrderById } from '@/lib/db/repositories/order.repository';
 import { OrderStatus } from '@/types/database.types';
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const orderId = params.id;
+    if (!orderId) {
+      return NextResponse.json({ success: false, error: 'معرّف الطلب مطلوب' }, { status: 400 });
+    }
+
+    const order = await getOrderById(orderId);
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'الطلب غير موجود' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      order: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+      },
+    });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'فشل استرجاع حالة الطلب' }, { status: 500 });
+  }
+}
 
 const statusMap: Record<string, OrderStatus> = {
   new: 'جديد',
