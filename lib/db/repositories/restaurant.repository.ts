@@ -190,7 +190,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     try {
       const supabase = createAdminClient();
       
-      // Insert restaurant with owner auth fields
+      // Insert restaurant (only existing schema columns)
       const { data: restData, error: restErr } = await supabase
         .from('restaurants')
         .insert({
@@ -199,8 +199,6 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
           phone: registeredRecord.phone,
           city: registeredRecord.city,
           currency: '₪',
-          owner_email: cleanEmail || null,
-          owner_password_hash: passwordHash || null,
         } as never)
         .select('id')
         .single();
@@ -237,41 +235,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
 
           await supabase.from('tables').insert(tablesToInsert as never);
 
-          // Insert default sample categories for quick start
-          const { data: catData } = await supabase
-            .from('menu_categories')
-            .insert([
-              { restaurant_id: dbRestId, name_ar: 'الوجبات الرئيسية', icon: '🍔', sort_order: 1 },
-              { restaurant_id: dbRestId, name_ar: 'المقبلات والبطاطا', icon: '🍟', sort_order: 2 },
-              { restaurant_id: dbRestId, name_ar: 'المشروبات الباردة', icon: '🥤', sort_order: 3 },
-            ] as never)
-            .select('id, name_ar');
-
-          if (catData && catData.length > 0) {
-            const mainCat = (catData as any[]).find((c) => c.name_ar === 'الوجبات الرئيسية') || catData[0];
-            const sidesCat = (catData as any[]).find((c) => c.name_ar === 'المقبلات والبطاطا') || catData[1];
-
-            await supabase.from('menu_items').insert([
-              {
-                category_id: mainCat.id,
-                name_ar: 'وجبة مميزة خاصة بالمطعم',
-                description_ar: 'وجبة طازجة محضرة بأجود المكونات المحلية والبهارات الخاصة',
-                price: 35.00,
-                is_available: true,
-                is_popular: true,
-                sort_order: 1,
-              },
-              {
-                category_id: sidesCat?.id || mainCat.id,
-                name_ar: 'بطاطا مقلية مقرمشة',
-                description_ar: 'بطاطا ذهبية مقرمشة تقدم مع الصوص الخاص',
-                price: 12.00,
-                is_available: true,
-                is_popular: false,
-                sort_order: 2,
-              }
-            ] as never);
-          }
+          // Menu starts completely empty as requested (no unwanted default items)
 
           // Insert staff user record with hashed PIN
           const staffPinHash = input.password ? await hashPin(input.password.slice(0, 6)) : await hashPin('1234');

@@ -104,59 +104,89 @@ export async function authenticateWithEmailPassword(
     }
   }
 
-  // 2. Check restaurant owners in DB (slug or email lookup)
+  // 2. Check restaurant owners in DB (by slug or linked staff user)
   if (isSupabaseConfigured()) {
     try {
       const adminClient = createAdminClient();
-      // Only allow email or slug (no phone as auth identifier for security)
       const isEmail = normalizedInput.includes('@');
-      const slugPattern = /^[a-z0-9\-]{3,60}$/.test(normalizedInput);
+      const slugPattern = /^[a-z0-9\-]{2,60}$/.test(normalizedInput);
 
-      if (!isEmail && !slugPattern) {
-        return { success: false, error: GENERIC_ERROR };
-      }
+      // If logging in by slug (or slug-derived identifier)
+      if (slugPattern && !isEmail) {
+        const { data: rest } = await adminClient
+          .from('restaurants')
+          .select('id, name, slug, branches(id, is_active)')
+          .eq('slug', normalizedInput)
+          .maybeSingle();
 
-      const { data: restaurants } = await adminClient
-        .from('restaurants')
-        .select('id, name, slug, owner_email, owner_password_hash, branches(id, is_active)')
-        .or(
-          isEmail
-            ? `owner_email.eq.${normalizedInput}`
-            : `slug.eq.${normalizedInput}`
-        )
-        .limit(1)
-        .maybeSingle();
+        if (rest) {
+          const restRecord = rest as any;
+          const branches = Array.isArray(restRecord.branches) ? restRecord.branches : (restRecord.branches ? [restRecord.branches] : []);
+          const primaryBranch = branches.find((b: any) => b.is_active) || branches[0];
+          const branchId = primaryBranch?.id || '';
 
-      if (restaurants) {
-        const rest = restaurants as any;
-        const branches = Array.isArray(rest.branches) ? rest.branches : (rest.branches ? [rest.branches] : []);
-        const primaryBranch = branches.find((b: any) => b.is_active) || branches[0];
-        const branchId = primaryBranch?.id || '';
+          // 2a. Check if owner has a Supabase Auth account linked to this restaurant
+          try {
+            const { data: usersData } = await adminClient.auth.admin.listUsers();
+            const ownerAuth = usersData?.users?.find(
+              (u) =>
+                u.user_metadata?.restaurant_id === restRecord.id ||
+                u.user_metadata?.restaurant_slug === restRecord.slug
+            );
+            if (ownerAuth?.email) {
+              const { data: authSignIn, error: authErr } = await adminClient.auth.signInWithPassword({
+                email: ownerAuth.email,
+                password: cleanPass,
+              });
+              if (!authErr && authSignIn?.user) {
+                return {
+                  success: true,
+                  session: {
+                    userId: authSignIn.user.id,
+                    email: authSignIn.user.email,
+                    name: restRecord.name,
+                    role: 'admin',
+                    branchId,
+                    restaurantId: restRecord.id,
+                    restaurantSlug: restRecord.slug,
+                  },
+                };
+              }
+            }
+          } catch {}
 
-        // Verify password hash (PBKDF2 or Supabase bcrypt)
-        const storedHash = rest.owner_password_hash;
-        if (!storedHash) {
-          // No password set — block access (force them to set one)
-          return { success: false, error: GENERIC_ERROR };
+          // 2b. Check staff_users table for owner PIN/password match
+          if (branchId) {
+            const { data: staffList } = await (adminClient as any)
+              .from('staff_users')
+              .select('id, full_name, pin_hash')
+              .eq('branch_id', branchId)
+              .eq('role', 'owner');
+
+            const staffRows = (staffList || []) as any[];
+            if (staffRows.length > 0) {
+              for (const staff of staffRows) {
+                const isMatch =
+                  staff.pin_hash === cleanPass ||
+                  (await verifyPassword(cleanPass, staff.pin_hash));
+                if (isMatch) {
+                  return {
+                    success: true,
+                    session: {
+                      userId: `owner-${restRecord.id}`,
+                      email: `${restRecord.slug}@menus.ps`,
+                      name: staff.full_name || restRecord.name,
+                      role: 'admin',
+                      branchId,
+                      restaurantId: restRecord.id,
+                      restaurantSlug: restRecord.slug,
+                    },
+                  };
+                }
+              }
+            }
+          }
         }
-
-        const passwordMatches = await verifyPassword(cleanPass, storedHash);
-        if (!passwordMatches) {
-          return { success: false, error: GENERIC_ERROR };
-        }
-
-        return {
-          success: true,
-          session: {
-            userId: `owner-${rest.id}`,
-            email: rest.owner_email || `${rest.slug}@menus.ps`,
-            name: rest.name,
-            role: 'admin',
-            branchId,
-            restaurantId: rest.id,
-            restaurantSlug: rest.slug,
-          },
-        };
       }
     } catch {
       // Silently continue
