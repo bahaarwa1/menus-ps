@@ -661,73 +661,73 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 4: FEATURES BENTO SHOWCASE (سلايد 4: المميزات والتقنيات)
         ========================================================================= */}
-        <section className="w-full relative flex flex-col justify-center items-center bg-slate-950 text-white p-4 sm:p-6 overflow-hidden py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always">
+        <section className="w-full relative flex flex-col justify-center items-center bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 p-4 sm:p-6 overflow-hidden py-12 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always border-y border-slate-200/60">
           
           <div className="text-center max-w-xl mx-auto mb-6 z-10">
-            <span className="bg-orange-500/20 text-orange-400 text-xs font-black px-3 py-1 rounded-full mb-2 inline-block border border-orange-500/30">
+            <span className="bg-orange-50 text-orange-600 text-xs font-black px-3.5 py-1 rounded-full mb-2.5 inline-block border border-orange-200/90 shadow-2xs">
               تقنيات عالمية بمطعمك
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black mb-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-1.5 tracking-tight">
               مبني بأحدث معايير الأمان والسرعة
             </h2>
-            <p className="text-slate-400 text-xs sm:text-sm">
+            <p className="text-slate-600 text-xs sm:text-sm font-medium">
               يجمع بين سرعة منيو الـ QR وقوة نظام إدارة المطاعم المتكامل
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto w-full z-10">
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <QrCode size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">أكواد QR مشفرة وديناميكية</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">تحمي من الطلبات الوهمية وتمنع إرسال طلبات من خارج المطعم.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">أكواد QR مشفرة وديناميكية</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">تحمي من الطلبات الوهمية وتمنع إرسال طلبات من خارج المطعم.</p>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Zap size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">مزامنة فورية Realtime</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">يصل الطلب للمطبخ في أجزاء من الثانية مع جرس تنبيه صوتي فوري.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">مزامنة فورية Realtime</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">يصل الطلب للمطبخ في أجزاء من الثانية مع جرس تنبيه صوتي فوري.</p>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Sparkles size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">ذكاء اصطناعي Menus AI</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">تحليل ذكي للمبيعات وساعات الذروة واقتراحات رفع الأرباح بالعربي.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">ذكاء اصطناعي Menus AI</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">تحليل ذكي للمبيعات وساعات الذروة واقتراحات رفع الأرباح بالعربي.</p>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <ShieldCheck size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">تحقق صارم من الأسعار</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">حساب مركزي للأسعار لمنع أي تلاعب وتأمين الفواتير بنسبة 100%.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">تحقق صارم من الأسعار</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">حساب مركزي للأسعار لمنع أي تلاعب وتأمين الفواتير بنسبة 100%.</p>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <TrendingUp size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">زيادة الفاتورة Upselling</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">اقتراحات إضافات تلقائية ذكية تزيد المبيعات بنسبة تصل إلى 35%.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">زيادة الفاتورة Upselling</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">اقتراحات إضافات تلقائية ذكية تزيد المبيعات بنسبة تصل إلى 35%.</p>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center mb-2.5">
+            <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Clock size={20} />
               </div>
-              <h4 className="font-black text-sm mb-1">تحمل آلاف الزيارات بدون بطء</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">كاش متطور في الذاكرة يستجيب في 0ms ومُختبر لـ 1000 زائر متزامن.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">تحمل آلاف الزيارات بدون بطء</h4>
+              <p className="text-slate-600 text-xs leading-relaxed">كاش متطور في الذاكرة يستجيب في 0ms ومُختبر لـ 1000 زائر متزامن.</p>
             </div>
           </div>
 
           <button 
             onClick={() => scrollToSlide(4)}
-            className="mt-4 flex flex-col items-center animate-bounce text-slate-400 hover:text-orange-500 transition-colors cursor-pointer"
+            className="mt-4 flex flex-col items-center animate-bounce text-slate-500 hover:text-orange-600 transition-colors cursor-pointer"
           >
             <span className="text-[10px] font-bold tracking-widest uppercase mb-0.5">SCROLL</span>
             <ArrowDown size={14} />
