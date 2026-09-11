@@ -803,9 +803,9 @@ export default function HomePage() {
                 <span>شاشة المطبخ</span>
               </Link>
               <span>•</span>
-              <Link href="/demo" className="hover:text-orange-600 flex items-center gap-1">
+              <Link href="/login" className="hover:text-orange-600 flex items-center gap-1">
                 <BarChart3 size={13} />
-                <span>لوحة التحكم</span>
+                <span>لوحة الإدارة</span>
               </Link>
             </div>
 

@@ -24,7 +24,7 @@ export default function Footer() {
               <li><Link href="/features" className="hover:text-orange-400 transition-colors">المميزات</Link></li>
               <li><Link href="/pricing" className="hover:text-orange-400 transition-colors">الأسعار</Link></li>
               <li><Link href="/faq" className="hover:text-orange-400 transition-colors">الأسئلة الشائعة</Link></li>
-              <li><Link href="/demo" className="hover:text-orange-400 transition-colors">الديمو</Link></li>
+              <li><a href="https://menus-ps-demo.vercel.app" target="_blank" className="hover:text-orange-400 transition-colors">موقع الديمو التجريبي ↗</a></li>
             </ul>
           </div>
 

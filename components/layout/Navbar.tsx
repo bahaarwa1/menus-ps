@@ -17,7 +17,6 @@ export default function Navbar() {
     { href: '/', label: t('nav.home', 'الرئيسية') },
     { href: '/how-it-works', label: t('nav.howItWorks', 'كيف يعمل') },
     { href: '/features', label: t('nav.features', 'المميزات') },
-    { href: '/demo', label: t('nav.demo', 'الديمو') },
     { href: '/pricing', label: t('nav.pricing', 'الأسعار') },
     { href: '/faq', label: t('nav.faq', 'الأسئلة الشائعة') },
   ];
