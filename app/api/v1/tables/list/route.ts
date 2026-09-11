@@ -41,18 +41,23 @@ export async function GET(request: NextRequest) {
       const supabase = createAdminClient();
       let targetBranchId = branchIdParam;
       let targetRestaurantSlug = slug;
+      let restData: any = null;
+      let resolvedRestaurantName = '';
 
       if (!targetBranchId) {
         // Resolve branch from restaurant slug
-        const { data: restData } = await supabase
+        const res = await supabase
           .from('restaurants')
-          .select('id, slug, branches(id)')
+          .select('id, name, slug, branches(id)')
           .eq('slug', slug)
           .maybeSingle();
 
+        restData = res.data;
+
         if (restData) {
-          targetRestaurantSlug = (restData as any).slug;
-          const branches = (restData as any).branches;
+          targetRestaurantSlug = restData.slug;
+          resolvedRestaurantName = restData.name || '';
+          const branches = restData.branches;
           if (Array.isArray(branches) && branches.length > 0) {
             targetBranchId = branches[0].id;
           } else if (branches?.id) {
@@ -65,13 +70,14 @@ export async function GET(request: NextRequest) {
       if (!targetBranchId) {
         const { data: firstBranch } = await supabase
           .from('branches')
-          .select('id, restaurant_id, restaurants(slug)')
+          .select('id, restaurant_id, restaurants(name, slug)')
           .limit(1)
           .maybeSingle();
 
         if (firstBranch) {
           targetBranchId = (firstBranch as any).id;
           targetRestaurantSlug = (firstBranch as any).restaurants?.slug || slug;
+          resolvedRestaurantName = (firstBranch as any).restaurants?.name || '';
         }
       }
 
@@ -83,10 +89,12 @@ export async function GET(request: NextRequest) {
           .order('table_number', { ascending: true });
 
         if (!error && data) {
+          const restaurantName = resolvedRestaurantName || (restData as any)?.name || (global.__menusRestaurantsStore?.get(targetRestaurantSlug)?.name) || '';
           const payload = {
             success: true,
             branchId: targetBranchId,
             restaurantSlug: targetRestaurantSlug,
+            restaurantName,
             tables: (data as any[]).map((t) => ({
               id: t.table_number,
               dbId: t.id,
@@ -113,10 +121,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Fallback: return empty array for real restaurants or demo tables only for burger-house-nablus demo
+  const fallbackRestaurantName = global.__menusRestaurantsStore?.get(slug)?.name || (slug === 'burger-house-nablus' ? 'Burger House نابلس' : '');
+
   if (slug === 'burger-house-nablus') {
     return NextResponse.json({
       success: true,
       restaurantSlug: slug,
+      restaurantName: fallbackRestaurantName,
       tables: fallbackTables.map((t) => {
         const token = `table_token_b1_${t.id}_${slug}`;
         return {
@@ -133,6 +144,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     restaurantSlug: slug,
+    restaurantName: fallbackRestaurantName,
     tables: [],
   });
 }

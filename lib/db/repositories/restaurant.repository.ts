@@ -488,6 +488,8 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
   appCache.invalidateTag('restaurants');
   appCache.invalidateTag(`restaurant:${cleanSlug}`);
   appCache.delete(`restaurant:slug:${cleanSlug}`);
+  appCache.invalidateTag('tables');
+  appCache.invalidateTag(`tables:${cleanSlug}`);
 
   return true;
 }

@@ -51,8 +51,8 @@ export default function ProductionSettingsPage() {
           try {
             const sessRes = await fetch('/api/auth/session');
             const sessData = await sessRes.json();
-            if (sessData?.session?.restaurantSlug) {
-              activeSlug = sessData.session.restaurantSlug;
+            if (sessData?.user?.restaurantSlug) {
+              activeSlug = sessData.user.restaurantSlug;
             }
           } catch {}
         }
@@ -138,6 +138,14 @@ export default function ProductionSettingsPage() {
       if (data.success) {
         setSavedMessage(data.message || 'تم حفظ جميع التعديلات وشعار المطعم بنجاح!');
         setTimeout(() => setSavedMessage(''), 4000);
+        try {
+          const effectiveSlug = slug || 'burger-house-nablus';
+          sessionStorage.setItem(`restaurant_meta_${effectiveSlug}`, JSON.stringify({
+            name: restaurantName,
+            logoUrl: logoUrl || '',
+            city: city || '',
+          }));
+        } catch {}
       } else {
         setErrorMessage(data.error || 'فشل حفظ الإعدادات');
       }

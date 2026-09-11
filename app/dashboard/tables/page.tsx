@@ -37,9 +37,12 @@ export default function ProductionTablesPage() {
       .then((r) => r.json())
       .then(async (res) => {
         if (res.success && Array.isArray(res.tables)) {
-          if (res.restaurantSlug && !slug) {
-            slug = res.restaurantSlug;
-            setCurrentSlug(slug);
+          const effectiveSlug = slug || res.restaurantSlug || '';
+          if (effectiveSlug) {
+            setCurrentSlug(effectiveSlug);
+          }
+          if (res.restaurantName) {
+            setRestaurantName(res.restaurantName);
           }
           const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
           // Load tables and generate QR codes in parallel
@@ -47,7 +50,7 @@ export default function ProductionTablesPage() {
             res.tables.map(async (t: any) => {
               const tableNumber = t.id;
               const qrToken = t.qrToken;
-              const targetUrl = `${origin}/r/${slug}?table=${tableNumber}&token=${qrToken}`;
+              const targetUrl = `${origin}/r/${effectiveSlug || slug}?table=${tableNumber}&token=${qrToken}`;
               let qrDataUrl = '';
               try {
                 qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 280, margin: 1 });
@@ -63,18 +66,30 @@ export default function ProductionTablesPage() {
             })
           );
           setTables(loadedTables);
+
+          // Once slug is resolved, also ensure latest restaurant name is fetched
+          if (effectiveSlug) {
+            fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`)
+              .then((r) => r.json())
+              .then((sData) => {
+                if (sData.success && sData.settings?.name) {
+                  setRestaurantName(sData.settings.name);
+                }
+              })
+              .catch(() => {});
+          }
         }
       })
       .catch((err) => console.error('Error fetching tables:', err))
       .finally(() => setIsLoading(false));
 
-    // Concurrently fetch session info
-    fetch('/api/auth/session')
+    // Fetch authoritative restaurant settings directly to get the current restaurant name!
+    fetch(`/api/v1/restaurant/settings${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.authenticated) {
-          if (data.user?.restaurantSlug) setCurrentSlug(data.user.restaurantSlug);
-          if (data.user?.name) setRestaurantName(data.user.name);
+        if (data.success && data.settings) {
+          if (data.settings.name) setRestaurantName(data.settings.name);
+          if (data.settings.slug && !slug) setCurrentSlug(data.settings.slug);
         }
       })
       .catch(() => {});
@@ -138,13 +153,27 @@ export default function ProductionTablesPage() {
   };
 
   const handlePrintSingle = async (table: TableItem) => {
+    let activeName = restaurantName;
+    const activeSlug = currentSlug || 'burger-house-nablus';
+
+    if (!activeName) {
+      try {
+        const res = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeSlug)}`);
+        const data = await res.json();
+        if (data.success && data.settings?.name) {
+          activeName = data.settings.name;
+          setRestaurantName(activeName);
+        }
+      } catch {}
+    }
+
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
-    const targetUrl = `${origin}/r/${currentSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
+    const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
     const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
 
     printTableStand({
       tableNumber: table.tableNumber,
-      restaurantName: restaurantName || currentSlug,
+      restaurantName: activeName || 'أهلاً وسهلاً بكم',
       targetUrl,
       qrDataUrl,
     });
@@ -154,14 +183,28 @@ export default function ProductionTablesPage() {
     if (tables.length === 0 || isPrintingAll) return;
     setIsPrintingAll(true);
     try {
+      let activeName = restaurantName;
+      const activeSlug = currentSlug || 'burger-house-nablus';
+
+      if (!activeName) {
+        try {
+          const res = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeSlug)}`);
+          const data = await res.json();
+          if (data.success && data.settings?.name) {
+            activeName = data.settings.name;
+            setRestaurantName(activeName);
+          }
+        } catch {}
+      }
+
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
       const stands = await Promise.all(
         tables.map(async (table) => {
-          const targetUrl = `${origin}/r/${currentSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
+          const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
           const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
           return {
             tableNumber: table.tableNumber,
-            restaurantName: restaurantName || currentSlug,
+            restaurantName: activeName || 'أهلاً وسهلاً بكم',
             targetUrl,
             qrDataUrl,
           };
