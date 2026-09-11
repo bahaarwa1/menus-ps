@@ -101,33 +101,115 @@ export async function middleware(request: NextRequest) {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // 7. SUBDOMAIN ROUTING
+  // 7. NONCE GENERATION & STRICT CSP CONSTRUCTION
+  // ──────────────────────────────────────────────────────────────────
+  // Generate cryptographically strong nonce for Next.js hydration scripts
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // script-src: strict nonce + strict-dynamic, NO unsafe-inline, NO wildcard https:
+  const scriptDirectives = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+    ...(isDev ? ["'unsafe-eval'"] : []),
+  ].join(' ');
+
+  // Content-Security-Policy: minimal, strictly required sources only
+  const cspDirectives = [
+    "default-src 'self'",
+    `script-src ${scriptDirectives}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "frame-src 'self'",
+    "block-all-mixed-content",
+    ...(process.env.NODE_ENV === 'production' ? ["upgrade-insecure-requests"] : []),
+  ];
+
+  const cspString = cspDirectives.join('; ');
+
+  // Propagate nonce and CSP to Next.js request headers so the server renders scripts with nonce
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', cspString);
+
+  // ──────────────────────────────────────────────────────────────────
+  // 8. RESTRICTED CORS & PREFLIGHT HANDLING (NO WILDCARD *)
+  // ──────────────────────────────────────────────────────────────────
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = Boolean(
+    origin && (
+      /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:menus\.ps|vercel\.app)(?::\d+)?$/.test(origin) ||
+      /^http:\/\/localhost(?::\d+)?$/.test(origin) ||
+      /^http:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin)
+    )
+  );
+
+  // Handle preflight OPTIONS requests for API routes
+  if (isApiRoute && method === 'OPTIONS') {
+    const preflightHeaders = new Headers();
+    if (isAllowedOrigin && origin) {
+      preflightHeaders.set('Access-Control-Allow-Origin', origin);
+      preflightHeaders.set('Access-Control-Allow-Credentials', 'true');
+      preflightHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      preflightHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Tenant-Subdomain');
+      preflightHeaders.set('Access-Control-Max-Age', '86400');
+    }
+    return new NextResponse(null, { status: 204, headers: preflightHeaders });
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 9. SUBDOMAIN ROUTING & RESPONSE INSTANTIATION
   // ──────────────────────────────────────────────────────────────────
   let response: NextResponse;
 
   if (currentSubdomain === 'demo') {
     if (pathname === '/') {
-      response = NextResponse.rewrite(new URL('/demo', request.url));
+      response = NextResponse.rewrite(new URL('/demo', request.url), {
+        request: { headers: requestHeaders },
+      });
     } else {
-      response = NextResponse.next();
+      response = NextResponse.next({
+        request: { headers: requestHeaders },
+      });
     }
     response.headers.set('X-Site-Mode', 'demo');
   } else if (currentSubdomain && pathname === '/') {
     const rewriteUrl = new URL(`/m?restaurant=${encodeURIComponent(currentSubdomain)}`, request.url);
-    response = NextResponse.rewrite(rewriteUrl);
+    response = NextResponse.rewrite(rewriteUrl, {
+      request: { headers: requestHeaders },
+    });
   } else {
-    response = NextResponse.next();
+    response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // 8. INJECT TENANT METADATA HEADERS
+  // 10. INJECT TENANT METADATA HEADERS
   // ──────────────────────────────────────────────────────────────────
   if (currentSubdomain) {
     response.headers.set('X-Tenant-Subdomain', currentSubdomain);
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // 9. HARDENED SECURITY HEADERS
+  // 11. CORS RESPONSE HEADERS FOR ALLOWED ORIGINS ONLY
+  // ──────────────────────────────────────────────────────────────────
+  if (isApiRoute && isAllowedOrigin && origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Tenant-Subdomain');
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 12. HARDENED SECURITY HEADERS
   // ──────────────────────────────────────────────────────────────────
 
   // Prevent MIME type sniffing
@@ -158,35 +240,13 @@ export async function middleware(request: NextRequest) {
   response.headers.delete('X-Powered-By');
   response.headers.delete('Server');
 
-  // Content-Security-Policy — strict, no unsafe-eval
-  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/staff');
-  const csp = [
-    "default-src 'self'",
-    // Inline scripts needed for Next.js hydration — nonce would be ideal but requires edge runtime changes
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    // Images: self, data URIs (QR codes), Supabase storage
-    "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://images.unsplash.com",
-    // API connections: Supabase only
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-    // No frames allowed
-    "frame-ancestors 'none'",
-    "frame-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    // Upgrade insecure requests in production
-    ...(process.env.NODE_ENV === 'production' ? ["upgrade-insecure-requests"] : []),
-    // Block mixed content
-    "block-all-mixed-content",
-  ].join('; ');
-
-  response.headers.set('Content-Security-Policy', csp);
+  // Set the Strict Content-Security-Policy (Nonce-based, zero unsafe-inline in script-src)
+  response.headers.set('Content-Security-Policy', cspString);
 
   // Cross-Origin policies
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
-  response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none'); // relaxed for external fonts
+  response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
   return response;
 }

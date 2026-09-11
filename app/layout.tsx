@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -19,6 +20,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read request nonce propagated from middleware.ts for secure CSP script hydration
+  // This ensures Next.js dynamically attaches the request nonce to hydration scripts
+  const nonce = headers().get("x-nonce") ?? undefined;
+
   return (
     <html lang="ar" dir="rtl" className={ibmPlexArabic.className}>
       <body className="antialiased">
