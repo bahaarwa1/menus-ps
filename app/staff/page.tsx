@@ -424,7 +424,7 @@ export default function StaffOrdersManagementPage() {
       <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
         isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/80'
       }`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-5 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           
           {/* Logo & Title */}
           <div className="flex items-center justify-between gap-2">
@@ -550,7 +550,7 @@ export default function StaffOrdersManagementPage() {
         </div>
 
         {/* 2. Filter Tabs & Search Bar */}
-        <div className={`max-w-7xl mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
+        <div className={`max-w-[1600px] mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
           isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'
         }`}>
           {/* Status Filter Tabs with Balanced Counters */}
@@ -635,11 +635,11 @@ export default function StaffOrdersManagementPage() {
       </header>
 
       {/* 3. Main Split Master-Detail Interface */}
-      <main className="max-w-7xl mx-auto p-3 sm:p-5 w-full flex-1 pb-16">
+      <main className="max-w-[1600px] mx-auto p-3 sm:p-5 w-full flex-1 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-start">
           
-          {/* Orders Cards Container: 2 COLUMNS ON DESKTOP & TABLET ("كل طاولتين فصف") */}
-          <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
+          {/* Orders Cards Container: 3 COLUMNS PER ROW ("3 طاولات جمب بعض") */}
+          <div className="w-full lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
             {filteredOrders.length === 0 ? (
               <div className={`col-span-full rounded-2xl border p-12 text-center ${
                 isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200/80 text-slate-500'
@@ -663,7 +663,7 @@ export default function StaffOrdersManagementPage() {
                       setSelectedOrderId(order.id);
                       setIsMobileDetailOpen(true);
                     }}
-                    className={`rounded-2xl p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
                       isSelected
                         ? isDarkMode
                           ? 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-950/20'
@@ -675,18 +675,18 @@ export default function StaffOrdersManagementPage() {
                   >
                     {/* Top Row: Order ID + Table badge */}
                     <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`font-bold text-sm tracking-tight ${
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`font-bold text-xs sm:text-sm tracking-tight truncate ${
                           isDarkMode ? 'text-white' : 'text-slate-900'
                         }`}>{order.id}</span>
-                        <span className="bg-slate-900 text-amber-300 font-semibold text-[11px] px-2 py-0.5 rounded-md shadow-2xs">
+                        <span className="bg-slate-900 text-amber-300 font-semibold text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md shadow-2xs shrink-0">
                           طاولة {order.table}
                         </span>
                       </div>
-                      <span className={`text-[11px] flex items-center gap-1 ${
+                      <span className={`text-[10px] sm:text-[11px] flex items-center gap-1 shrink-0 ${
                         isDarkMode ? 'text-slate-400' : 'text-slate-400'
                       }`}>
-                        <Clock size={12} />
+                        <Clock size={11} />
                         {order.time}
                       </span>
                     </div>
@@ -724,8 +724,8 @@ export default function StaffOrdersManagementPage() {
             )}
           </div>
 
-          {/* Desktop Sticky Inspector Pane (5 Cols on Desktop) */}
-          <div className="hidden lg:block lg:col-span-5 sticky top-20">
+          {/* Desktop Sticky Inspector Pane (4 Cols on Desktop) */}
+          <div className="hidden lg:block lg:col-span-4 sticky top-20">
             {renderInspectorContent(selectedOrder, false)}
           </div>
 

@@ -369,11 +369,11 @@ export default function OrdersManagementPage() {
         </div>
       </div>
 
-      {/* Main Split Interface - Master/Detail (2 Columns for cards) */}
+      {/* Main Split Interface - Master/Detail (3 Columns for cards) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         
-        {/* Orders Cards Grid (2 COLUMNS PER ROW) */}
-        <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
+        {/* Orders Cards Grid (3 COLUMNS PER ROW) */}
+        <div className="w-full lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
           {filteredOrders.length === 0 ? (
             <div className="col-span-full bg-white border border-slate-200/80 rounded-2xl p-10 text-center text-slate-500">
               <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
@@ -391,22 +391,22 @@ export default function OrdersManagementPage() {
                     setSelectedOrderId(order.id);
                     setIsMobileDetailOpen(true);
                   }}
-                  className={`bg-white rounded-2xl p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
+                  className={`bg-white rounded-2xl p-2.5 sm:p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
                     isSelected
                       ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20'
                       : 'border-slate-200/80 hover:border-orange-300'
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900 text-sm">{order.id}</span>
-                        <span className="bg-slate-900 text-amber-300 font-semibold text-[11px] px-2 py-0.5 rounded-md">
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">{order.id}</span>
+                        <span className="bg-slate-900 text-amber-300 font-semibold text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md shrink-0">
                           طاولة {order.table}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Clock size={12} className="text-slate-400" />
+                      <span className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1 shrink-0">
+                        <Clock size={11} className="text-slate-400" />
                         {order.time}
                       </span>
                     </div>
@@ -424,8 +424,8 @@ export default function OrdersManagementPage() {
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <span className="font-bold text-orange-600 text-sm sm:text-base">{order.total} ₪</span>
                     <div className="flex items-center gap-0.5 text-xs text-slate-400">
-                      <span className="text-orange-600 font-semibold">معاينة</span>
-                      <ChevronRight size={14} className="rtl:rotate-180 text-orange-600" />
+                      <span className="text-[11px] text-orange-600 font-semibold">معاينة</span>
+                      <ChevronRight size={13} className="rtl:rotate-180 text-orange-600" />
                     </div>
                   </div>
                 </div>
@@ -434,8 +434,8 @@ export default function OrdersManagementPage() {
           )}
         </div>
 
-        {/* Selected Order Inspector (5 Cols on Desktop) */}
-        <div className="hidden lg:block lg:col-span-5 sticky top-2">
+        {/* Selected Order Inspector (4 Cols on Desktop) */}
+        <div className="hidden lg:block lg:col-span-4 sticky top-2">
           {renderInspectorContent(selectedOrder, false)}
         </div>
       </div>
