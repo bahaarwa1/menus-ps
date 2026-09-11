@@ -445,3 +445,125 @@ export function printTableStand(stand: {
     }, 1500);
   }, 350);
 }
+
+export function printAllTableStands(stands: Array<{
+  tableNumber: number | string;
+  restaurantName?: string;
+  targetUrl: string;
+  qrDataUrl: string;
+  branchName?: string;
+}>) {
+  if (typeof window === 'undefined' || stands.length === 0) return;
+
+  const existingFrame = document.getElementById('stands-all-print-frame');
+  if (existingFrame) existingFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'stands-all-print-frame';
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
+
+  const cardsHtml = stands.map((stand, idx) => `
+    <div class="stand-wrapper ${idx < stands.length - 1 ? 'page-break' : ''}">
+      <div class="stand-card">
+        <div class="accent-bar"></div>
+        <div class="mascot-badge">🍽️</div>
+        <h1 class="restaurant-title">${stand.restaurantName || 'قائمة الطعام الإلكترونية'}</h1>
+        ${stand.branchName ? `<div class="restaurant-sub">${stand.branchName}</div>` : ''}
+
+        <div class="table-pill">طاولة رقم ${stand.tableNumber}</div>
+
+        <div class="qr-frame">
+          <img src="${stand.qrDataUrl}" alt="كود طاولة ${stand.tableNumber}" />
+        </div>
+
+        <div class="instructions">
+          <h3>امسح الكود لفتح المنيو والطلب 📱</h3>
+          <p>افتح كاميرا الهاتف ووجّهها نحو الكود للتصفح والطلب المباشر</p>
+        </div>
+
+        <div class="steps-container">
+          <div class="step-item"><span class="step-icon">📱</span><span>١. امسح الكود</span></div>
+          <div class="step-item"><span class="step-icon">🍽️</span><span>٢. اختر وجبتك</span></div>
+          <div class="step-item"><span class="step-icon">⚡</span><span>٣. أرسل طلبك</span></div>
+        </div>
+
+        <div class="url-text">${stand.targetUrl}</div>
+        <div class="footer-brand">نتمنى لكم تجربة مميزة! · Menus.ps</div>
+      </div>
+    </div>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="utf-8">
+      <title>طباعة بطاقات الطاولات</title>
+      <style>
+        @page { size: A5 portrait; margin: 0; }
+        @media print {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .page-break { page-break-after: always; break-after: page; }
+          .stand-card { box-shadow: none !important; border: 4px solid #1e293b !important; }
+        }
+        body {
+          font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0; padding: 0; background: #ffffff; direction: rtl;
+        }
+        * { box-sizing: border-box; }
+        .stand-wrapper {
+          width: 148mm; height: 210mm; display: flex; align-items: center; justify-content: center; padding: 8mm; box-sizing: border-box;
+        }
+        .stand-card {
+          width: 132mm; background: #ffffff; border-radius: 28px; border: 4px solid #0f172a;
+          padding: 24px 20px; text-align: center; position: relative; overflow: hidden;
+          display: flex; flex-direction: column; align-items: center;
+        }
+        .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 10px; background: linear-gradient(90deg, #f97316, #ea580c, #f59e0b); }
+        .mascot-badge { width: 56px; height: 56px; border-radius: 18px; background: #fff7ed; border: 2px solid #ea580c; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 6px 0 8px 0; }
+        .restaurant-title { font-size: 22px; font-weight: 900; color: #0f172a; margin: 0; }
+        .restaurant-sub { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 2px; }
+        .table-pill { display: inline-block; background: #0f172a; color: #ffffff; padding: 6px 22px; border-radius: 999px; font-size: 15px; font-weight: 900; margin: 10px 0; border: 2px solid #f97316; }
+        .qr-frame { width: 70mm; height: 70mm; background: #ffffff; border: 3px solid #f97316; border-radius: 24px; padding: 8px; margin: 4px auto; display: flex; align-items: center; justify-content: center; }
+        .qr-frame img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+        .instructions h3 { margin: 8px 0 2px 0; font-size: 14px; font-weight: 800; color: #0f172a; }
+        .instructions p { margin: 0 0 8px 0; font-size: 11px; color: #64748b; font-weight: 500; }
+        .steps-container { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; }
+        .step-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 4px; }
+        .url-text { font-size: 9px; color: #94a3b8; font-family: monospace; direction: ltr; margin-bottom: 4px; }
+        .footer-brand { font-size: 10px; font-weight: 700; color: #ea580c; border-top: 1px solid #f1f5f9; padding-top: 6px; width: 100%; }
+      </style>
+    </head>
+    <body>
+      ${cardsHtml}
+    </body>
+    </html>
+  `;
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  iframe.contentWindow?.focus();
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => {
+      iframe.remove();
+    }, 1500);
+  }, 400);
+}

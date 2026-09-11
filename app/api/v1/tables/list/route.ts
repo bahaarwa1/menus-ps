@@ -49,13 +49,13 @@ export async function GET(request: NextRequest) {
       }
 
       if (targetBranchId) {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('tables')
           .select('id, branch_id, table_number, seats, qr_token, status')
           .eq('branch_id', targetBranchId)
           .order('table_number', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           return NextResponse.json({
             success: true,
             branchId: targetBranchId,
@@ -66,30 +66,38 @@ export async function GET(request: NextRequest) {
               seats: t.seats,
               status: t.status,
               qrToken: t.qr_token,
-              qrUrl: `${appUrl}/m?t=${t.qr_token}&restaurant=${targetRestaurantSlug}`,
+              qrUrl: `${appUrl}/r/${targetRestaurantSlug}?table=${t.table_number}&token=${t.qr_token}`,
             })),
           });
         }
       }
     } catch (err) {
-      console.warn('Database tables list warning, using fallback:', err);
+      console.warn('Database tables list warning:', err);
     }
   }
 
-  // Fallback demo tables with tokens
+  // Fallback: return empty array for real restaurants or demo tables only for burger-house-nablus demo
+  if (slug === 'burger-house-nablus') {
+    return NextResponse.json({
+      success: true,
+      restaurantSlug: slug,
+      tables: fallbackTables.map((t) => {
+        const token = `table_token_b1_${t.id}_${slug}`;
+        return {
+          id: t.id,
+          seats: t.seats,
+          status: t.status,
+          qrToken: token,
+          qrUrl: `${appUrl}/r/${slug}?table=${t.id}&token=${token}`,
+        };
+      }),
+    });
+  }
+
   return NextResponse.json({
     success: true,
     restaurantSlug: slug,
-    tables: fallbackTables.map((t) => {
-      const token = `table_token_b1_${t.id}_${slug}`;
-      return {
-        id: t.id,
-        seats: t.seats,
-        status: t.status,
-        qrToken: token,
-        qrUrl: `${appUrl}/m?t=${token}&restaurant=${slug}`,
-      };
-    }),
+    tables: [],
   });
 }
 

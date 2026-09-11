@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Trash2, X, Search, Flame } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Trash2, X, Search, Flame, Utensils, RefreshCw } from 'lucide-react';
 
 interface MenuItemType {
   id: string;
@@ -15,109 +15,153 @@ interface MenuItemType {
 }
 
 export default function ProductionMenuPage() {
-  const categories = [
+  const [categories, setCategories] = useState<{ id: string; name: string; icon: string }[]>([
     { id: 'all', name: 'كل الأصناف', icon: '🍽️' },
-    { id: 'burgers', name: 'البرجر والساندويش', icon: '🍔' },
-    { id: 'pizza', name: 'البيتزا والمعجنات', icon: '🍕' },
-    { id: 'sides', name: 'المقبلات والبطاطا', icon: '🍟' },
-    { id: 'drinks', name: 'المشروبات والعصائر', icon: '🥤' },
-  ];
+  ]);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Initial Menu Items
-  const [items, setItems] = useState<MenuItemType[]>([
-    {
-      id: 'item-1',
-      name: 'برجر كلاسيك بيف فاخر',
-      category: 'burgers',
-      price: 35,
-      description: 'شريحة لحم بقري أنجوس طازجة 180 غم مع جبنة شيدر صوص خاص وخس ومخلل.',
-      available: true,
-      popular: true,
-    },
-    {
-      id: 'item-2',
-      name: 'برجر دجاج كرسبي سبايسي',
-      category: 'burgers',
-      price: 32,
-      description: 'صدر دجاج مقرمش متبل بخلطة حارة مع صوص الرانش وخس كولسلو.',
-      available: true,
-      popular: true,
-      spicy: true,
-    },
-    {
-      id: 'item-3',
-      name: 'بيتزا مارجريتا إيطالية',
-      category: 'pizza',
-      price: 45,
-      description: 'صلصة طماطم سان مارزانو، جبنة موزاريلا طازجة، ريحان وزيت زيتون.',
-      available: true,
-    },
-    {
-      id: 'item-4',
-      name: 'بطاطا مقلية بالبهارات',
-      category: 'sides',
-      price: 14,
-      description: 'بطاطا مقلية ذهبية مقرمشة متبلة ببهارات المطعم الخاصة.',
-      available: true,
-    },
-    {
-      id: 'item-5',
-      name: 'عصير برتقال طبيعي طازج',
-      category: 'drinks',
-      price: 12,
-      description: 'عصير برتقال طبيعي معصور يومياً بدون سكر مضاف.',
-      available: true,
-    },
-  ]);
+  const [currentSlug, setCurrentSlug] = useState<string>('');
+  const [items, setItems] = useState<MenuItemType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form State for Adding New Item
   const [newName, setNewName] = useState('');
-  const [newCategory, setNewCategory] = useState('burgers');
+  const [newCategory, setNewCategory] = useState('الأطباق الرئيسية');
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newPopular, setNewPopular] = useState(false);
   const [newSpicy, setNewSpicy] = useState(false);
 
-  const toggleAvailability = (id: string) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, available: !it.available } : it))
-    );
-  };
+  const loadMenu = useCallback(async (slug?: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/v1/menu${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`);
+      const data = await res.json();
+      if (data.categories && Array.isArray(data.categories)) {
+        const loadedItems: MenuItemType[] = [];
+        const dynamicCats = [{ id: 'all', name: 'كل الأصناف', icon: '🍽️' }];
 
-  const deleteItem = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا الصنف من المنيو؟')) {
-      setItems((prev) => prev.filter((it) => it.id !== id));
+        data.categories.forEach((cat: any) => {
+          dynamicCats.push({
+            id: cat.id || cat.name,
+            name: cat.name,
+            icon: cat.icon || '🍽️',
+          });
+
+          if (Array.isArray(cat.items)) {
+            cat.items.forEach((it: any) => {
+              loadedItems.push({
+                id: it.id,
+                name: it.name,
+                category: cat.id || cat.name,
+                price: Number(it.price) || 0,
+                description: it.description || '',
+                available: it.available !== false,
+                popular: Boolean(it.popular),
+                spicy: Boolean(it.spicy),
+              });
+            });
+          }
+        });
+
+        setCategories(dynamicCats);
+        setItems(loadedItems);
+      }
+    } catch (err) {
+      console.error('Error fetching menu:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then((r) => r.json())
+      .then((data) => {
+        const slug = data.user?.restaurantSlug || '';
+        setCurrentSlug(slug);
+        loadMenu(slug);
+      })
+      .catch(() => loadMenu());
+  }, [loadMenu]);
+
+  const toggleAvailability = async (id: string) => {
+    const item = items.find((it) => it.id === id);
+    if (!item) return;
+    const newAvail = !item.available;
+
+    // Optimistic update
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, available: newAvail } : it))
+    );
+
+    try {
+      await fetch('/api/v1/menu/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: id, isAvailable: newAvail }),
+      });
+    } catch (err) {
+      console.error('Failed to update availability:', err);
     }
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const deleteItem = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الصنف من المنيو؟')) return;
+
+    setItems((prev) => prev.filter((it) => it.id !== id));
+
+    try {
+      await fetch('/api/v1/menu', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: id }),
+      });
+    } catch (err) {
+      console.error('Failed to delete menu item:', err);
+    }
+  };
+
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newPrice) return;
+    setIsSaving(true);
 
-    const newItem: MenuItemType = {
-      id: `item-${Date.now()}`,
-      name: newName.trim(),
-      category: newCategory,
-      price: parseFloat(newPrice),
-      description: newDescription.trim(),
-      available: true,
-      popular: newPopular,
-      spicy: newSpicy,
-    };
+    try {
+      const res = await fetch('/api/v1/menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName.trim(),
+          price: parseFloat(newPrice),
+          description: newDescription.trim(),
+          categoryName: newCategory,
+          isPopular: newPopular,
+          isSpicy: newSpicy,
+          slug: currentSlug,
+        }),
+      });
 
-    setItems((prev) => [newItem, ...prev]);
-    setIsModalOpen(false);
+      const data = await res.json();
+      if (data.success && data.item) {
+        setItems((prev) => [data.item, ...prev]);
+        setIsModalOpen(false);
 
-    // Reset Form
-    setNewName('');
-    setNewPrice('');
-    setNewDescription('');
-    setNewPopular(false);
-    setNewSpicy(false);
+        // Reset Form
+        setNewName('');
+        setNewPrice('');
+        setNewDescription('');
+        setNewPopular(false);
+        setNewSpicy(false);
+      }
+    } catch (err) {
+      console.error('Error adding menu item:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const filteredItems = items.filter((it) => {
@@ -133,19 +177,31 @@ export default function ProductionMenuPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900">إدارة قائمة الطعام (المنيو)</h1>
-          <p className="text-xs text-slate-500 mt-1">تعديل الأطباق، الأسعار، وإتاحة الأصناف فورياً للزبائن على الهواتف</p>
+          <p className="text-xs text-slate-500 mt-1">تعديل الأطباق، الأسعار، وإتاحة الأصناف فورياً للزبائن في قاعدة البيانات</p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
-        >
-          <Plus size={16} />
-          <span>إضافة طبق جديد للمنيو</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => loadMenu(currentSlug)}
+            disabled={isLoading}
+            className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            title="تحديث المنيو"
+          >
+            <RefreshCw size={14} className={isLoading ? 'animate-spin text-orange-500' : 'text-slate-500'} />
+            <span>تحديث</span>
+          </button>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>إضافة صنف جديد</span>
+          </button>
+        </div>
       </div>
 
-      {/* Category Pills & Search */}
+      {/* Category Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
           {categories.map((cat) => {
@@ -156,7 +212,7 @@ export default function ProductionMenuPage() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   active
-                    ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                    ? 'bg-slate-900 text-white shadow-sm'
                     : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -170,7 +226,7 @@ export default function ProductionMenuPage() {
         <div className="relative min-w-[220px]">
           <input
             type="text"
-            placeholder="ابحث عن طبق أو وجبة..."
+            placeholder="بحث في المنيو..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
@@ -179,178 +235,196 @@ export default function ProductionMenuPage() {
         </div>
       </div>
 
-      {/* Menu Items Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className={`bg-white rounded-2xl border p-4 shadow-xs flex flex-col justify-between transition-all ${
-              item.available ? 'border-slate-200/80 hover:shadow-md' : 'border-slate-200/50 opacity-60 bg-slate-50/50'
-            }`}
-          >
-            <div>
-              {/* Item Badges */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1">
-                  {item.popular && (
-                    <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Flame size={10} className="text-amber-500" /> الأكثر طلباً
-                    </span>
-                  )}
-                  {item.spicy && (
-                    <span className="text-xs" title="حار">🌶️</span>
-                  )}
+      {/* Menu Items Grid or Empty State */}
+      {isLoading ? (
+        <div className="py-20 text-center bg-white rounded-3xl border border-slate-200/80 text-xs text-slate-400 font-medium">
+          جاري تحميل قائمة الطعام الحقيقية...
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="py-20 text-center bg-white rounded-3xl border border-slate-200/80 p-8">
+          <div className="w-16 h-16 rounded-3xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto mb-4">
+            <Utensils size={32} />
+          </div>
+          <h3 className="font-black text-slate-900 text-base mb-1">
+            {items.length === 0 ? 'لا توجد أصناف في قائمتك بعد' : 'لا توجد أصناف تطابق هذا البحث'}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
+            {items.length === 0
+              ? 'أضف وجبات وأطباق مطعمك الأولى مع الأسعار والوصف لتظهر مباشرة على هواتف الزبائن عند مسح الباركود.'
+              : 'جرّب تغيير التصنيف أو مسح كلمة البحث لرؤية كل الأصناف.'}
+          </p>
+          {items.length === 0 && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>إضافة أول طبق الآن</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredItems.map((item) => (
+            <div
+              key={item.id}
+              className={`bg-white rounded-2xl border p-4 shadow-xs flex flex-col justify-between transition-all ${
+                !item.available ? 'opacity-60 bg-slate-50/50' : 'hover:shadow-md'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h3 className="font-black text-sm text-slate-900">{item.name}</h3>
+                    {item.popular && (
+                      <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 text-[10px] font-black">
+                        الأكثر طلباً
+                      </span>
+                    )}
+                    {item.spicy && (
+                      <span className="text-rose-500 flex items-center" title="حار">
+                        <Flame size={12} />
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-mono font-black text-sm text-orange-600 shrink-0">
+                    {item.price} ₪
+                  </span>
                 </div>
 
-                {/* Availability Toggle */}
-                <button
-                  onClick={() => toggleAvailability(item.id)}
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
-                    item.available
-                      ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                  }`}
-                  title="انقر لتغيير التوفر"
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${item.available ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                  <span>{item.available ? 'متاح للطلب' : 'نفد من المطبخ'}</span>
-                </button>
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
+                  {item.description || 'لا يوجد وصف مضاف لهذا الصنف.'}
+                </p>
               </div>
 
-              {/* Title & Price */}
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <h3 className="font-black text-sm text-slate-900 leading-snug">{item.name}</h3>
-                <span className="font-black text-sm text-orange-600 font-mono shrink-0">{item.price} ₪</span>
-              </div>
+              {/* Card Footer Actions */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleAvailability(item.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      item.available
+                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    }`}
+                  >
+                    {item.available ? 'متاح للطلب' : 'نفذت الكمية'}
+                  </button>
+                </div>
 
-              {/* Description */}
-              <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
-                {item.description}
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-[11px] text-slate-400 font-medium">
-                القسم: {categories.find((c) => c.id === item.category)?.name || item.category}
-              </span>
-
-              <div className="flex items-center gap-1">
                 <button
                   onClick={() => deleteItem(item.id)}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                  title="حذف الصنف"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="حذف الصنف من المنيو"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add New Item Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 text-right">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h3 className="font-black text-base text-slate-900">إضافة طبق أو وجبة جديدة للمنيو</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <h2 className="text-base font-black text-slate-900">إضافة صنف جديد للمنيو</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} className="space-y-4">
+            <form onSubmit={handleAddItem} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">اسم الطبق / الوجبة</label>
+                <label className="block font-bold text-slate-700 mb-1">اسم الصنف / الوجبة *</label>
                 <input
                   type="text"
                   required
-                  placeholder="مثال: برجر مشروم سويس"
+                  placeholder="مثال: شاورما عربي دبل"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">القسم والتصنيف</label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="burgers">البرجر والساندويش</option>
-                    <option value="pizza">البيتزا والمعجنات</option>
-                    <option value="sides">المقبلات والبطاطا</option>
-                    <option value="drinks">المشروبات والعصائر</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">السعر بالشيكل (₪)</label>
+                  <label className="block font-bold text-slate-700 mb-1">السعر (₪) *</label>
                   <input
                     type="number"
                     step="0.5"
                     required
-                    placeholder="35"
+                    placeholder="25"
                     value={newPrice}
                     onChange={(e) => setNewPrice(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 font-mono"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">القسم</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: الوجبات الرئيسية"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">الوصف والمكونات</label>
+                <label className="block font-bold text-slate-700 mb-1">الوصف والمكونات</label>
                 <textarea
-                  rows={3}
-                  placeholder="اكتب مكونات الوجبة لجذب الزبائن..."
+                  rows={2}
+                  placeholder="وصف مختصر لمكونات الطبق والصلصات..."
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium resize-none"
                 />
               </div>
 
               <div className="flex items-center gap-4 pt-1">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
                   <input
                     type="checkbox"
                     checked={newPopular}
                     onChange={(e) => setNewPopular(e.target.checked)}
-                    className="accent-orange-500 rounded"
+                    className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
                   />
-                  <span>تمييز كـ &quot;الأكثر طلباً&quot; 🔥</span>
+                  <span>تمييز كـ (الأكثر طلباً)</span>
                 </label>
 
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
                   <input
                     type="checkbox"
                     checked={newSpicy}
                     onChange={(e) => setNewSpicy(e.target.checked)}
-                    className="accent-orange-500 rounded"
+                    className="rounded border-slate-300 text-rose-500 focus:ring-rose-500"
                   />
-                  <span>طبق حار / سبايسي 🌶️</span>
+                  <span>وجبة حارة 🌶️</span>
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs"
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 font-bold transition-colors cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs shadow-md shadow-orange-500/20"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/20 transition-all cursor-pointer"
                 >
-                  حفظ وإضافة للمنيو فوراً 🚀
+                  {isSaving ? 'جاري الحفظ...' : 'حفظ الصنف في المنيو'}
                 </button>
               </div>
             </form>

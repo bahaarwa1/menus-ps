@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRestaurantMenu } from '@/lib/db/repositories/menu.repository';
 import { appCache } from '@/lib/cache/lru-cache';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const slug = searchParams.get('slug') || 'burger-house-nablus';
+  const slug = searchParams.get('slug') || '';
+  if (!slug) {
+    return NextResponse.json({ restaurantSlug: '', categories: [] });
+  }
+
   const cacheKey = `menu:${slug}`;
 
   try {
@@ -51,5 +59,135 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to retrieve menu catalog' },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    if (!session || !['owner', 'admin', 'branch_manager'].includes(session.role)) {
+      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { name, price, description, categoryName, isPopular, isSpicy, slug } = body;
+
+    if (!name || price === undefined) {
+      return NextResponse.json({ success: false, error: 'اسم الصنف والسعر مطلوبان' }, { status: 400 });
+    }
+
+    const targetSlug = slug || session.restaurantSlug;
+
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({ success: true, item: { id: `item-${Date.now()}`, name, price, description } });
+    }
+
+    const supabase = createAdminClient();
+
+    // 1. Get restaurant ID
+    const { data: rest } = await (supabase as any)
+      .from('restaurants')
+      .select('id')
+      .eq('slug', targetSlug)
+      .maybeSingle();
+
+    if (!rest) {
+      return NextResponse.json({ success: false, error: 'المطعم غير موجود' }, { status: 404 });
+    }
+
+    // 2. Find or create category
+    const catTitle = categoryName || 'الأصناف الرئيسية';
+    let { data: cat } = await (supabase as any)
+      .from('menu_categories')
+      .select('id')
+      .eq('restaurant_id', rest.id)
+      .eq('name_ar', catTitle)
+      .maybeSingle();
+
+    if (!cat) {
+      const { data: newCat } = await (supabase as any)
+        .from('menu_categories')
+        .insert({
+          restaurant_id: rest.id,
+          name_ar: catTitle,
+          icon: '🍽️',
+        })
+        .select('id')
+        .single();
+      cat = newCat;
+    }
+
+    if (!cat) {
+      return NextResponse.json({ success: false, error: 'فشل تحديد قسم الصنف' }, { status: 500 });
+    }
+
+    // 3. Insert menu item
+    const { data: newItem, error: itemErr } = await (supabase as any)
+      .from('menu_items')
+      .insert({
+        category_id: cat.id,
+        name_ar: String(name).trim(),
+        description_ar: description ? String(description).trim() : null,
+        price: Number(price),
+        is_popular: Boolean(isPopular),
+        is_spicy: Boolean(isSpicy),
+        is_available: true,
+      })
+      .select('id, name_ar, description_ar, price, is_popular, is_spicy, is_available')
+      .single();
+
+    if (itemErr) {
+      return NextResponse.json({ success: false, error: itemErr.message }, { status: 500 });
+    }
+
+    appCache.invalidateTag('menu');
+
+    return NextResponse.json({
+      success: true,
+      item: {
+        id: newItem.id,
+        name: newItem.name_ar,
+        description: newItem.description_ar || '',
+        price: Number(newItem.price),
+        popular: newItem.is_popular,
+        spicy: newItem.is_spicy,
+        available: newItem.is_available,
+        category: catTitle,
+      },
+    });
+  } catch (err) {
+    console.error('Create menu item error:', err);
+    return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    if (!session || !['owner', 'admin', 'branch_manager'].includes(session.role)) {
+      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
+    }
+
+    const { itemId } = await request.json();
+    if (!itemId) {
+      return NextResponse.json({ success: false, error: 'معرف الصنف مطلوب' }, { status: 400 });
+    }
+
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      await (supabase as any).from('menu_items').delete().eq('id', itemId);
+    }
+
+    appCache.invalidateTag('menu');
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Delete menu item error:', err);
+    return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
   }
 }
