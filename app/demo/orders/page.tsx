@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock, PlusCircle, RotateCcw, 
-  Search, Printer, ChevronRight, Check, ExternalLink, X
+  Search, Printer, ChevronRight, Check, ExternalLink, X, Flame
 } from 'lucide-react';
 import { orders as initialOrders } from '@/data/demo-data';
+import { printThermalReceipt } from '@/lib/print-utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Mock images for demonstration
 const mockImages: Record<string, string> = {
@@ -30,6 +32,7 @@ export default function OrdersManagementPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
+  const { language, direction } = useLanguage();
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
@@ -63,6 +66,19 @@ export default function OrdersManagementPage() {
     setSelectedOrderId(initialOrders[0]?.id || '');
   };
 
+  const handlePrintReceipt = (order: any) => {
+    if (!order) return;
+    printThermalReceipt({
+      id: order.id,
+      table: order.table,
+      time: order.time,
+      total: order.total,
+      items: order.items || [],
+      notes: order.notes,
+      restaurantName: 'Burger House نابلس'
+    });
+  };
+
   // Filter orders
   const filteredOrders = ordersList.filter(o => {
     const matchesFilter = statusFilter === 'all' || o.status === statusFilter;
@@ -72,16 +88,36 @@ export default function OrdersManagementPage() {
     return matchesFilter && matchesSearch;
   });
 
+  // Solid, high-contrast, saturated badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'جديد':
-        return <span className="bg-rose-50 text-rose-600 border border-rose-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">بانتظار التأكيد</span>;
+        return (
+          <span className="bg-rose-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            <span>بانتظار التأكيد</span>
+          </span>
+        );
       case 'قيد التحضير':
-        return <span className="bg-amber-50 text-amber-600 border border-amber-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">قيد التحضير</span>;
+        return (
+          <span className="bg-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-spin" />
+            <span>قيد التحضير</span>
+          </span>
+        );
       case 'جاهز':
-        return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">جاهز للتسليم</span>;
+        return (
+          <span className="bg-emerald-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+            <Check size={12} strokeWidth={3} />
+            <span>جاهز للتسليم</span>
+          </span>
+        );
       case 'تم التسليم':
-        return <span className="bg-slate-100 text-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">مكتمل</span>;
+        return (
+          <span className="bg-slate-800 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-2xs">
+            مكتمل
+          </span>
+        );
       default:
         return null;
     }
@@ -94,36 +130,39 @@ export default function OrdersManagementPage() {
   const renderInspectorContent = (order: any, isMobileModal: boolean = false) => {
     if (!order) {
       return (
-        <div className="bg-white rounded-xl border border-slate-200/80 p-6 text-center text-slate-400 text-xs">
+        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 text-center text-slate-700 font-bold text-xs">
           اختر طلباً من القائمة لعرض تفاصيله
         </div>
       );
     }
 
     return (
-      <div className={`space-y-2.5 ${isMobileModal ? '' : 'bg-white rounded-xl border border-slate-200/80 shadow-xs p-3.5 max-h-[calc(100vh-170px)] overflow-y-auto'}`}>
+      <div className={`space-y-3 ${isMobileModal ? '' : 'bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-4 max-h-[calc(100vh-170px)] overflow-y-auto'}`}>
         {/* Header */}
-        <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
+        <div className="border-b-2 border-slate-100 pb-3 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-base text-slate-900">{order.id}</h3>
+              <h3 className="font-black text-lg text-slate-950">{order.id}</h3>
               {getStatusBadge(order.status)}
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">طلب طاولة {order.table} — {order.time}</p>
+            <p className="text-xs text-slate-700 font-bold mt-1">
+              طلب طاولة <span className="text-orange-600 font-black">{order.table}</span> — {order.time}
+            </p>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => window.print()}
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+              onClick={() => handlePrintReceipt(order)}
+              className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-xs transition-all"
               title="طباعة بون الطلب"
             >
-              <Printer size={16} />
+              <Printer size={15} />
+              <span>طباعة البون</span>
             </button>
             {isMobileModal && (
               <button
                 onClick={() => setIsMobileDetailOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
                 title="إغلاق"
               >
                 <X size={18} />
@@ -133,57 +172,58 @@ export default function OrdersManagementPage() {
         </div>
 
         {/* Items List */}
-        <div className={`space-y-1.5 ${isMobileModal ? 'max-h-60' : 'max-h-56'} overflow-y-auto pr-0.5`}>
-          <p className="text-xs font-black text-slate-500">محتويات الطلب ({order.items.length} أصناف)</p>
+        <div className={`space-y-2 ${isMobileModal ? 'max-h-60' : 'max-h-56'} overflow-y-auto pr-0.5`}>
+          <p className="text-xs font-black text-slate-900">محتويات الطلب ({order.items.length} أصناف):</p>
           {order.items.map((item: any, iIdx: number) => {
-             const img = mockImages[item.name];
-             return (
-            <div key={iIdx} className="bg-slate-50 p-2 rounded-xl flex items-center justify-between gap-2 border border-slate-100">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center shrink-0 border border-orange-200">
-                  {item.quantity}×
-                </span>
-                {img && (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-200">
-                    <img src={img} alt={item.name} className="w-full h-full object-cover" />
+            const img = mockImages[item.name];
+            return (
+              <div key={iIdx} className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between gap-2 border border-slate-200">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    {item.quantity}×
+                  </span>
+                  {img && (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200">
+                      <img src={img} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-black text-xs sm:text-sm text-slate-950">{item.name}</p>
+                    {item.customization && (
+                      <span className="text-[11px] text-orange-600 font-bold block">• {item.customization}</span>
+                    )}
+                    {item.extras && item.extras.length > 0 && (
+                      <span className="text-[11px] text-slate-700 font-bold block">• + {item.extras.join('، ')}</span>
+                    )}
                   </div>
-                )}
-                <div>
-                  <p className="font-black text-sm text-slate-900">{item.name}</p>
-                  {item.customization && (
-                    <span className="text-[10px] text-orange-700 font-bold block">• {item.customization}</span>
-                  )}
-                  {item.extras && item.extras.length > 0 && (
-                    <span className="text-[10px] text-slate-600 font-bold block">• + {item.extras.join('، ')}</span>
-                  )}
                 </div>
+                <span className="font-black text-xs sm:text-sm text-slate-950 shrink-0">{item.price * item.quantity} ₪</span>
               </div>
-              <span className="font-black text-sm text-slate-900 shrink-0">{item.price * item.quantity} ₪</span>
-            </div>
-          )})}
+            );
+          })}
         </div>
 
         {/* Customer Notes */}
         {order.notes && (
-          <div className="bg-amber-100/90 border border-amber-300 rounded-xl p-2.5 text-xs font-black text-amber-950">
-            <span className="block mb-0.5">⚠️ ملاحظات الزبون:</span>
+          <div className="bg-amber-100 border border-amber-300 rounded-xl p-3 text-xs font-black text-amber-950 shadow-2xs">
+            <span className="block mb-1">⚠️ ملاحظات الزبون الخاصة:</span>
             <p className="font-bold">{order.notes}</p>
           </div>
         )}
 
         {/* Bill Details */}
-        <div className="bg-slate-50 p-2.5 rounded-xl space-y-1 text-xs">
-          <div className="flex justify-between text-slate-500 font-bold">
+        <div className="bg-slate-100/80 p-3 rounded-xl space-y-1.5 text-xs">
+          <div className="flex justify-between text-slate-700 font-bold">
             <span>المجموع الفرعي:</span>
-            <span className="font-black text-slate-800">{order.total} ₪</span>
+            <span className="font-black text-slate-950">{order.total} ₪</span>
           </div>
-          <div className="flex justify-between text-slate-500 font-bold">
+          <div className="flex justify-between text-slate-700 font-bold">
             <span>الضريبة والخدمة:</span>
-            <span className="font-black text-emerald-600">مشمولة (0 ₪)</span>
+            <span className="font-black text-emerald-700">مشمولة (0 ₪)</span>
           </div>
-          <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 pt-1.5 border-t border-slate-200">
+          <div className="flex justify-between text-sm sm:text-base font-black text-slate-950 pt-2 border-t border-slate-200">
             <span>الإجمالي المطلوب:</span>
-            <span className="text-orange-600">{order.total} ₪</span>
+            <span className="text-orange-600 font-black">{order.total} ₪</span>
           </div>
         </div>
 
@@ -192,36 +232,36 @@ export default function OrdersManagementPage() {
           {order.status === 'جديد' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
-              className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
             >
-              <span>قبول الطلب وبدء التحضير</span>
-              <Check size={16} />
+              <Flame size={16} />
+              <span>قبول الطلب وبدء التحضير فوراً 🔥</span>
             </button>
           )}
 
           {order.status === 'قيد التحضير' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'جاهز')}
-              className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
             >
-              <span>الطلب جاهز للتسليم (طاولة {order.table})</span>
               <CheckCircle2 size={16} />
+              <span>الطلب جاهز للتسليم (طاولة {order.table}) ✅</span>
             </button>
           )}
 
           {order.status === 'جاهز' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
-              className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
             >
-              <span>تم التسليم بنجاح وإغلاق الطلب</span>
               <Check size={16} />
+              <span>تم التسليم بنجاح وإغلاق الطلب 🚀</span>
             </button>
           )}
 
           {order.status === 'تم التسليم' && (
-            <div className="text-center py-2 bg-slate-100 rounded-xl text-xs sm:text-sm font-black text-slate-500">
-              تم تسليم هذا الطلب بنجاح ✓
+            <div className="text-center py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs sm:text-sm font-black">
+              ✓ تم تسليم هذا الطلب بنجاح
             </div>
           )}
         </div>
@@ -230,109 +270,125 @@ export default function OrdersManagementPage() {
   };
 
   return (
-    <div className="space-y-2.5 max-w-7xl mx-auto font-sans text-slate-800 text-xs sm:text-sm" dir="rtl">
+    <div className="space-y-3 max-w-7xl mx-auto font-sans text-slate-900 text-xs sm:text-sm" dir={direction}>
       
-      {/* Header Bar - Slim & High Density */}
-      <div className="bg-white border border-slate-200/80 rounded-xl px-3 py-2 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center font-bold">
-            <ClipboardList size={18} />
+      {/* Header Bar */}
+      <div className="bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center font-black shadow-xs">
+            <ClipboardList size={20} />
           </div>
           <div>
-            <h1 className="text-base font-black text-slate-900 leading-tight">إدارة الطلبات الحية</h1>
-            <p className="text-[11px] text-slate-400">متابعة وتحديث طلبات الطاولات لحظة بلحظة</p>
+            <h1 className="text-lg font-black text-slate-950 leading-tight">إدارة الطلبات الحية</h1>
+            <p className="text-xs text-slate-700 font-bold">متابعة وتحديث طلبات الطاولات لحظة بلحظة</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={addNewSimulatedOrder}
-            className="px-2.5 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition-all"
+            className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
           >
-            <PlusCircle size={13} />
-            <span>+ محاكاة طلب QR</span>
+            <PlusCircle size={14} />
+            <span>+ محاكاة طلب QR جديد</span>
           </button>
 
           <button
             onClick={resetOrders}
-            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
+            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
             title="إعادة تعيين البيانات"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={15} />
           </button>
         </div>
       </div>
 
-      {/* Quick Summary Strip & Filter - Slim */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+      {/* Quick Summary Strip & Filter */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-white px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-xs">
         {/* Filters */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 md:pb-0 scrollbar-none text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 hide-scrollbar text-xs font-black">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               statusFilter === 'all'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-slate-950 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             الكل ({ordersList.length})
           </button>
+
           <button
             onClick={() => setStatusFilter('جديد')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'جديد'
                 ? 'bg-rose-500 text-white shadow-xs'
-                : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                : 'bg-rose-100 text-rose-900 border border-rose-200 hover:bg-rose-200'
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
             <span>بانتظار التأكيد ({newOrdersCount})</span>
           </button>
+
           <button
             onClick={() => setStatusFilter('قيد التحضير')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'قيد التحضير'
                 ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'bg-amber-100 text-amber-950 border border-amber-200 hover:bg-amber-200'
             }`}
           >
-            قيد التحضير ({preparingCount})
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>قيد التحضير ({preparingCount})</span>
           </button>
+
           <button
             onClick={() => setStatusFilter('جاهز')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'جاهز'
-                ? 'bg-emerald-500 text-white shadow-xs'
-                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-emerald-100 text-emerald-900 border border-emerald-200 hover:bg-emerald-200'
             }`}
           >
-            جاهز للتسليم ({readyCount})
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+            <span>جاهز للتسليم ({readyCount})</span>
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('تم التسليم')}
+            className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+              statusFilter === 'تم التسليم'
+                ? 'bg-slate-800 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full md:w-64">
+        {/* Search Input */}
+        <div className="relative w-full md:w-64 shrink-0">
           <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
+          <input 
             type="text"
             placeholder="بحث برقم الطلب أو الطاولة..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pr-8 pl-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white text-slate-800"
+            className="w-full pr-8 pl-3 py-1.5 bg-slate-50 border border-slate-300 rounded-full text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-950 placeholder:text-slate-400"
           />
         </div>
       </div>
 
-      {/* Main Split Interface - Master/Detail (Strictly Viewport-Fitted) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+      {/* Main Split Interface - Master/Detail (2 Columns for cards) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         
-        {/* Orders List (Full width on Mobile, 7 Cols on Desktop) */}
-        <div className="w-full lg:col-span-7 space-y-2 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5">
+        {/* Orders Cards Grid (2 COLUMNS PER ROW) */}
+        <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
           {filteredOrders.length === 0 ? (
-            <div className="bg-white border border-slate-200/80 rounded-xl p-8 text-center text-slate-400">
-              <ClipboardList size={32} className="mx-auto mb-1.5 opacity-40" />
-              <p className="text-xs font-bold text-slate-700">لا توجد طلبات مطابقة</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">جرّب تغيير حالة الفلتر أو محاكاة طلب جديد</p>
+            <div className="col-span-full bg-white border-2 border-slate-200 rounded-2xl p-10 text-center text-slate-600 font-bold">
+              <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
+              <p className="text-sm font-black text-slate-900">لا توجد طلبات مطابقة</p>
+              <p className="text-xs text-slate-600 mt-1 font-bold">جرّب تغيير حالة الفلتر أو محاكاة طلب جديد</p>
             </div>
           ) : (
             filteredOrders.map((order) => {
@@ -345,39 +401,41 @@ export default function OrdersManagementPage() {
                     setSelectedOrderId(order.id);
                     setIsMobileDetailOpen(true);
                   }}
-                  className={`bg-white rounded-xl p-2.5 border transition-all cursor-pointer relative ${
+                  className={`bg-white rounded-2xl p-3 border-2 transition-all cursor-pointer relative shadow-2xs hover:shadow-md flex flex-col justify-between ${
                     isSelected
-                      ? 'border-orange-500 shadow-sm ring-2 ring-orange-500/20 bg-orange-50/10'
-                      : 'border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                      ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20'
+                      : 'border-slate-200 hover:border-orange-300'
                   }`}
                 >
+                  <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-slate-900 text-sm">{order.id}</span>
-                      <span className="bg-slate-900 text-white font-black text-xs px-2.5 py-0.5 rounded-md">
-                        طاولة {order.table}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(order.status)}
-                      <span className="text-xs text-slate-500 flex items-center gap-1 font-bold">
-                        <Clock size={12} />
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-black text-slate-950 text-sm">{order.id}</span>
+                        <span className="bg-slate-950 text-amber-300 font-black text-[11px] px-2 py-0.5 rounded-md">
+                          طاولة {order.table}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-600 flex items-center gap-1 font-bold">
+                        <Clock size={12} className="text-slate-500" />
                         {order.time}
                       </span>
                     </div>
+
+                    <div className="mb-2">
+                      {getStatusBadge(order.status)}
+                    </div>
+
+                    {/* Items preview */}
+                    <p className="text-xs text-slate-800 line-clamp-2 mb-2 font-bold leading-relaxed">
+                      {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
+                    </p>
                   </div>
 
-                  {/* Items preview */}
-                  <p className="text-xs text-slate-700 line-clamp-1 mb-1.5 font-bold">
-                    {order.items.map((i: any) => `${i.name} (${i.quantity})`).join('، ')}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <span className="font-black text-orange-600 text-sm sm:text-base">{order.total} ₪</span>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
-                      <span className="lg:hidden text-orange-600">فتح التفاصيل والإجراءات</span>
-                      <span className="hidden lg:inline">عرض التفاصيل</span>
-                      <ChevronRight size={14} className="rtl:rotate-180" />
+                    <div className="flex items-center gap-0.5 text-xs text-slate-600 font-black">
+                      <span className="text-orange-600">معاينة</span>
+                      <ChevronRight size={14} className="rtl:rotate-180 text-orange-600" />
                     </div>
                   </div>
                 </div>
@@ -386,14 +444,13 @@ export default function OrdersManagementPage() {
           )}
         </div>
 
-        {/* Selected Order Inspector / Action Pane (Desktop Only - Left Column 5 Cols) */}
-        <div className="hidden lg:block lg:col-span-5 sticky top-1">
+        {/* Selected Order Inspector (5 Cols on Desktop) */}
+        <div className="hidden lg:block lg:col-span-5 sticky top-2">
           {renderInspectorContent(selectedOrder, false)}
         </div>
-
       </div>
 
-      {/* Mobile Drawer / Bottom Sheet for Order Inspector */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {isMobileDetailOpen && selectedOrder && (
           <div className="fixed inset-0 z-50 flex items-end justify-center lg:hidden">
@@ -402,26 +459,19 @@ export default function OrdersManagementPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileDetailOpen(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative bg-white w-full max-h-[85vh] rounded-t-3xl shadow-2xl z-10 overflow-hidden flex flex-col border-t border-slate-100"
+              className="relative w-full max-h-[85vh] rounded-t-3xl bg-white p-4 shadow-2xl z-10 overflow-y-auto"
             >
-              {/* Drawer Handle */}
               <div 
-                className="pt-3 pb-1 flex justify-center cursor-pointer"
+                className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3 cursor-pointer"
                 onClick={() => setIsMobileDetailOpen(false)}
-              >
-                <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
-              </div>
-              
-              <div className="p-4 overflow-y-auto">
-                {renderInspectorContent(selectedOrder, true)}
-              </div>
+              />
+              {renderInspectorContent(selectedOrder, true)}
             </motion.div>
           </div>
         )}

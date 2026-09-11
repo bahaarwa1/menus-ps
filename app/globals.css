@@ -20,7 +20,15 @@ html {
 
 body {
   font-family: 'IBM Plex Sans Arabic', sans-serif;
-  direction: rtl;
+  color: #0f172a;
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #020617;
+  letter-spacing: -0.01em;
 }
 
 /* Custom scrollbar */

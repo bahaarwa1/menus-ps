@@ -57,11 +57,11 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-10 font-sans" dir="rtl">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-10 font-sans text-slate-900" dir="rtl">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 mb-1">التقارير والتحليلات المالية — Burger House نابلس</h1>
-        <p className="text-slate-500 text-xs md:text-sm">إحصائيات نمو الإيرادات، ساعات الذروة، ونسب زيادة المبيعات (Upselling)</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-950 mb-1">التقارير والتحليلات المالية — Burger House نابلس</h1>
+        <p className="text-slate-700 text-xs md:text-sm font-bold">إحصائيات نمو الإيرادات، ساعات الذروة، ونسب زيادة المبيعات (Upselling)</p>
       </div>
 
       {/* KPIs (2 cols on mobile, 4 on desktop) */}
@@ -72,19 +72,19 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+            className="bg-white border-2 border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-xs flex flex-col justify-between"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 sm:p-2.5 rounded-xl bg-orange-50 text-orange-600">
-                <kpi.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-2.5 rounded-xl bg-orange-100 text-orange-700">
+                <kpi.icon className="w-5 h-5" />
               </div>
-              <div className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`} dir="ltr">
+              <div className={`text-xs font-black px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'}`} dir="ltr">
                 {kpi.change}
               </div>
             </div>
             <div>
-              <h3 className="text-slate-500 text-[11px] sm:text-xs font-medium mb-0.5 truncate">{kpi.title}</h3>
-              <p className="text-lg sm:text-2xl font-black text-slate-900">{kpi.value}</p>
+              <h3 className="text-slate-800 text-xs sm:text-sm font-black mb-1 truncate">{kpi.title}</h3>
+              <p className="text-xl sm:text-2xl font-black text-slate-950">{kpi.value}</p>
             </div>
           </motion.div>
         ))}
@@ -95,33 +95,33 @@ export default function DashboardPage() {
           {/* Charts Row 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Revenue Trend */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">اتجاه المبيعات (أسبوعي)</h3>
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs">
+              <h3 className="text-base sm:text-lg font-black text-slate-950 mb-4 sm:mb-6">اتجاه المبيعات (أسبوعي)</h3>
               <div className="h-[250px] sm:h-[300px] w-full" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dailySales} margin={{ top: 5, right: 15, bottom: 5, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="day" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} />
-                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => `₪${val}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="day" stroke="#64748b" tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 700 }} />
+                    <YAxis stroke="#64748b" tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 700 }} tickFormatter={(val) => `₪${val}`} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#0f172a' }}
-                      itemStyle={{ color: '#f97316' }}
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#0f172a', fontWeight: 'bold' }}
+                      itemStyle={{ color: '#ea580c', fontWeight: 'bold' }}
                     />
-                    <Line type="monotone" dataKey="sales" name="المبيعات" stroke="#f97316" strokeWidth={3} dot={{ r: 3, fill: '#f97316' }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="sales" name="المبيعات" stroke="#ea580c" strokeWidth={3.5} dot={{ r: 4, fill: '#ea580c' }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Best Sellers */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-4 sm:mb-6">الأصناف الأكثر مبيعاً</h3>
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs">
+              <h3 className="text-base sm:text-lg font-black text-slate-950 mb-4 sm:mb-6">الأصناف الأكثر مبيعاً</h3>
               <div className="h-[250px] sm:h-[300px] w-full" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={bestSellers?.slice(0, 8) || []} layout="vertical" margin={{ top: 5, right: 15, left: 35, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#64748b' }} />
-                    <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} width={75} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" stroke="#64748b" tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 700 }} />
+                    <YAxis dataKey="name" type="category" stroke="#64748b" tick={{ fill: '#0f172a', fontSize: 11, fontWeight: 800 }} width={80} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#0f172a' }}
                       cursor={{ fill: '#fff7ed' }}
