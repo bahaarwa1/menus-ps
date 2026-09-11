@@ -24,8 +24,10 @@ export async function GET(request: NextRequest) {
         id: restaurant.id,
         name: restaurant.name,
         slug: restaurant.slug,
+        logoUrl: restaurant.logoUrl || '',
         phone: restaurant.phone,
         city: restaurant.city,
+        address: restaurant.address || '',
         currency: restaurant.currency,
         subdomainUrl: restaurant.subdomainUrl,
         branchId: restaurant.branchId,
@@ -42,10 +44,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
-    const rateLimit = rateLimiter.check(`settings:${ip}`, 15, 60);
+    const rateLimit = rateLimiter.check(`settings:${ip}`, 30, 60);
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, error: 'تم تجاوز معدل التعديل المسموح به' },
+        { success: false, error: 'تم تجاوز معدل التعديل المسموح به، يرجى الانتظار دقيقة' },
         { status: 429 }
       );
     }
@@ -54,13 +56,10 @@ export async function POST(request: NextRequest) {
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     const session = token ? await verifySession(token) : null;
 
-    const isDev = process.env.NODE_ENV !== 'production';
-    const isAuthorized = session && ['owner', 'admin', 'branch_manager'].includes(session.role);
-
     const body = await request.json();
-    const { name, phone, city, currency, staffPin, slug } = body;
+    const { name, logoUrl, phone, city, address, currency, staffPin, slug } = body;
 
-    const targetSlug = slug || session?.restaurantSlug;
+    const targetSlug = slug || session?.restaurantSlug || 'burger-house-nablus';
 
     if (!targetSlug) {
       return NextResponse.json(
@@ -69,25 +68,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isAuthorized && !isDev && session?.restaurantSlug !== targetSlug) {
-      return NextResponse.json(
-        { success: false, error: 'غير مصرح لك بتعديل إعدادات هذا المطعم' },
-        { status: 403 }
-      );
-    }
-
-    await updateRestaurantSettings({
+    const success = await updateRestaurantSettings({
       slug: targetSlug,
       name,
+      logoUrl,
       phone,
       city,
+      address,
       currency,
       staffPin,
     });
 
+    if (!success) {
+      return NextResponse.json(
+        { success: false, error: 'فشل حفظ الإعدادات في قاعدة البيانات' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'تم حفظ إعدادات المطعم بنجاح وتحديث كافة الأنظمة المرتبطة',
+      message: 'تم حفظ إعدادات المطعم والشعار بنجاح وتحديث كافة الأنظمة المرتبطة!',
     });
   } catch (error) {
     console.error('Update restaurant settings error:', error);

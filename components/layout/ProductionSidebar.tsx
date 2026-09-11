@@ -31,6 +31,7 @@ export default function ProductionSidebar({
 
   const [activeSlug, setActiveSlug] = useState(restaurantSlug);
   const [activeName, setActiveName] = useState(restaurantName);
+  const [logoUrl, setLogoUrl] = useState('');
 
   const [appOrigin, setAppOrigin] = useState('https://menus-ps.vercel.app');
 
@@ -39,12 +40,23 @@ export default function ProductionSidebar({
       setAppOrigin(window.location.origin);
       const params = new URLSearchParams(window.location.search);
       const created = params.get('created');
+      const target = created || activeSlug;
       if (created) {
         setActiveSlug(created);
         setActiveName(created.replace(/-/g, ' '));
       }
+
+      fetch(`/api/v1/restaurant/settings${target ? `?slug=${encodeURIComponent(target)}` : ''}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.settings) {
+            if (data.settings.logoUrl) setLogoUrl(data.settings.logoUrl);
+            if (data.settings.name) setActiveName(data.settings.name);
+          }
+        })
+        .catch(() => {});
     }
-  }, [pathname]);
+  }, [pathname, activeSlug]);
 
   const liveUrl = `${appOrigin}/r/${activeSlug}`;
   const directMenuUrl = `/r/${activeSlug}`;
@@ -95,9 +107,16 @@ export default function ProductionSidebar({
       {/* Restaurant Overview Card — Soft Light Theme */}
       <div className="p-3.5 m-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-800 shadow-2xs relative overflow-hidden">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
-            {activeName.slice(0, 1).toUpperCase()}
-          </div>
+          {logoUrl ? (
+            <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt={activeName} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+              {activeName.slice(0, 1).toUpperCase()}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <h3 className="font-black text-sm truncate capitalize leading-tight text-slate-900">{activeName}</h3>
             <p className="text-[11px] text-slate-500 truncate mt-0.5">الفرع الرئيسي — {city}</p>

@@ -216,7 +216,24 @@ function FastFrictionlessMenuContent() {
 
   const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(effectiveSlug);
   const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
+  const [activeRestaurantLogo, setActiveRestaurantLogo] = useState<string>('');
+  const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>('');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
+
+  // Fetch restaurant details (logo, city, etc.)
+  useEffect(() => {
+    if (!activeRestaurantSlug) return;
+    fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeRestaurantSlug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          if (data.settings.logoUrl) setActiveRestaurantLogo(data.settings.logoUrl);
+          if (data.settings.name) setActiveRestaurantName(data.settings.name);
+          if (data.settings.city) setActiveRestaurantCity(data.settings.city);
+        }
+      })
+      .catch(() => {});
+  }, [activeRestaurantSlug]);
 
   // Dynamic QR Token Verification on Load — runs in parallel with menu fetch
   useEffect(() => {
@@ -460,13 +477,20 @@ function FastFrictionlessMenuContent() {
           {/* Top Row: Brand + Table + Language + Waiter */}
           <div className="px-3.5 py-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-sm shadow-orange-500/20 shrink-0">
-                BH
-              </div>
+              {activeRestaurantLogo ? (
+                <div className="w-10 h-10 rounded-2xl overflow-hidden border border-slate-200 shadow-xs shrink-0 bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={activeRestaurantLogo} alt={activeRestaurantName || 'Logo'} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-sm shadow-orange-500/20 shrink-0">
+                  {activeRestaurantName ? activeRestaurantName.slice(0, 1).toUpperCase() : 'M'}
+                </div>
+              )}
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-sm font-bold text-slate-900 truncate capitalize">
-                    {activeRestaurantName || (restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus'))}
+                    {activeRestaurantName || (restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'مطعمنا' : 'Our Restaurant'))}
                   </h1>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>
@@ -474,7 +498,7 @@ function FastFrictionlessMenuContent() {
                   <span className="text-amber-500 font-bold flex items-center gap-0.5">
                     <Star size={11} fill="currentColor" /> 4.9
                   </span>
-                  <span>· {restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'رفيديا، نابلس' : 'Rafidia, Nablus')}</span>
+                  <span>· {activeRestaurantCity || (restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
                 </p>
               </div>
             </div>

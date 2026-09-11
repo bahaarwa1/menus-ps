@@ -30,6 +30,8 @@ export interface RegisteredRestaurantResult {
     qrToken: string;
     qrUrl: string;
   }>;
+  logoUrl?: string;
+  address?: string;
   ownerEmail?: string;
   ownerPassword?: string;
   createdAt: string;
@@ -311,7 +313,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
           const supabase = createAdminClient();
           const { data: rest, error } = await supabase
             .from('restaurants')
-            .select('id, name, slug, phone, city, currency, created_at')
+            .select('id, name, slug, logo_url, phone, city, currency, created_at')
             .eq('slug', cleanSlug)
             .single();
 
@@ -320,6 +322,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               id: string;
               name: string;
               slug: string;
+              logo_url?: string | null;
               phone: string;
               city: string;
               currency: string;
@@ -329,15 +332,15 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
             // Fetch primary branch
             const { data: branchData } = await supabase
               .from('branches')
-              .select('id, name, tables_count')
+              .select('id, name, address, tables_count')
               .eq('restaurant_id', restData.id)
               .limit(1)
               .maybeSingle();
 
-            const branchId = (branchData as any)?.id || 'b0000000-0000-0000-0000-000000000001';
-            const branchName = (branchData as any)?.name || 'الفرع الرئيسي';
+            const branchId = (branchData as any)?.id || restData.id;
+            const branchName = (branchData as any)?.name || `${restData.name} — الفرع الرئيسي`;
+            const branchAddress = (branchData as any)?.address || '';
 
-            // Fetch actual tables for this branch
             const { data: tablesData } = await supabase
               .from('tables')
               .select('id, table_number, qr_token, status')
@@ -345,7 +348,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               .order('table_number', { ascending: true });
 
             const tables = (tablesData && tablesData.length > 0)
-              ? (tablesData as any[]).map((t) => ({
+              ? tablesData.map((t: any) => ({
                   id: t.id,
                   tableNumber: t.table_number,
                   qrToken: t.qr_token,
@@ -362,6 +365,8 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               id: restData.id,
               name: restData.name,
               slug: restData.slug,
+              logoUrl: restData.logo_url || '',
+              address: branchAddress,
               phone: restData.phone || '',
               city: restData.city || 'نابلس',
               currency: restData.currency || '₪',
@@ -403,14 +408,16 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
 export interface UpdateRestaurantSettingsInput {
   slug: string;
   name?: string;
+  logoUrl?: string;
   phone?: string;
   city?: string;
+  address?: string;
   currency?: string;
   staffPin?: string;
 }
 
 /**
- * Updates restaurant profile, contact, city, currency, and staff PIN with cache invalidation.
+ * Updates restaurant profile, logo, contact, city, currency, and staff PIN with cache invalidation.
  */
 export async function updateRestaurantSettings(input: UpdateRestaurantSettingsInput): Promise<boolean> {
   const cleanSlug = input.slug.trim().toLowerCase();
@@ -419,8 +426,10 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
   const existing = global.__menusRestaurantsStore?.get(cleanSlug);
   if (existing) {
     if (input.name) existing.name = input.name.trim();
+    if (input.logoUrl !== undefined) existing.logoUrl = input.logoUrl.trim();
     if (input.phone) existing.phone = input.phone.trim();
     if (input.city) existing.city = input.city.trim();
+    if (input.address !== undefined) existing.address = input.address.trim();
     if (input.currency) existing.currency = input.currency.trim();
     global.__menusRestaurantsStore?.set(cleanSlug, existing);
   }
@@ -431,6 +440,7 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
       const supabase = createAdminClient();
       const updates: any = {};
       if (input.name) updates.name = input.name.trim();
+      if (input.logoUrl !== undefined) updates.logo_url = input.logoUrl.trim();
       if (input.phone) updates.phone = input.phone.trim();
       if (input.city) updates.city = input.city.trim();
       if (input.currency) updates.currency = input.currency.trim();
@@ -442,8 +452,8 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
           .eq('slug', cleanSlug);
       }
 
-      // Update primary branch city/name if changed
-      if (input.city || input.name) {
+      // Update primary branch city/name/address if changed
+      if (input.city || input.name || input.address !== undefined) {
         const { data: rest } = await (supabase as any)
           .from('restaurants')
           .select('id')
@@ -453,6 +463,7 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
         if (rest) {
           const branchUpdates: any = {};
           if (input.city) branchUpdates.city = input.city.trim();
+          if (input.address !== undefined) branchUpdates.address = input.address.trim();
           await (supabase as any)
             .from('branches')
             .update(branchUpdates)

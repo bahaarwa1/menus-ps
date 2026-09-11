@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock,
   Search, Printer, Check, X, Bell, BellOff,
-  Sun, Moon, LogOut, Flame, ChefHat, RefreshCw
+  Sun, Moon, LogOut, ChefHat, RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { printThermalReceipt } from '@/lib/print-utils';
@@ -258,33 +258,33 @@ export default function StaffOrdersManagementPage() {
   });
 
 
-  // Vibrant, high-contrast, saturated status badges
+  // Clean, professional, eye-friendly status badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'جديد':
         return (
-          <span className="bg-rose-500 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-rose-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+          <span className="bg-amber-50 text-amber-800 border border-amber-200/80 font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             <span>بانتظار التأكيد</span>
           </span>
         );
       case 'قيد التحضير':
         return (
-          <span className="bg-amber-500 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-spin" />
+          <span className="bg-blue-50 text-blue-800 border border-blue-200/80 font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             <span>قيد التحضير</span>
           </span>
         );
       case 'جاهز':
         return (
-          <span className="bg-emerald-600 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-emerald-600/30">
-            <Check size={11} strokeWidth={3} />
+          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <Check size={11} strokeWidth={2.5} className="text-emerald-600" />
             <span>جاهز للتسليم</span>
           </span>
         );
       case 'تم التسليم':
         return (
-          <span className="bg-slate-800 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full">
+          <span className="bg-slate-100 text-slate-600 border border-slate-200/80 font-bold text-[11px] px-2.5 py-0.5 rounded-full shrink-0">
             مكتمل
           </span>
         );
@@ -461,40 +461,40 @@ export default function StaffOrdersManagementPage() {
           {order.status === 'جديد' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
-              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Flame size={17} />
-              <span>قبول الطلب وبدء التحضير فوراً 🔥</span>
+              <ChefHat size={17} />
+              <span>بدء تحضير الطلب</span>
             </button>
           )}
 
           {order.status === 'قيد التحضير' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'جاهز')}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckCircle2 size={17} />
-              <span>الطلب جاهز للتسليم (طاولة {order.table}) ✅</span>
+              <span>الطلب جاهز للتسليم (طاولة {order.table})</span>
             </button>
           )}
 
           {order.status === 'جاهز' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
-              className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check size={17} />
-              <span>تم التسليم بنجاح وإغلاق الطلب 🚀</span>
+              <span>تسليم الطلب للزبون وإغلاقه</span>
             </button>
           )}
 
           {order.status === 'تم التسليم' && (
-            <div className={`text-center py-2.5 border rounded-xl text-xs sm:text-sm font-black ${
+            <div className={`text-center py-2.5 border rounded-xl text-xs sm:text-sm font-bold ${
               isDarkMode 
-                ? 'bg-slate-800 text-emerald-400 border-slate-700' 
-                : 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                ? 'bg-slate-800 text-slate-300 border-slate-700' 
+                : 'bg-slate-50 text-slate-700 border-slate-200'
             }`}>
-              ✓ تم تسليم هذا الطلب للزبون بنجاح
+              ✓ تم تسليم هذا الطلب بنجاح
             </div>
           )}
         </div>
@@ -666,14 +666,14 @@ export default function StaffOrdersManagementPage() {
         <div className={`max-w-[1600px] mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
           isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'
         }`}>
-          {/* Status Filter Tabs with Balanced Counters */}
+          {/* Status Filter Tabs with Clean Calm Style */}
           <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 font-medium ${
+              className={`px-3 py-1.5 rounded-xl transition-all shrink-0 font-bold ${
                 statusFilter === 'all'
-                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-900 text-white shadow-xs font-bold'
-                  : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               الكل ({ordersList.length})
@@ -681,46 +681,46 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setStatusFilter('جديد')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
+              className={`px-3 py-1.5 rounded-xl transition-all shrink-0 flex items-center gap-1.5 font-bold ${
                 statusFilter === 'جديد'
-                  ? 'bg-rose-500 text-white shadow-xs font-bold'
-                  : isDarkMode ? 'bg-rose-950/60 text-rose-300 hover:bg-rose-900/60' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                  ? 'bg-amber-500 text-white shadow-2xs'
+                  : 'bg-amber-50 border border-amber-200/80 text-amber-800 hover:bg-amber-100'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+              <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'جديد' ? 'bg-white' : 'bg-amber-500'} animate-pulse`} />
               <span>بانتظار التأكيد ({newOrdersCount})</span>
             </button>
 
             <button
               onClick={() => setStatusFilter('قيد التحضير')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
+              className={`px-3 py-1.5 rounded-xl transition-all shrink-0 flex items-center gap-1.5 font-bold ${
                 statusFilter === 'قيد التحضير'
-                  ? 'bg-amber-500 text-white shadow-xs font-bold'
-                  : isDarkMode ? 'bg-amber-950/60 text-amber-300 hover:bg-amber-900/60' : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+                  ? 'bg-blue-600 text-white shadow-2xs'
+                  : 'bg-blue-50 border border-blue-200/80 text-blue-800 hover:bg-blue-100'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'قيد التحضير' ? 'bg-white' : 'bg-blue-500'}`} />
               <span>قيد التحضير ({preparingCount})</span>
             </button>
 
             <button
               onClick={() => setStatusFilter('جاهز')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
+              className={`px-3 py-1.5 rounded-xl transition-all shrink-0 flex items-center gap-1.5 font-bold ${
                 statusFilter === 'جاهز'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : isDarkMode ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/60' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-emerald-50 border border-emerald-200/80 text-emerald-800 hover:bg-emerald-100'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'جاهز' ? 'bg-white' : 'bg-emerald-600'}`} />
               <span>جاهز للتسليم ({readyCount})</span>
             </button>
 
             <button
               onClick={() => setStatusFilter('تم التسليم')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 font-medium ${
+              className={`px-3 py-1.5 rounded-xl transition-all shrink-0 font-bold ${
                 statusFilter === 'تم التسليم'
-                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-900 text-white shadow-xs font-bold'
-                  : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-slate-700 text-white shadow-2xs'
+                  : 'bg-slate-100 border border-slate-200/80 text-slate-600 hover:bg-slate-200'
               }`}
             >
               مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
@@ -786,39 +786,31 @@ export default function StaffOrdersManagementPage() {
                         : 'bg-white border-slate-200/80 hover:border-orange-300'
                     }`}
                   >
-                    {/* Top Row: Huge Table Pill + Time */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="bg-orange-500 text-white font-black text-xs px-2.5 py-1 rounded-xl shadow-xs shrink-0 flex items-center gap-1">
-                          <span>طاولة</span>
-                          <span className="text-sm font-black underline">{order.table}</span>
-                        </span>
-                        <span className={`font-mono font-bold text-xs truncate ${
-                          isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                    {/* Top Row: Clean Table Badge + Status + Time */}
+                    <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`px-2.5 py-1 rounded-xl font-bold text-xs flex items-center gap-1 border shrink-0 ${
+                          isDarkMode ? 'bg-slate-800 text-slate-100 border-slate-700' : 'bg-slate-100 text-slate-800 border-slate-200'
                         }`}>
-                          {order.orderNumber || order.id}
-                        </span>
+                          <span className="text-[10px] text-slate-400 font-bold">طاولة</span>
+                          <span className="text-sm font-black">{order.table}</span>
+                        </div>
+                        {getStatusBadge(order.status)}
                       </div>
-                      <span className={`text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
-                      }`}>
-                        <Clock size={12} className="text-orange-500" />
-                        {order.time}
-                      </span>
-                    </div>
 
-                    {/* Status Badge */}
-                    <div className="mb-2">
-                      {getStatusBadge(order.status)}
+                      <div className="flex items-center gap-1.5 shrink-0 text-[11px] font-mono text-slate-400">
+                        <Clock size={12} className="text-slate-400" />
+                        <span>{order.time}</span>
+                      </div>
                     </div>
 
                     {/* Items preview with count */}
                     <div className="mb-2.5 flex-1">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1 text-xs">
                         <span className="text-[11px] font-bold text-slate-400">
                           {order.items.length} أصناف
                         </span>
-                        <span className="font-black text-sm text-orange-600 font-mono">
+                        <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                           {order.total} ₪
                         </span>
                       </div>
@@ -828,8 +820,8 @@ export default function StaffOrdersManagementPage() {
                         {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
                       </p>
                       {order.notes && (
-                        <span className="mt-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded block truncate">
-                          ⚠️ {order.notes}
+                        <span className="mt-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 px-2 py-0.5 rounded-md block truncate">
+                          ملاحظة: {order.notes}
                         </span>
                       )}
                     </div>
@@ -845,7 +837,7 @@ export default function StaffOrdersManagementPage() {
                             e.stopPropagation();
                             updateOrderStatus(order.id, 'قيد التحضير');
                           }}
-                          className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                          className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                         >
                           <ChefHat size={14} />
                           <span>بدء التحضير</span>
@@ -858,10 +850,10 @@ export default function StaffOrdersManagementPage() {
                             e.stopPropagation();
                             updateOrderStatus(order.id, 'جاهز');
                           }}
-                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                         >
-                          <Check size={14} strokeWidth={3} />
-                          <span>جاهز للتقديم ✨</span>
+                          <Check size={14} strokeWidth={2.5} />
+                          <span>جاهز للتسليم</span>
                         </button>
                       )}
                       {order.status === 'جاهز' && (
@@ -871,13 +863,13 @@ export default function StaffOrdersManagementPage() {
                             e.stopPropagation();
                             updateOrderStatus(order.id, 'تم التسليم');
                           }}
-                          className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
+                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                         >
-                          <span>تم التسليم للزبون ✔️</span>
+                          <span>تسليم الطلب</span>
                         </button>
                       )}
                       {order.status === 'تم التسليم' && (
-                        <span className="text-[11px] font-bold text-slate-400 py-1 flex-1 text-center">
+                        <span className="text-[11px] font-bold text-slate-400 py-1.5 flex-1 text-center">
                           تم التسليم بنجاح
                         </span>
                       )}
