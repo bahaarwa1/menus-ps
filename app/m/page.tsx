@@ -6,11 +6,31 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
-  Sparkles, ChefHat, ArrowLeft
+  Sparkles, ChefHat, ArrowLeft, Loader2
 } from 'lucide-react';
-import { menuItems, categories, MenuItem, Extra } from '@/data/demo-data';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+
+// --- DB-driven types (mirrors PublicMenuCategory from menu.repository) ---
+interface Extra { id: string; name: string; price: number; }
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  imageUrl?: string;
+  popular?: boolean;
+  spicy?: boolean;
+  category: string; // category id
+  extras?: Extra[];
+}
+interface MenuCategory {
+  id: string;
+  name: string;
+  icon: string;
+  items: MenuItem[];
+}
 
 function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
@@ -18,11 +38,17 @@ function FastFrictionlessMenuContent() {
   const restaurantParam = searchParams.get('restaurant') || '';
   const { t, direction, language } = useLanguage();
 
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || 'burgers');
+  // DB menu state
+  const [dbCategories, setDbCategories] = useState<MenuCategory[]>([]);
+  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState('');
+
+  const [activeCategory, setActiveCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Table verification state
-  const [tableNumber, setTableNumber] = useState<number>(12);
+  const [tableNumber, setTableNumber] = useState<number>(0);
   const [isTokenVerified, setIsTokenVerified] = useState<boolean>(false);
   const [tokenError, setTokenError] = useState<string>('');
 
@@ -67,12 +93,12 @@ function FastFrictionlessMenuContent() {
     const diffX = touchStartX - touchEndX;
     const diffY = touchStartY - touchEndY;
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
-      const currentIdx = categories.findIndex(c => c.id === activeCategory);
-      if (diffX > 0 && currentIdx < categories.length - 1) {
-        setActiveCategory(categories[currentIdx + 1].id);
+      const currentIdx = dbCategories.findIndex(c => c.id === activeCategory);
+      if (diffX > 0 && currentIdx < dbCategories.length - 1) {
+        setActiveCategory(dbCategories[currentIdx + 1].id);
         setSearchQuery('');
       } else if (diffX < 0 && currentIdx > 0) {
-        setActiveCategory(categories[currentIdx - 1].id);
+        setActiveCategory(dbCategories[currentIdx - 1].id);
         setSearchQuery('');
       }
     }
@@ -117,17 +143,11 @@ function FastFrictionlessMenuContent() {
     };
   }, [isOrderSubmitted, submittedOrderId]);
 
-  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(restaurantParam || 'burger-house-nablus');
+  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(restaurantParam || '');
   const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
-  const [activeBranchId, setActiveBranchId] = useState<string>('b0000000-0000-0000-0000-000000000001');
+  const [activeBranchId, setActiveBranchId] = useState<string>('');
 
-  useEffect(() => {
-    if (activeRestaurantSlug && !activeRestaurantName && activeRestaurantSlug !== 'burger-house-nablus') {
-      setActiveRestaurantName(activeRestaurantSlug.replace(/-/g, ' '));
-    }
-  }, [activeRestaurantSlug, activeRestaurantName]);
-
-  // Dynamic QR Token Verification on Load
+  // Dynamic QR Token Verification on Load — resolves table + branch + slug
   useEffect(() => {
     if (qrTokenParam) {
       fetch(`/api/v1/tables/verify-token?token=${encodeURIComponent(qrTokenParam)}`)
@@ -137,28 +157,48 @@ function FastFrictionlessMenuContent() {
             setTableNumber(data.table.tableNumber);
             setIsTokenVerified(true);
             setTokenError('');
-            if (data.table.restaurantSlug) {
-              setActiveRestaurantSlug(data.table.restaurantSlug);
-            }
-            if (data.table.restaurantName) {
-              setActiveRestaurantName(data.table.restaurantName);
-            }
-            if (data.table.branchId) {
-              setActiveBranchId(data.table.branchId);
-            }
+            if (data.table.restaurantSlug) setActiveRestaurantSlug(data.table.restaurantSlug);
+            if (data.table.restaurantName) setActiveRestaurantName(data.table.restaurantName);
+            if (data.table.branchId) setActiveBranchId(data.table.branchId);
           } else {
             setTokenError(data.error || 'رمز QR غير صالح أو منتهي الصلاحية');
           }
         })
         .catch(() => {
-          const match = qrTokenParam.match(/(\d+)/);
-          if (match) {
-            setTableNumber(parseInt(match[1], 10));
-            setIsTokenVerified(true);
-          }
+          setTokenError('تعذر التحقق من رمز QR');
         });
+    } else if (restaurantParam) {
+      // Fallback: direct ?restaurant= param (no QR scan)
+      setActiveRestaurantSlug(restaurantParam);
+      setIsTokenVerified(true);
+      setTableNumber(0);
     }
-  }, [qrTokenParam]);
+  }, [qrTokenParam, restaurantParam]);
+
+  // Fetch menu from DB when slug is resolved
+  useEffect(() => {
+    if (!activeRestaurantSlug) return;
+    setMenuLoading(true);
+    setMenuError('');
+    fetch(`/api/v1/menu?slug=${encodeURIComponent(activeRestaurantSlug)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.categories && Array.isArray(data.categories)) {
+          const cats: MenuCategory[] = data.categories;
+          setDbCategories(cats);
+          // Flatten all items with their category id
+          const allItems: MenuItem[] = cats.flatMap(cat =>
+            cat.items.map(item => ({ ...item, category: cat.id }))
+          );
+          setDbMenuItems(allItems);
+          if (cats.length > 0) setActiveCategory(cats[0].id);
+        } else {
+          setMenuError('لم يتم العثور على قائمة الطعام');
+        }
+      })
+      .catch(() => setMenuError('تعذر تحميل قائمة الطعام'))
+      .finally(() => setMenuLoading(false));
+  }, [activeRestaurantSlug]);
 
   // Fast quantity modifications
   const addOne = (id: string, e?: React.MouseEvent) => {
@@ -182,21 +222,21 @@ function FastFrictionlessMenuContent() {
     });
   };
 
-  // Filtered menu
+  // Filtered menu — from DB
   const filteredItems = useMemo(() => {
-    return menuItems.filter(item => {
+    return dbMenuItems.filter(item => {
       const matchCat = searchQuery ? true : item.category === activeCategory;
       const matchSearch = !searchQuery || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [activeCategory, searchQuery]);
+  }, [dbMenuItems, activeCategory, searchQuery]);
 
-  // Cart summary
+  // Cart summary — uses dbMenuItems
   const cartItemsList = useMemo(() => {
     return Object.entries(cartQuantities).map(([id, qty]) => {
-      const item = menuItems.find(m => m.id === id)!;
+      const item = dbMenuItems.find(m => m.id === id);
       if (!item) return null;
       
       const extrasList = selectedExtras[id] || [];
@@ -216,7 +256,7 @@ function FastFrictionlessMenuContent() {
         total: unitPrice * qty
       };
     }).filter((ci): ci is NonNullable<typeof ci> => ci !== null && ci.quantity > 0);
-  }, [cartQuantities, itemNotes, selectedExtras]);
+  }, [dbMenuItems, cartQuantities, itemNotes, selectedExtras]);
 
   const totalAmount = cartItemsList.reduce((sum, ci) => sum + ci.total, 0);
   const totalCount = cartItemsList.reduce((sum, ci) => sum + ci.quantity, 0);
@@ -378,7 +418,7 @@ function FastFrictionlessMenuContent() {
 
           {/* Categories Pill Slider */}
           <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
-            {categories.map((cat) => {
+            {dbCategories.map((cat) => {
               const isActive = activeCategory === cat.id && !searchQuery;
               return (
                 <button
@@ -441,7 +481,18 @@ function FastFrictionlessMenuContent() {
           onTouchEnd={handleTouchEnd}
           className="flex-1 p-3.5 space-y-3 pb-32 bg-[#F8FAFC] touch-pan-y"
         >
-          {filteredItems.length === 0 ? (
+          {menuLoading ? (
+            <div className="py-20 text-center text-slate-400">
+              <Loader2 size={32} className="mx-auto mb-3 animate-spin text-orange-500" />
+              <p className="text-sm font-bold text-slate-600">جاري تحميل قائمة الطعام...</p>
+            </div>
+          ) : menuError ? (
+            <div className="py-20 text-center text-slate-400">
+              <AlertCircle size={32} className="mx-auto mb-3 text-rose-400" />
+              <p className="text-sm font-bold text-slate-700">{menuError}</p>
+              <p className="text-xs text-slate-400 mt-1">تواصل مع إدارة المطعم</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="py-20 text-center text-slate-400">
               <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />
               <p className="text-sm font-bold text-slate-700">لم يتم العثور على أطباق مطابقة</p>

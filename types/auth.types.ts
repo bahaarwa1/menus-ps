@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'branch_manager' | 'cashier' | 'kitchen' | 'staff';
+export type UserRole = 'owner' | 'admin' | 'branch_manager' | 'cashier' | 'kitchen' | 'staff';
 
 export interface AuthSession {
   userId: string;
@@ -8,6 +8,7 @@ export interface AuthSession {
   branchId?: string;
   restaurantId?: string;
   restaurantSlug?: string;
+  staffUserId?: string;
   exp: number; // Unix timestamp in seconds
 }
 

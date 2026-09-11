@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ClipboardList, CheckCircle2, Clock, PlusCircle, RotateCcw, 
-  Search, Printer, ChevronRight, Check, X, Bell, BellOff,
-  Sun, Moon, LogOut, Flame, ChefHat
+  ClipboardList, CheckCircle2, Clock,
+  Search, Printer, Check, X, Bell, BellOff,
+  Sun, Moon, LogOut, Flame, ChefHat, RefreshCw, ChevronRight
 } from 'lucide-react';
-import { orders as initialOrders } from '@/data/demo-data';
+import { createClient } from '@/lib/supabase/client';
 import { printThermalReceipt } from '@/lib/print-utils';
 
 // Audio chime using Web Audio API
@@ -20,8 +20,8 @@ function playOrderChime() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
     gain.gain.setValueAtTime(0.25, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
     osc.connect(gain);
@@ -31,109 +31,146 @@ function playOrderChime() {
   } catch {}
 }
 
-// Food images map for visual preview
-const mockImages: Record<string, string> = {
-  'دبل سماش برغر': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
-  'تشيز بيكون فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
-  'تشيز فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
-  'كوكا كولا مثلجة': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
-  'كولا': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
-  'كلاسيك برغر فاخر': 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&q=80',
-  'وجبة أطفال': 'https://images.unsplash.com/photo-1625937759403-1c39050d276c?w=500&q=80',
-  'بيتزا مارغريتا': 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=80',
-  'عصير برتقال': 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&q=80',
-  'عصير برتقال طازج': 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&q=80',
-  'تشيكن كريسبي': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80',
-  'بطاطا ودجز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
-  'بطاطا مقلية': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
-};
+function mapDbOrder(raw: any) {
+  return {
+    id: raw.id,
+    orderNumber: raw.order_number || raw.orderNumber || `#${raw.id?.slice(0, 6)}`,
+    table: raw.table_number ?? raw.tableNumber ?? 0,
+    items: (raw.order_items || raw.items || []).map((it: any) => ({
+      name: it.item_name || it.itemName || it.name || 'صنف',
+      quantity: Number(it.quantity) || 1,
+      price: Number(it.unit_price || it.unitPrice || it.price) || 0,
+      extras: it.selected_extras || it.extras || [],
+      customization: it.notes || it.customization || ''
+    })),
+    total: Number(raw.total_amount || raw.totalAmount) || 0,
+    status: raw.status || 'جديد',
+    time: raw.created_at
+      ? new Date(raw.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+      : new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+    customerName: `طاولة ${raw.table_number ?? raw.tableNumber ?? 0}`,
+    notes: raw.customer_note || raw.customerNote || '',
+    branchId: raw.branch_id || raw.branchId,
+    createdAt: raw.created_at || raw.createdAt || new Date().toISOString(),
+  };
+}
 
 export default function StaffOrdersManagementPage() {
   const router = useRouter();
-  const [ordersList, setOrdersList] = useState<any[]>(initialOrders);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>(initialOrders[0]?.id || '');
+  const [ordersList, setOrdersList] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const [branchId, setBranchId] = useState<string>('');
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
-  // Realtime SSE listener for customer orders placed via QR
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
+  // Fetch session + load initial orders
+  const loadOrders = useCallback(async (bid?: string) => {
+    setIsLoadingOrders(true);
     try {
-      eventSource = new EventSource('/api/v1/orders/stream');
-      eventSource.addEventListener('connected', () => setIsRealtimeConnected(true));
-      eventSource.addEventListener('order', (e: MessageEvent) => {
-        try {
-          const payload = JSON.parse(e.data);
-          if (payload.eventType === 'ORDER_CREATED' && payload.order) {
-            const inc = payload.order;
-            const newOrder = {
-              id: inc.orderNumber || `#${inc.id?.slice(0, 6)}`,
-              table: inc.tableNumber || 1,
-              items: (inc.items || []).map((it: any) => ({
-                name: it.itemName || it.name,
-                quantity: it.quantity || 1,
-                price: it.price || 35,
-                extras: it.extras || [],
-                customization: it.customization || it.notes || ''
-              })),
-              total: inc.totalAmount || 75,
-              status: 'جديد',
-              time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-              customerName: `طاولة ${inc.tableNumber || 1}`,
-              notes: inc.customerNote || ''
-            };
+      const res = await fetch(`/api/v1/orders/list${bid ? `?branchId=${encodeURIComponent(bid)}` : ''}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.orders)) {
+        const mapped = data.orders.map(mapDbOrder);
+        setOrdersList(mapped);
+        if (mapped.length > 0 && !selectedOrderId) {
+          setSelectedOrderId(mapped[0].id);
+        }
+      }
+    } catch (e) {
+      console.error('loadOrders error:', e);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  }, [selectedOrderId]);
 
-            setOrdersList(prev => [newOrder, ...prev]);
-            setSelectedOrderId(newOrder.id);
-            if (soundEnabled) playOrderChime();
-          }
-        } catch {}
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        const bid = data.user?.branchId || '';
+        setBranchId(bid);
+        loadOrders(bid);
+      })
+      .catch(() => loadOrders());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Supabase Realtime subscription for live order updates
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('kitchen-orders')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          const raw = payload.new as any;
+          if (branchId && raw.branch_id !== branchId) return;
+          // Fetch full order with items
+          fetch(`/api/v1/orders/list?orderId=${raw.id}`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.orders?.length > 0) {
+                const newOrder = mapDbOrder(data.orders[0]);
+                setOrdersList(prev => {
+                  const exists = prev.some(o => o.id === newOrder.id);
+                  if (exists) return prev;
+                  return [newOrder, ...prev];
+                });
+                setSelectedOrderId(newOrder.id);
+                if (soundEnabled) playOrderChime();
+              }
+            })
+            .catch(() => {
+              // Fallback: map directly from payload
+              const newOrder = mapDbOrder(raw);
+              setOrdersList(prev => {
+                const exists = prev.some(o => o.id === newOrder.id);
+                if (exists) return prev;
+                return [newOrder, ...prev];
+              });
+              if (soundEnabled) playOrderChime();
+            });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const raw = payload.new as any;
+          setOrdersList(prev => prev.map(o =>
+            o.id === raw.id ? { ...o, status: raw.status } : o
+          ));
+        }
+      )
+      .subscribe((status) => {
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
       });
-      eventSource.onerror = () => setIsRealtimeConnected(false);
-    } catch {
-      setIsRealtimeConnected(false);
-    }
-    return () => eventSource?.close();
-  }, [soundEnabled]);
 
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    return () => { supabase.removeChannel(channel); };
+  }, [branchId, soundEnabled]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // Optimistic update
     setOrdersList(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    if (newStatus === 'جاهز' && soundEnabled) {
-      playOrderChime();
+    if (newStatus === 'جاهز' && soundEnabled) playOrderChime();
+    // Persist to DB
+    try {
+      await fetch(`/api/v1/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch (e) {
+      console.error('updateOrderStatus error:', e);
     }
-  };
-
-  const addNewSimulatedOrder = () => {
-    const newId = `ORD-0${Math.floor(Math.random() * 900 + 100)}`;
-    const randomTable = Math.floor(Math.random() * 14 + 1);
-    const newOrder = {
-      id: newId,
-      table: randomTable,
-      items: [
-        { name: 'دبل سماش برغر', quantity: 2, price: 42, extras: ['جبنة شيدر'], customization: 'ميديوم' },
-        { name: 'تشيز بيكون فرايز', quantity: 1, price: 22 },
-        { name: 'كوكا كولا مثلجة', quantity: 2, price: 7 }
-      ],
-      total: 120,
-      status: 'جديد',
-      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      customerName: `زبون طاولة ${randomTable}`,
-      notes: 'بدون بصل في أحد البرغرين، صوص خارجي'
-    };
-    setOrdersList(prev => [newOrder, ...prev]);
-    setSelectedOrderId(newId);
-    if (soundEnabled) playOrderChime();
-  };
-
-  const resetOrders = () => {
-    setOrdersList(initialOrders);
-    setSelectedOrderId(initialOrders[0]?.id || '');
   };
 
   const toggleFullscreen = () => {
@@ -144,21 +181,21 @@ export default function StaffOrdersManagementPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     router.push('/login?role=staff');
   };
 
-  // Dedicated single-page thermal receipt print (80mm) via isolated iframe
   const handlePrintReceipt = (order: any) => {
     if (!order) return;
     printThermalReceipt({
-      id: order.id,
+      id: order.orderNumber || order.id,
       table: order.table,
       time: order.time,
       total: order.total,
       items: order.items || [],
       notes: order.notes,
-      restaurantName: 'Burger House نابلس'
+      restaurantName: 'MENUS.PS'
     });
   };
 
@@ -166,10 +203,11 @@ export default function StaffOrdersManagementPage() {
   const filteredOrders = ordersList.filter(o => {
     const matchesFilter = statusFilter === 'all' || o.status === statusFilter;
     const matchesSearch = searchQuery.trim() === '' || 
-      o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.orderNumber || o.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
       `طاولة ${o.table}`.includes(searchQuery);
     return matchesFilter && matchesSearch;
   });
+
 
   // Vibrant, high-contrast, saturated status badges
   const getStatusBadge = (status: string) => {
@@ -281,7 +319,7 @@ export default function StaffOrdersManagementPage() {
             محتويات الطلب ({order.items.length} أصناف)
           </p>
           {order.items.map((item: any, iIdx: number) => {
-            const img = mockImages[item.name];
+            const img = item.imageUrl || item.image || null;
             return (
               <div 
                 key={iIdx} 
@@ -474,23 +512,17 @@ export default function StaffOrdersManagementPage() {
           {/* Action Toolbar (Without QR code, purely staff order management) */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
-              onClick={addNewSimulatedOrder}
-              className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
-            >
-              <PlusCircle size={15} />
-              <span>+ محاكاة طلب QR جديد</span>
-            </button>
-
-            <button
-              onClick={resetOrders}
-              className={`p-2 rounded-xl text-xs font-medium transition-colors border shadow-2xs ${
+              onClick={() => loadOrders(branchId)}
+              disabled={isLoadingOrders}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border shadow-2xs ${
                 isDarkMode 
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' 
-                  : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border-slate-200/80'
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' 
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/80'
               }`}
-              title="إعادة ضبط البيانات"
+              title="تحديث قائمة الطلبات"
             >
-              <RotateCcw size={15} />
+              <RefreshCw size={14} className={isLoadingOrders ? 'animate-spin text-orange-500' : 'text-slate-500'} />
+              <span>تحديث الطلبات</span>
             </button>
 
             <button

@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateWithEmailPassword } from '@/lib/auth/service';
 import { signSession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { rateLimiter } from '@/lib/security/rate-limiter';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: max 5 login attempts per minute per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const rateLimit = rateLimiter.check(`login:${ip}`, 5, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `تم تجاوز الحد المسموح به من محاولات تسجيل الدخول. انتظر ${rateLimit.resetInSeconds} ثانية.` },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.resetInSeconds) } }
+      );
+    }
+
     const body = await request.json();
     const { email, password, redirectTo } = body;
 
-    if (!email || !password) {
+    // Basic input sanitization
+    const cleanEmail = String(email || '').trim().slice(0, 200);
+    const cleanPassword = String(password || '').slice(0, 200);
+
+    if (!cleanEmail || !cleanPassword) {
       return NextResponse.json(
         { success: false, error: 'البريد الإلكتروني وكلمة المرور مطلوبان' },
         { status: 400 }
       );
     }
 
-    const authResult = await authenticateWithEmailPassword(email, password);
+    const authResult = await authenticateWithEmailPassword(cleanEmail, cleanPassword);
 
     if (!authResult.success || !authResult.session) {
       return NextResponse.json(
@@ -27,8 +42,8 @@ export async function POST(request: NextRequest) {
     const token = await signSession(authResult.session);
 
     // Determine redirect
-    let target = redirectTo;
-    if (!target) {
+    let target = typeof redirectTo === 'string' ? redirectTo.replace(/[^a-zA-Z0-9\/\-_?=&]/g, '') : '';
+    if (!target || !target.startsWith('/')) {
       target = authResult.session.role === 'staff' || authResult.session.role === 'kitchen' ? '/staff' : '/dashboard';
     }
 

@@ -7,10 +7,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Store, Globe, CheckCircle2, XCircle, Loader2, Phone, 
   MapPin, Lock, Mail, Sparkles, QrCode, 
-  ExternalLink, Copy, Check, ChefHat, BarChart3
+  ExternalLink, Copy, Check, ChefHat, BarChart3, Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
 import { registerRestaurantAction } from '@/app/actions/register-restaurant';
 import { RegisteredRestaurantResult } from '@/lib/db/repositories/restaurant.repository';
+
+// --- Validation helpers ---
+function validateEmail(email: string): string {
+  if (!email) return '';
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!re.test(email)) return 'البريد الإلكتروني غير صحيح (مثال: owner@restaurant.ps)';
+  return '';
+}
+
+function validatePhone(phone: string): string {
+  if (!phone) return 'رقم الهاتف مطلوب';
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  const palLocal = /^05[0-9]{8}$/;
+  const palIntl = /^\+9725[0-9]{8}$/;
+  const palIntl2 = /^00972[0-9]{9}$/;
+  if (!palLocal.test(cleaned) && !palIntl.test(cleaned) && !palIntl2.test(cleaned)) {
+    return 'رقم الهاتف غير صحيح. صيغ مقبولة: 0599000000 أو +972599000000';
+  }
+  return '';
+}
+
+interface PasswordStrength {
+  score: number; // 0-4
+  label: string;
+  color: string;
+  errors: string[];
+}
+
+function checkPasswordStrength(password: string): PasswordStrength {
+  const errors: string[] = [];
+  if (password.length < 8) errors.push('8 أحرف على الأقل');
+  if (!/[A-Z]/.test(password)) errors.push('حرف كبير واحد على الأقل');
+  if (!/[0-9]/.test(password)) errors.push('رقم واحد على الأقل');
+  const score = 4 - errors.length - (password.length < 6 ? 1 : 0);
+  const safeScore = Math.max(0, Math.min(4, score));
+  const labels = ['ضعيفة جداً', 'ضعيفة', 'متوسطة', 'قوية', 'قوية جداً'];
+  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-400', 'bg-emerald-600'];
+  return { score: safeScore, label: labels[safeScore], color: colors[safeScore], errors };
+}
 
 const PALESTINIAN_CITIES = [
   'نابلس',
@@ -61,7 +100,6 @@ function convertNameToSlug(name: string): string {
     clean = clean.replace(new RegExp(ar, 'g'), en);
   }
 
-  // Remove remaining arabic or special characters, keep english alphanumeric and hyphens
   let slug = clean
     .replace(/[^\w\s-]/g, '')
     .trim()
@@ -69,7 +107,6 @@ function convertNameToSlug(name: string): string {
     .replace(/-+/g, '-')
     .toLowerCase();
 
-  // If arabic couldn't be mapped to english, generate fallback
   if (!slug || slug.length < 2) {
     slug = 'restaurant-' + Math.floor(100 + Math.random() * 900);
   }
@@ -88,7 +125,13 @@ export default function RegisterPage() {
   const [city, setCity] = useState('نابلس');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [tablesCount, setTablesCount] = useState(10);
+
+  // Inline field errors
+  const [phoneError, setPhoneError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const pwdStrength = checkPasswordStrength(password);
 
   // Validation State
   const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
@@ -98,6 +141,7 @@ export default function RegisterPage() {
 
   // Success State
   const [createdRestaurant, setCreatedRestaurant] = useState<RegisteredRestaurantResult | null>(null);
+
 
   // Auto-generate slug as user types restaurant name
   useEffect(() => {
@@ -139,18 +183,54 @@ export default function RegisterPage() {
     e.preventDefault();
     setFormError('');
 
-    if (!restaurantName.trim()) {
-      setFormError('يرجى إدخال اسم المطعم');
+    // --- Client-side validation ---
+    if (!restaurantName.trim() || restaurantName.trim().length < 2) {
+      setFormError('يرجى إدخال اسم المطعم (حرفان على الأقل)');
+      return;
+    }
+    if (restaurantName.trim().length > 60) {
+      setFormError('اسم المطعم طويل جداً (60 حرف كحد أقصى)');
       return;
     }
 
     if (slugStatus === 'taken' || slug.length < 3) {
-      setFormError('يرجى اختيار رابط صالح ومتاح للمطعم');
+      setFormError('يرجى اختيار رابط صالح ومتاح للمطعم (3 أحرف على الأقل)');
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(slug)) {
+      setFormError('الرابط يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام وشرطات فقط');
       return;
     }
 
-    if (!phone.trim()) {
-      setFormError('يرجى إدخال رقم هاتف أو جوال للتواصل');
+    // Phone validation
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) {
+      setFormError(phoneErr);
+      setPhoneError(phoneErr);
+      return;
+    }
+
+    // Email validation (if provided)
+    if (ownerEmail.trim()) {
+      const emailErr = validateEmail(ownerEmail.trim());
+      if (emailErr) {
+        setFormError(emailErr);
+        setEmailError(emailErr);
+        return;
+      }
+    }
+
+    // Password validation
+    if (!password || password.length < 8) {
+      setFormError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setFormError('كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل (A-Z)');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setFormError('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل');
       return;
     }
 
@@ -173,6 +253,7 @@ export default function RegisterPage() {
       setCreatedRestaurant(res.restaurant);
     });
   };
+
 
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -357,11 +438,19 @@ export default function RegisterPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="0599000000 أو 0569000000"
+                      placeholder="0599000000 أو +972599000000"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
+                      onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                      onBlur={() => setPhoneError(validatePhone(phone))}
+                      className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 transition-all font-mono ${
+                        phoneError ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:border-orange-500 focus:ring-orange-500'
+                      }`}
                     />
+                    {phoneError && (
+                      <p className="text-rose-400 text-[11px] font-bold mt-1 flex items-center gap-1">
+                        <AlertTriangle size={11} /> {phoneError}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -373,9 +462,17 @@ export default function RegisterPage() {
                       type="email"
                       placeholder="owner@restaurant.ps"
                       value={ownerEmail}
-                      onChange={(e) => setOwnerEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                      onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
+                      onBlur={() => ownerEmail.trim() && setEmailError(validateEmail(ownerEmail.trim()))}
+                      className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 transition-all ${
+                        emailError ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:border-orange-500 focus:ring-orange-500'
+                      }`}
                     />
+                    {emailError && (
+                      <p className="text-rose-400 text-[11px] font-bold mt-1 flex items-center gap-1">
+                        <AlertTriangle size={11} /> {emailError}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -383,14 +480,47 @@ export default function RegisterPage() {
                       <Lock size={15} className="text-orange-400" />
                       <span>كلمة المرور للوحة التحكم *</span>
                     </label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 pr-11 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(v => !v)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    {/* Password strength meter */}
+                    {password.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex gap-1 mb-1">
+                          {[0,1,2,3].map(i => (
+                            <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                              i < pwdStrength.score ? pwdStrength.color : 'bg-slate-700'
+                            }`} />
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-400">قوة كلمة المرور: <span className="text-white">{pwdStrength.label}</span></span>
+                        </div>
+                        {pwdStrength.errors.length > 0 && (
+                          <ul className="mt-1 space-y-0.5">
+                            {pwdStrength.errors.map(err => (
+                              <li key={err} className="text-[11px] text-rose-400 flex items-center gap-1">
+                                <AlertTriangle size={10} /> {err}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                 </div>
