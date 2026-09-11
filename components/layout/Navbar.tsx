@@ -61,7 +61,7 @@ export default function Navbar() {
               {t('nav.login', 'تسجيل الدخول')}
             </Link>
             <Link
-              href="/contact"
+              href="/register"
               className="px-4 py-2 text-xs font-black text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors shadow-md shadow-orange-500/20"
             >
               {t('nav.startFree', 'ابدأ مجانًا')}
@@ -108,7 +108,7 @@ export default function Navbar() {
                 {t('nav.login', 'تسجيل الدخول')}
               </Link>
               <Link
-                href="/contact"
+                href="/register"
                 onClick={() => setMobileOpen(false)}
                 className="block px-4 py-2.5 text-center text-sm font-black text-white bg-orange-500 rounded-lg hover:bg-orange-600 shadow-md shadow-orange-500/20"
               >

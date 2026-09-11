@@ -783,7 +783,7 @@ export default function HomePage() {
               </div>
 
               <Link
-                href="/contact"
+                href="/register"
                 className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-sm block shadow-md shadow-orange-500/25 transition-all"
               >
                 ابدأ تجربتك المجانية لمدة 14 يوم الآن 🚀
