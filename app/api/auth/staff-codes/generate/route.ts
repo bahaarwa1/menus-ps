@@ -4,6 +4,7 @@ import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
 import { generateSecurePin, sanitizeInput } from '@/lib/security/crypto';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { saveStaffAccessCode } from '@/lib/db/repositories/staff-code.repository';
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,35 +91,23 @@ export async function POST(request: NextRequest) {
     const hours = Math.min(Math.max(1, Number(expiresInHours) || 24), 168); // Max 7 days
     const expiresAt = new Date(Date.now() + hours * 3600 * 1000).toISOString();
 
-    // 3. Insert code
-    const { data: insertedCode, error: insertError } = await (supabase as any)
-      .from('staff_access_codes')
-      .insert({
-        branch_id: targetBranchId,
-        code,
-        employee_name: cleanName,
-        role,
-        created_by: session.staffUserId || session.userId || null,
-        expires_at: expiresAt,
-      })
-      .select('id, code, employee_name, role, expires_at')
-      .single();
-
-    if (insertError || !insertedCode) {
-      console.error('staff_access_codes insert error:', insertError?.message);
-      return NextResponse.json(
-        { success: false, error: 'فشل حفظ رمز الوصول في قاعدة البيانات' },
-        { status: 500 }
-      );
-    }
+    // 3. Save code using resilient repository
+    const insertedCode = await saveStaffAccessCode({
+      branch_id: targetBranchId,
+      code,
+      employee_name: cleanName,
+      role: role as 'staff' | 'kitchen' | 'branch_manager',
+      created_by: session.staffUserId || session.userId || null,
+      expires_at: expiresAt,
+    });
 
     return NextResponse.json({
       success: true,
-      code: (insertedCode as any).code,
-      employeeName: (insertedCode as any).employee_name,
-      role: (insertedCode as any).role,
-      expiresAt: (insertedCode as any).expires_at,
-      message: `تم إنشاء رمز الوصول للموظف "${(insertedCode as any).employee_name}" بنجاح`,
+      code: insertedCode.code,
+      employeeName: insertedCode.employee_name,
+      role: insertedCode.role,
+      expiresAt: insertedCode.expires_at,
+      message: `تم إنشاء رمز الوصول للموظف "${insertedCode.employee_name}" بنجاح`,
     });
   } catch (error) {
     console.error('Generate staff code error:', error);

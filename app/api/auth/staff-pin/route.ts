@@ -4,6 +4,7 @@ import { signSession, getSessionCookieOptions } from '@/lib/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 import { sanitizeInput } from '@/lib/security/crypto';
+import { findStaffAccessCode, markStaffAccessCodeUsed } from '@/lib/db/repositories/staff-code.repository';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,33 +50,11 @@ export async function POST(request: NextRequest) {
     // === 6-DIGIT ONE-TIME ACCESS CODE PATH ===
     if (pinStr.length === 6 && /^\d{6}$/.test(pinStr)) {
       try {
-        const supabase = createAdminClient();
-        const now = new Date().toISOString();
+        const record = await findStaffAccessCode(pinStr, branchId);
 
-        // Find a valid, unused 6-digit code
-        const { data: codeRecord, error: codeError } = await (supabase as any)
-          .from('staff_access_codes')
-          .select('id, branch_id, employee_name, role, expires_at')
-          .eq('code', pinStr)
-          .eq('is_used', false)
-          .gt('expires_at', now)
-          .limit(1)
-          .maybeSingle();
-
-        if (!codeError && codeRecord) {
-          const record = codeRecord as {
-            id: string;
-            branch_id: string;
-            employee_name: string;
-            role: string;
-            expires_at: string;
-          };
-
+        if (record) {
           // Mark code as used immediately (single-use)
-          await (supabase as any)
-            .from('staff_access_codes')
-            .update({ is_used: true, used_at: now })
-            .eq('id', record.id);
+          await markStaffAccessCodeUsed(record.id);
 
           rateLimiter.recordSuccess(lockoutKey);
 
