@@ -82,7 +82,7 @@ export default function HomePage() {
       <div 
         ref={containerRef}
         className="w-full overflow-y-auto scroll-smooth relative selection:bg-orange-500 selection:text-white bg-slate-50 md:h-[calc(100dvh-3.5rem)] md:snap-y md:snap-mandatory hide-scrollbar"
-        dir="rtl"
+        dir={direction}
       >
 
 
@@ -198,24 +198,36 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-amber-300 rounded-[3rem] rotate-2 scale-105 opacity-25 blur-xl"></div>
 
                   {/* Floating Badge 1: Live QR Scan */}
-                  <div className="absolute -top-3 -right-3 z-30 bg-slate-900 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700">
+                  <div className={`absolute -top-3 z-30 bg-slate-900 text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700 ${
+                    isRtl ? '-right-3' : '-left-3'
+                  }`}>
                     <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white font-black shrink-0">
                       <QrCode size={15} />
                     </div>
-                    <div className="text-right leading-tight">
-                      <p className="text-[10px] text-slate-400 font-bold">تم مسح الكود 📲</p>
-                      <p className="text-xs font-black text-white">طاولة 12 (منيو مباشر)</p>
+                    <div className={`${isRtl ? 'text-right' : 'text-left'} leading-tight`}>
+                      <p className="text-[10px] text-slate-400 font-bold">
+                        {isRtl ? 'تم مسح الكود 📲' : 'QR Code Scanned 📲'}
+                      </p>
+                      <p className="text-xs font-black text-white">
+                        {isRtl ? 'طاولة 12 (منيو مباشر)' : 'Table 12 (Live Menu)'}
+                      </p>
                     </div>
                   </div>
 
                   {/* Floating Badge 2: Kitchen Instant Sync */}
-                  <div className="absolute -bottom-3 -left-3 z-30 bg-white text-slate-900 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-200">
+                  <div className={`absolute -bottom-3 z-30 bg-white text-slate-900 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-200 ${
+                    isRtl ? '-left-3' : '-right-3'
+                  }`}>
                     <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                       <CheckCircle2 size={16} />
                     </div>
-                    <div className="text-right leading-tight">
-                      <p className="text-[10px] text-slate-400 font-bold">الطلب وصل بلحظة ⚡</p>
-                      <p className="text-xs font-black text-slate-900">مزامنة فورية مع المطبخ</p>
+                    <div className={`${isRtl ? 'text-right' : 'text-left'} leading-tight`}>
+                      <p className="text-[10px] text-slate-400 font-bold">
+                        {isRtl ? 'الطلب وصل بلحظة ⚡' : 'Instant Kitchen Alert ⚡'}
+                      </p>
+                      <p className="text-xs font-black text-slate-900">
+                        {isRtl ? 'مزامنة فورية مع المطبخ' : 'Realtime Kitchen Sync'}
+                      </p>
                     </div>
                   </div>
 
@@ -230,7 +242,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Inside Phone Screen Content */}
-                    <div className="flex-1 bg-[#f8fafc] flex flex-col overflow-hidden text-slate-800 text-right" dir="rtl">
+                    <div className={`flex-1 bg-[#f8fafc] flex flex-col overflow-hidden text-slate-800 ${isRtl ? 'text-right' : 'text-left'}`} dir={direction}>
                       
                       {/* Restaurant Header Banner */}
                       <div className="relative h-28 shrink-0 bg-slate-900 overflow-hidden">
@@ -245,29 +257,43 @@ export default function HomePage() {
                           <div>
                             <div className="flex items-center gap-1.5 mb-0.5">
                               <span className="text-sm font-black">Burger House</span>
-                              <span className="text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.2 rounded-full">مفتوح</span>
+                              <span className="text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.2 rounded-full">
+                                {isRtl ? 'مفتوح' : 'Open'}
+                              </span>
                             </div>
-                            <p className="text-[10px] text-slate-300 font-bold">فرع رفيديا • طاولة 12</p>
+                            <p className="text-[10px] text-slate-300 font-bold">
+                              {isRtl ? 'فرع رفيديا • طاولة 12' : 'Rafidia Branch • Table 12'}
+                            </p>
                           </div>
                           <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-xs">
-                            طاولة 12
+                            {isRtl ? 'طاولة 12' : 'Table 12'}
                           </span>
                         </div>
                       </div>
 
                       {/* Categories Bar */}
                       <div className="bg-white p-2 border-b border-slate-200 flex gap-1.5 text-[10px] font-black shrink-0 overflow-x-auto">
-                        <span className="bg-orange-500 text-white px-2.5 py-1 rounded-lg shrink-0">🍔 برغر (8)</span>
-                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg shrink-0">🍟 مقبلات</span>
-                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg shrink-0">🥤 مشروبات</span>
+                        <span className="bg-orange-500 text-white px-2.5 py-1 rounded-lg shrink-0">
+                          {isRtl ? '🍔 برغر (8)' : '🍔 Burgers (8)'}
+                        </span>
+                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg shrink-0">
+                          {isRtl ? '🍟 مقبلات' : '🍟 Sides'}
+                        </span>
+                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg shrink-0">
+                          {isRtl ? '🥤 مشروبات' : '🥤 Drinks'}
+                        </span>
                       </div>
 
                       {/* Food Items List */}
                       <div className="p-2 space-y-2 flex-1 overflow-y-auto">
                         <div className="bg-white p-2 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="font-black text-xs text-slate-900 truncate">دبل سماش برغر</p>
-                            <p className="text-[9px] text-slate-400 truncate">لحم بقري، شيدر ذائبة، صوص</p>
+                            <p className="font-black text-xs text-slate-900 truncate">
+                              {isRtl ? 'دبل سماش برغر' : 'Double Smash Burger'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 truncate">
+                              {isRtl ? 'لحم بقري، شيدر ذائبة، صوص' : 'Beef patty, melted cheddar, special sauce'}
+                            </p>
                             <p className="text-xs font-black text-orange-600 mt-0.5">42 ₪</p>
                           </div>
                           <button className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
@@ -277,8 +303,12 @@ export default function HomePage() {
 
                         <div className="bg-white p-2 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="font-black text-xs text-slate-900 truncate">تشيز بيكون فرايز</p>
-                            <p className="text-[9px] text-slate-400 truncate">بطاطا مقرمشة وصوص جبنة</p>
+                            <p className="font-black text-xs text-slate-900 truncate">
+                              {isRtl ? 'تشيز بيكون فرايز' : 'Cheese Bacon Fries'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 truncate">
+                              {isRtl ? 'بطاطا مقرمشة وصوص جبنة' : 'Crispy fries with warm cheese sauce'}
+                            </p>
                             <p className="text-xs font-black text-orange-600 mt-0.5">22 ₪</p>
                           </div>
                           <button className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
@@ -290,9 +320,11 @@ export default function HomePage() {
                       {/* Bottom Floating Bar */}
                       <div className="p-2 bg-white border-t border-slate-200 shrink-0">
                         <div className="bg-orange-500 text-white px-3 py-2 rounded-xl flex items-center justify-between shadow-xs">
-                          <span className="text-xs font-black">السلة (64 ₪)</span>
+                          <span className="text-xs font-black">
+                            {isRtl ? 'السلة (64 ₪)' : 'Cart (64 ₪)'}
+                          </span>
                           <span className="text-[10px] font-bold bg-orange-600 px-2 py-0.5 rounded-md">
-                            إرسال للمطبخ ⬅
+                            {isRtl ? 'إرسال للمطبخ ⬅' : 'Send to Kitchen ➔'}
                           </span>
                         </div>
                       </div>
@@ -324,18 +356,24 @@ export default function HomePage() {
           <div className="text-center max-w-2xl mx-auto mb-3 z-10">
             <span className="bg-sky-500/20 text-sky-400 text-xs font-black px-3.5 py-1 rounded-full mb-1.5 inline-flex items-center gap-1.5 border border-sky-500/30">
               <span>🪟</span>
-              <span>واجهة وتجربة سطح مكتب ويندوز 11 المتطورة</span>
+              <span>
+                {isRtl ? 'واجهة وتجربة سطح مكتب ويندوز 11 المتطورة' : 'Modern Windows 11 Desktop Experience'}
+              </span>
             </span>
             <h2 className="text-xl sm:text-3xl font-black mb-1">
-              نظام تشغيل متكامل لمطعمك في شاشة واحدة
+              {isRtl 
+                ? 'نظام تشغيل متكامل لمطعمك في شاشة واحدة' 
+                : 'A Complete Operating System for Your Restaurant in One Screen'}
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              تحكم بالمنيو، راقب المطبخ لحظة بلحظة، وتابع حركة الكاشير كما لو كنت على كمبيوتر ويندوز
+              {isRtl 
+                ? 'تحكم بالمنيو، راقب المطبخ لحظة بلحظة، وتابع حركة الكاشير كما لو كنت على كمبيوتر ويندوز' 
+                : 'Manage your menu, monitor the kitchen in real-time, and track cashier KPIs just like a desktop OS'}
             </p>
           </div>
 
           {/* Windows 11 Application Window Frame */}
-          <div className="w-full max-w-4xl bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col z-10">
+          <div className="w-full max-w-4xl bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col z-10" dir={direction}>
             
             {/* Windows 11 Title Bar */}
             <div className="bg-slate-950 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between text-xs select-none">
@@ -344,12 +382,14 @@ export default function HomePage() {
                   🪟
                 </div>
                 <span className="font-extrabold text-white text-[11px] sm:text-xs truncate">
-                  Menus.ps Windows OS — مركز إدارة المطاعم الموحد (Burger House نابلس)
+                  {isRtl 
+                    ? 'Menus.ps Windows OS — مركز إدارة المطاعم الموحد (Burger House نابلس)' 
+                    : 'Menus.ps Windows OS — Unified Restaurant Command Center (Burger House Nablus)'}
                 </span>
               </div>
 
               {/* Windows Window Controls */}
-              <div className="flex items-center gap-1 shrink-0 -ml-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">—</span>
                 <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">🗖</span>
                 <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-rose-600 hover:text-white rounded text-xs cursor-pointer">✕</span>
@@ -367,7 +407,7 @@ export default function HomePage() {
                 }`}
               >
                 <Smartphone size={14} className="text-orange-400" />
-                <span>1. منيو العميل للجوال</span>
+                <span>{isRtl ? '1. منيو العميل للجوال' : '1. Customer Mobile Menu'}</span>
               </button>
 
               <button
@@ -379,7 +419,7 @@ export default function HomePage() {
                 }`}
               >
                 <ChefHat size={14} className="text-amber-400" />
-                <span>2. شاشة المطبخ (KDS)</span>
+                <span>{isRtl ? '2. شاشة المطبخ (KDS)' : '2. Kitchen Display (KDS)'}</span>
               </button>
 
               <button
@@ -391,7 +431,7 @@ export default function HomePage() {
                 }`}
               >
                 <BarChart3 size={14} className="text-emerald-400" />
-                <span>3. لوحة الكاشير والـ KPI</span>
+                <span>{isRtl ? '3. لوحة الكاشير والـ KPI' : '3. Cashier & KPI Dashboard'}</span>
               </button>
             </div>
 
@@ -404,50 +444,61 @@ export default function HomePage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="w-full max-w-md bg-white text-slate-900 rounded-2xl p-3.5 shadow-xl text-right"
+                    className={`w-full max-w-md bg-white text-slate-900 rounded-2xl p-3.5 shadow-xl ${isRtl ? 'text-right' : 'text-left'}`}
+                    dir={direction}
                   >
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2.5">
                       <div>
-                        <h4 className="font-black text-xs sm:text-sm text-slate-900">منيو طاولة 12 (تجربة تفاعلية)</h4>
-                        <p className="text-[10px] text-slate-400">انقر على (+) لتجربة إضافة الوجبة للسلة فوراً</p>
+                        <h4 className="font-black text-xs sm:text-sm text-slate-900">
+                          {isRtl ? 'منيو طاولة 12 (تجربة تفاعلية)' : 'Table 12 Menu (Interactive Demo)'}
+                        </h4>
+                        <p className="text-[10px] text-slate-400">
+                          {isRtl ? 'انقر على (+) لتجربة إضافة الوجبة للسلة فوراً' : 'Click (+) to add an item to the cart instantly'}
+                        </p>
                       </div>
                       <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                        مباشر
+                        {isRtl ? 'مباشر' : 'Live'}
                       </span>
                     </div>
 
                     <div className="space-y-2 mb-3">
                       <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
                         <div>
-                          <p className="font-black text-xs text-slate-900">دبل سماش برغر فاخر</p>
+                          <p className="font-black text-xs text-slate-900">
+                            {isRtl ? 'دبل سماش برغر فاخر' : 'Deluxe Double Smash Burger'}
+                          </p>
                           <span className="text-xs font-black text-orange-600">42 ₪</span>
                         </div>
                         <button 
                           onClick={() => handleAddDemoItem(42)}
-                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
+                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform cursor-pointer"
                         >
-                          + أضف
+                          {isRtl ? '+ أضف' : '+ Add'}
                         </button>
                       </div>
 
                       <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
                         <div>
-                          <p className="font-black text-xs text-slate-900">تشيز بيكون فرايز مقرمش</p>
+                          <p className="font-black text-xs text-slate-900">
+                            {isRtl ? 'تشيز بيكون فرايز مقرمش' : 'Crispy Cheese Bacon Fries'}
+                          </p>
                           <span className="text-xs font-black text-orange-600">22 ₪</span>
                         </div>
                         <button 
                           onClick={() => handleAddDemoItem(22)}
-                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform"
+                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform cursor-pointer"
                         >
-                          + أضف
+                          {isRtl ? '+ أضف' : '+ Add'}
                         </button>
                       </div>
                     </div>
 
                     <div className="p-2 bg-slate-100 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">{demoCartCount} أصناف بالسلة</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">
+                          {demoCartCount} {isRtl ? 'أصناف بالسلة' : 'items in cart'}
+                        </span>
                         <span className="text-sm font-black text-slate-900">{demoCartTotal} ₪</span>
                       </div>
                       <Link
@@ -455,7 +506,7 @@ export default function HomePage() {
                         target="_blank"
                         className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors shadow-xs"
                       >
-                        <span>فتح المنيو الكامل</span>
+                        <span>{isRtl ? 'فتح المنيو الكامل' : 'Open Full Menu'}</span>
                         <ExternalLink size={12} />
                       </Link>
                     </div>
@@ -468,41 +519,66 @@ export default function HomePage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="w-full grid sm:grid-cols-3 gap-2.5 text-right"
+                    className={`w-full grid sm:grid-cols-3 gap-2.5 ${isRtl ? 'text-right' : 'text-left'}`}
+                    dir={direction}
                   >
                     <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-rose-400 block mb-1.5">جديد (2)</span>
+                      <span className="text-xs font-black text-rose-400 block mb-1.5">
+                        {isRtl ? 'جديد (2)' : 'New (2)'}
+                      </span>
                       <div className="bg-slate-800 p-2.5 rounded-lg text-white">
                         <div className="flex justify-between text-xs font-black mb-1">
                           <span className="text-orange-400">#4241</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 7</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
+                            {isRtl ? 'طاولة 7' : 'Table 7'}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">2x دبل سماش برغر</p>
-                        <span className="text-[9px] text-rose-400 block mt-1">تنبيه صوتي رن 🛎️</span>
+                        <p className="text-[11px] text-slate-300">
+                          {isRtl ? '2x دبل سماش برغر' : '2x Double Smash Burger'}
+                        </p>
+                        <span className="text-[9px] text-rose-400 block mt-1">
+                          {isRtl ? 'تنبيه صوتي رن 🛎️' : 'Audio chime triggered 🛎️'}
+                        </span>
                       </div>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-amber-400 block mb-1.5">قيد التحضير (1)</span>
+                      <span className="text-xs font-black text-amber-400 block mb-1.5">
+                        {isRtl ? 'قيد التحضير (1)' : 'In Progress (1)'}
+                      </span>
                       <div className="bg-slate-800 p-2.5 rounded-lg text-white">
                         <div className="flex justify-between text-xs font-black mb-1">
                           <span className="text-orange-400">#4240</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 12</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
+                            {isRtl ? 'طاولة 12' : 'Table 12'}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">1x كلاسيك برغر فاخر</p>
-                        <span className="text-[9px] text-amber-400 block mt-1">جاري الشوي</span>
+                        <p className="text-[11px] text-slate-300">
+                          {isRtl ? '1x كلاسيك برغر فاخر' : '1x Classic Burger'}
+                        </p>
+                        <span className="text-[9px] text-amber-400 block mt-1">
+                          {isRtl ? 'جاري الشوي' : 'Currently grilling'}
+                        </span>
                       </div>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-emerald-400 block mb-1.5">جاهز للتسليم (1)</span>
+                      <span className="text-xs font-black text-emerald-400 block mb-1.5">
+                        {isRtl ? 'جاهز للتسليم (1)' : 'Ready to Serve (1)'}
+                      </span>
                       <div className="bg-slate-800 p-2.5 rounded-lg text-white">
                         <div className="flex justify-between text-xs font-black mb-1">
                           <span className="text-orange-400">#4239</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">طاولة 4</span>
+                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
+                            {isRtl ? 'طاولة 4' : 'Table 4'}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">3x تشيكن كريسبي</p>
-                        <span className="text-[9px] text-emerald-400 block mt-1">جاهز على الصينية</span>
+                        <p className="text-[11px] text-slate-300">
+                          {isRtl ? '3x تشيكن كريسبي' : '3x Crispy Chicken'}
+                        </p>
+                        <span className="text-[9px] text-emerald-400 block mt-1">
+                          {isRtl ? 'جاهز على الصينية' : 'Ready on tray'}
+                        </span>
                       </div>
                     </div>
                   </motion.div>
@@ -514,30 +590,47 @@ export default function HomePage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-right"
+                    className={`w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 ${isRtl ? 'text-right' : 'text-left'}`}
+                    dir={direction}
                   >
                     <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">مبيعات اليوم</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'مبيعات اليوم' : "Today's Sales"}
+                      </span>
                       <span className="text-lg font-black text-white">3,350 ₪</span>
-                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">+12.5% نمو</span>
+                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">
+                        {isRtl ? '+12.5% نمو' : '+12.5% growth'}
+                      </span>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">طلبات QR</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'طلبات QR' : 'QR Orders'}
+                      </span>
                       <span className="text-lg font-black text-orange-400">72%</span>
-                      <span className="text-[10px] text-slate-400 font-bold block mt-1">43 طلب مباشر</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-1">
+                        {isRtl ? '43 طلب مباشر' : '43 direct orders'}
+                      </span>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">متوسط الطلب</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'متوسط الطلب' : 'Average Order'}
+                      </span>
                       <span className="text-lg font-black text-white">76.8 ₪</span>
-                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">+18% عبر الإضافات</span>
+                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">
+                        {isRtl ? '+18% عبر الإضافات' : '+18% via add-ons'}
+                      </span>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">إشغال الصالة</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'إشغال الصالة' : 'Floor Occupancy'}
+                      </span>
                       <span className="text-lg font-black text-emerald-400">9 / 15</span>
-                      <span className="text-[10px] text-slate-400 font-bold block mt-1">طاولات نشطة</span>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-1">
+                        {isRtl ? 'طاولات نشطة' : 'active tables'}
+                      </span>
                     </div>
                   </motion.div>
                 )}
@@ -548,19 +641,19 @@ export default function HomePage() {
             <div className="bg-slate-950 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-white select-none">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 rounded-md bg-sky-600 text-white font-black text-xs flex items-center gap-1 shadow-xs">
-                  🪟 <span className="hidden sm:inline">ابدأ</span>
+                  🪟 <span className="hidden sm:inline">{isRtl ? 'ابدأ' : 'Start'}</span>
                 </span>
                 <span className="text-[11px] text-slate-400 font-bold hidden sm:inline">
-                  متصل بـ Burger House Nablus
+                  {isRtl ? 'متصل بـ Burger House Nablus' : 'Connected to Burger House Nablus'}
                 </span>
               </div>
 
               <div className="flex items-center gap-2.5 text-[11px] text-slate-400 font-medium">
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  سحابي نشط
+                  {isRtl ? 'سحابي نشط' : 'Cloud Active'}
                 </span>
-                <span>🇵🇸 فلسطين</span>
+                <span>🇵🇸 {isRtl ? 'فلسطين' : 'Palestine'}</span>
               </div>
             </div>
 
@@ -570,7 +663,9 @@ export default function HomePage() {
             onClick={() => scrollToSlide(2)}
             className="mt-4 flex flex-col items-center animate-bounce text-slate-400 hover:text-orange-500 transition-colors cursor-pointer"
           >
-            <span className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5">اسحب للأسفل</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5">
+              {isRtl ? 'اسحب للأسفل' : 'SCROLL DOWN'}
+            </span>
             <ArrowDown size={14} />
           </button>
         </section>
@@ -584,13 +679,15 @@ export default function HomePage() {
             
             <div className="max-w-xl mx-auto mb-8">
               <span className="bg-orange-100 text-orange-700 text-xs font-black px-3.5 py-1 rounded-full mb-2 inline-block">
-                سرعة وسهولة متناهية
+                {isRtl ? 'سرعة وسهولة متناهية' : 'Effortless & Fast'}
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2">
-                ثلاث خطوات تريحك وتريح زبونك
+                {isRtl ? 'ثلاث خطوات تريحك وتريح زبونك' : 'Three Simple Steps for You & Your Guests'}
               </h2>
               <p className="text-slate-500 text-xs sm:text-sm font-medium">
-                النظام مصمم ليعمل بدون تدريب معقد أو شراء أي أجهزة جديدة
+                {isRtl 
+                  ? 'النظام مصمم ليعمل بدون تدريب معقد أو شراء أي أجهزة جديدة' 
+                  : 'Designed to work smoothly without complicated training or costly new hardware'}
               </p>
             </div>
 
@@ -599,9 +696,13 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center font-black text-lg mx-auto mb-4 shadow-md shadow-orange-500/25">
                   1
                 </div>
-                <h3 className="text-base font-black text-slate-900 mb-1.5">اطبع ستاند الـ QR للطاولات</h3>
+                <h3 className="text-base font-black text-slate-900 mb-1.5">
+                  {isRtl ? 'اطبع ستاند الـ QR للطاولات' : 'Print Table QR Stands'}
+                </h3>
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  أنشئ واطبع ستاند أنيق بكود مشفر خاص بكل طاولة بنقرة واحدة من لوحة التحكم.
+                  {isRtl 
+                    ? 'أنشئ واطبع ستاند أنيق بكود مشفر خاص بكل طاولة بنقرة واحدة من لوحة التحكم.' 
+                    : 'Generate and print stylish encrypted QR code stands for each table with one click from the dashboard.'}
                 </p>
               </div>
 
@@ -609,9 +710,13 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center font-black text-lg mx-auto mb-4 shadow-md shadow-orange-500/25">
                   2
                 </div>
-                <h3 className="text-base font-black text-slate-900 mb-1.5">الزبون يمسح ويطلب بجواله</h3>
+                <h3 className="text-base font-black text-slate-900 mb-1.5">
+                  {isRtl ? 'الزبون يمسح ويطلب بجواله' : 'Guest Scans & Orders on Phone'}
+                </h3>
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  يفتح المنيو بكاميرا هاتفه فوراً بدون تحميل تطبيق، يختار وجباته ويرسل الطلب.
+                  {isRtl 
+                    ? 'يفتح المنيو بكاميرا هاتفه فوراً بدون تحميل تطبيق، يختار وجباته ويرسل الطلب.' 
+                    : 'Opens the digital menu instantly with their phone camera without downloading an app, selects meals, and places orders.'}
                 </p>
               </div>
 
@@ -619,9 +724,13 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center font-black text-lg mx-auto mb-4 shadow-md shadow-orange-500/25">
                   3
                 </div>
-                <h3 className="text-base font-black text-slate-900 mb-1.5">يصل للمطبخ فوراً مع نغمة تنبيه</h3>
+                <h3 className="text-base font-black text-slate-900 mb-1.5">
+                  {isRtl ? 'يصل للمطبخ فوراً مع نغمة تنبيه' : 'Instant Kitchen Alert with Chime'}
+                </h3>
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  يظهر الطلب على شاشة المطبخ والكاشير بصوت تنبيه فوري، ويبدأ التحضير.
+                  {isRtl 
+                    ? 'يظهر الطلب على شاشة المطبخ والكاشير بصوت تنبيه فوري، ويبدأ التحضير.' 
+                    : 'Orders appear instantly on kitchen and cashier screens with sound alerts to start prep immediately.'}
                 </p>
               </div>
             </div>
@@ -630,19 +739,27 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 border border-slate-200/80 p-4 rounded-2xl max-w-4xl mx-auto">
               <div>
                 <p className="text-xl sm:text-2xl font-black text-orange-500">+35%</p>
-                <p className="text-[11px] font-bold text-slate-600">زيادة بالفاتورة</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  {isRtl ? 'زيادة بالفاتورة' : 'Higher Check Size'}
+                </p>
               </div>
               <div>
-                <p className="text-xl sm:text-2xl font-black text-slate-900">0 ثوانٍ</p>
-                <p className="text-[11px] font-bold text-slate-600">انتظار المنيو</p>
+                <p className="text-xl sm:text-2xl font-black text-slate-900">0 {isRtl ? 'ثوانٍ' : 'sec'}</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  {isRtl ? 'انتظار المنيو' : 'Menu Wait Time'}
+                </p>
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-black text-orange-500">100%</p>
-                <p className="text-[11px] font-bold text-slate-600">دقة الطلبات</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  {isRtl ? 'دقة الطلبات' : 'Order Accuracy'}
+                </p>
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-black text-slate-900">0 ₪</p>
-                <p className="text-[11px] font-bold text-slate-600">أجهزة إضافية</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  {isRtl ? 'أجهزة إضافية' : 'Hardware Cost'}
+                </p>
               </div>
             </div>
 
@@ -652,7 +769,9 @@ export default function HomePage() {
             onClick={() => scrollToSlide(3)}
             className="mt-4 flex flex-col items-center animate-bounce text-slate-400 hover:text-orange-500 transition-colors cursor-pointer"
           >
-            <span className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5">اسحب للمميزات</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5">
+              {isRtl ? 'اسحب للمميزات' : 'SCROLL TO FEATURES'}
+            </span>
             <ArrowDown size={14} />
           </button>
         </section>
@@ -665,13 +784,15 @@ export default function HomePage() {
           
           <div className="text-center max-w-xl mx-auto mb-6 z-10">
             <span className="bg-orange-50 text-orange-600 text-xs font-black px-3.5 py-1 rounded-full mb-2.5 inline-block border border-orange-200/90 shadow-2xs">
-              تقنيات عالمية بمطعمك
+              {isRtl ? 'تقنيات عالمية بمطعمك' : 'World-Class Restaurant Tech'}
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-1.5 tracking-tight">
-              مبني بأحدث معايير الأمان والسرعة
+              {isRtl ? 'مبني بأحدث معايير الأمان والسرعة' : 'Built for Speed & Enterprise Security'}
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm font-medium">
-              يجمع بين سرعة منيو الـ QR وقوة نظام إدارة المطاعم المتكامل
+              {isRtl 
+                ? 'يجمع بين سرعة منيو الـ QR وقوة نظام إدارة المطاعم المتكامل' 
+                : 'Combines the agility of QR ordering with the power of an integrated restaurant OS'}
             </p>
           </div>
 
@@ -680,48 +801,84 @@ export default function HomePage() {
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <QrCode size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">أكواد QR مشفرة وديناميكية</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">تحمي من الطلبات الوهمية وتمنع إرسال طلبات من خارج المطعم.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'أكواد QR مشفرة وديناميكية' : 'Encrypted Dynamic QR Codes'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'تحمي من الطلبات الوهمية وتمنع إرسال طلبات من خارج المطعم.' 
+                  : 'Protects against fraudulent orders and restricts requests strictly to seated guests.'}
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Zap size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">مزامنة فورية Realtime</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">يصل الطلب للمطبخ في أجزاء من الثانية مع جرس تنبيه صوتي فوري.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'مزامنة فورية Realtime' : 'Realtime Kitchen Synchronization'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'يصل الطلب للمطبخ في أجزاء من الثانية مع جرس تنبيه صوتي فوري.' 
+                  : 'Tickets arrive in milliseconds at the kitchen accompanied by an immediate sound chime.'}
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Sparkles size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">ذكاء اصطناعي Menus AI</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">تحليل ذكي للمبيعات وساعات الذروة واقتراحات رفع الأرباح بالعربي.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'ذكاء اصطناعي Menus AI' : 'Menus AI Intelligence'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'تحليل ذكي للمبيعات وساعات الذروة واقتراحات رفع الأرباح بالعربي.' 
+                  : 'Smart analysis of peak hours, sales trends, and automated revenue-boosting suggestions.'}
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <ShieldCheck size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">تحقق صارم من الأسعار</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">حساب مركزي للأسعار لمنع أي تلاعب وتأمين الفواتير بنسبة 100%.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'تحقق صارم من الأسعار' : 'Strict Price Verification'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'حساب مركزي للأسعار لمنع أي تلاعب وتأمين الفواتير بنسبة 100%.' 
+                  : 'Server-authoritative price validation eliminates tampering and guarantees 100% billing accuracy.'}
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <TrendingUp size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">زيادة الفاتورة Upselling</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">اقتراحات إضافات تلقائية ذكية تزيد المبيعات بنسبة تصل إلى 35%.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'زيادة الفاتورة Upselling' : 'Automated Smart Upselling'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'اقتراحات إضافات تلقائية ذكية تزيد المبيعات بنسبة تصل إلى 35%.' 
+                  : 'Contextual add-on recommendations that increase average guest check values by up to 35%.'}
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200/90 hover:border-orange-500/60 p-4 sm:p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300 group">
               <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/90 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all">
                 <Clock size={20} />
               </div>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">تحمل آلاف الزيارات بدون بطء</h4>
-              <p className="text-slate-600 text-xs leading-relaxed">كاش متطور في الذاكرة يستجيب في 0ms ومُختبر لـ 1000 زائر متزامن.</p>
+              <h4 className="font-black text-sm sm:text-base text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">
+                {isRtl ? 'تحمل آلاف الزيارات بدون بطء' : 'High-Concurrency Memory Cache'}
+              </h4>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {isRtl 
+                  ? 'كاش متطور في الذاكرة يستجيب في 0ms ومُختبر لـ 1000 زائر متزامن.' 
+                  : 'Advanced LRU memory cache delivers 0ms responses, stress-tested for 1,000+ simultaneous visitors.'}
+              </p>
             </div>
           </div>
 
@@ -729,7 +886,9 @@ export default function HomePage() {
             onClick={() => scrollToSlide(4)}
             className="mt-4 flex flex-col items-center animate-bounce text-slate-500 hover:text-orange-600 transition-colors cursor-pointer"
           >
-            <span className="text-[10px] font-bold tracking-widest uppercase mb-0.5">SCROLL</span>
+            <span className="text-[10px] font-bold tracking-widest uppercase mb-0.5">
+              {isRtl ? 'الأسعار' : 'PRICING'}
+            </span>
             <ArrowDown size={14} />
           </button>
         </section>
@@ -743,42 +902,48 @@ export default function HomePage() {
             
             <div className="bg-white rounded-3xl border-2 border-orange-500 p-6 sm:p-8 shadow-2xl relative mb-6">
               <div className="absolute -top-3.5 right-1/2 translate-x-1/2 bg-orange-500 text-white px-4 py-1 rounded-full text-xs font-black shadow-sm">
-                الباقة الاحترافية الشاملة
+                {isRtl ? 'الباقة الاحترافية الشاملة' : 'All-in-One Pro Plan'}
               </div>
 
-              <h3 className="text-xl font-black text-slate-900 mt-2 mb-1">خطة واحدة تشمل كل شيء</h3>
-              <p className="text-xs text-slate-400 mb-4">بدون عمولات على المبيعات وبدون أجهزة إضافية</p>
+              <h3 className="text-xl font-black text-slate-900 mt-2 mb-1">
+                {isRtl ? 'خطة واحدة تشمل كل شيء' : 'One Plan That Covers Everything'}
+              </h3>
+              <p className="text-xs text-slate-400 mb-4">
+                {isRtl ? 'بدون عمولات على المبيعات وبدون أجهزة إضافية' : '0% commission on orders and zero extra hardware'}
+              </p>
 
               <div className="flex items-baseline justify-center gap-1 mb-5">
                 <span className="text-4xl sm:text-5xl font-black text-slate-900">150</span>
                 <span className="text-xl font-black text-orange-600">₪</span>
-                <span className="text-xs text-slate-400 font-bold">/ شهرياً</span>
+                <span className="text-xs text-slate-400 font-bold">
+                  {isRtl ? '/ شهرياً' : '/ month'}
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-right text-xs font-bold text-slate-700 max-w-sm mx-auto mb-6">
+              <div className={`grid grid-cols-2 gap-2 text-xs font-bold text-slate-700 max-w-sm mx-auto mb-6 ${isRtl ? 'text-right' : 'text-left'}`}>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>منيو رقمي غير محدود</span>
+                  <span>{isRtl ? 'منيو رقمي غير محدود' : 'Unlimited Digital Menu'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>كود QR لكل طاولة</span>
+                  <span>{isRtl ? 'كود QR لكل طاولة' : 'QR Code per Table'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>شاشة المطبخ (KDS)</span>
+                  <span>{isRtl ? 'شاشة المطبخ (KDS)' : 'Kitchen Display (KDS)'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>مساعد Menus AI</span>
+                  <span>{isRtl ? 'مساعد Menus AI' : 'Menus AI Assistant'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>تحليلات المبيعات</span>
+                  <span>{isRtl ? 'تحليلات المبيعات' : 'Sales Analytics'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500 shrink-0" />
-                  <span>دعم فني وتحديثات</span>
+                  <span>{isRtl ? 'دعم فني وتحديثات' : 'Tech Support & Updates'}</span>
                 </div>
               </div>
 
@@ -786,26 +951,28 @@ export default function HomePage() {
                 href="/register"
                 className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-sm block shadow-md shadow-orange-500/25 transition-all"
               >
-                ابدأ تجربتك المجانية لمدة 14 يوم الآن 🚀
+                {isRtl ? 'ابدأ تجربتك المجانية لمدة 14 يوم الآن 🚀' : 'Start 14-Day Free Trial Now 🚀'}
               </Link>
-              <p className="text-[10px] text-slate-400 mt-2 font-bold">إلغاء بأي وقت • بدون بطاقة ائتمان</p>
+              <p className="text-[10px] text-slate-400 mt-2 font-bold">
+                {isRtl ? 'إلغاء بأي وقت • بدون بطاقة ائتمان' : 'Cancel anytime • No credit card required'}
+              </p>
             </div>
 
             {/* Direct links */}
             <div className="flex items-center justify-center gap-4 text-xs font-bold text-slate-500">
               <Link href="/m" target="_blank" className="hover:text-orange-600 flex items-center gap-1">
                 <Smartphone size={13} />
-                <span>ديمو منيو الزبون</span>
+                <span>{isRtl ? 'ديمو منيو الزبون' : 'Customer Menu Demo'}</span>
               </Link>
               <span>•</span>
               <Link href="/staff" target="_blank" className="hover:text-orange-600 flex items-center gap-1">
                 <ChefHat size={13} />
-                <span>شاشة المطبخ</span>
+                <span>{isRtl ? 'شاشة المطبخ' : 'Kitchen Screen'}</span>
               </Link>
               <span>•</span>
               <Link href="/login" className="hover:text-orange-600 flex items-center gap-1">
                 <BarChart3 size={13} />
-                <span>لوحة الإدارة</span>
+                <span>{isRtl ? 'لوحة الإدارة' : 'Admin Login'}</span>
               </Link>
             </div>
 

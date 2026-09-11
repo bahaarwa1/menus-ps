@@ -2,9 +2,20 @@
 
 import { motion } from 'framer-motion';
 import PublicLayout from '@/components/layout/PublicLayout';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function HowItWorksPage() {
-  const steps = [
+  const { language, direction } = useLanguage();
+  const isEn = language === 'en';
+
+  const steps = isEn ? [
+    { emoji: '📱', title: 'Scan Table QR Code', desc: 'Guests scan the dedicated QR code placed on their table using their phone camera.' },
+    { emoji: '📖', title: 'Browse Digital Menu', desc: 'Complete interactive menu with vibrant high-res photos, descriptions, and real-time prices.' },
+    { emoji: '🛒', title: 'Customize & Order', desc: 'Guests customize ingredients, add special notes, and pick extras directly from their phone.' },
+    { emoji: '✨', title: 'Smart Upselling', desc: 'AI suggests complementary sides and drinks that automatically increase average ticket size.' },
+    { emoji: '📋', title: 'Instant Kitchen Ticket', desc: 'Orders arrive in milliseconds at the kitchen display with an audible chime to start cooking.' },
+    { emoji: '📊', title: 'Real-Time Insights', desc: 'Monitor live sales, table turnaround, and staff speed in real time from your dashboard.' },
+  ] : [
     { emoji: '📱', title: 'امسح كود QR', desc: 'الزبون بيمسح الكود الموجود على الطاولة عن طريق جواله بكل سهولة.' },
     { emoji: '📖', title: 'تصفّح المنيو', desc: 'منيو رقمي كامل مع صور جذابة وأسعار وتفاصيل لكل طبق.' },
     { emoji: '🛒', title: 'اطلب واختار', desc: 'اختار الأصناف وخصصها حسب ذوقك مع خيارات وإضافات متعددة.' },
@@ -15,7 +26,7 @@ export default function HowItWorksPage() {
 
   return (
     <PublicLayout>
-      <div className="bg-[#f8fafc] min-h-screen pt-12 sm:pt-24 pb-16 px-4">
+      <div className="bg-[#f8fafc] min-h-screen pt-12 sm:pt-24 pb-16 px-4" dir={direction}>
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-10 sm:mb-16">
             <motion.h1 
@@ -23,7 +34,7 @@ export default function HowItWorksPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3"
             >
-              كيف يعمل النظام؟
+              {isEn ? 'How It Works' : 'كيف يعمل النظام؟'}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -31,7 +42,9 @@ export default function HowItWorksPage() {
               transition={{ delay: 0.1 }}
               className="text-sm sm:text-base text-slate-600"
             >
-              خطوات بسيطة وسلسة لتجربة مستخدم مميزة للزبون ولإدارة المطعم
+              {isEn 
+                ? 'Simple, smooth steps delivering a frictionless experience for guests and staff' 
+                : 'خطوات بسيطة وسلسة لتجربة مستخدم مميزة للزبون ولإدارة المطعم'}
             </motion.p>
           </div>
 
@@ -52,7 +65,7 @@ export default function HowItWorksPage() {
                     className={`flex flex-col md:flex-row items-center gap-8 ${isEven ? 'md:flex-row-reverse' : ''}`}
                   >
                     <div className="flex-1 w-full flex justify-center md:justify-end">
-                      <div className="w-full max-w-md bg-white p-7 rounded-3xl shadow-sm hover:shadow-xl border border-slate-200/80 transition-all text-right relative group">
+                      <div className={`w-full max-w-md bg-white p-7 rounded-3xl shadow-sm hover:shadow-xl border border-slate-200/80 transition-all relative group ${isEn ? 'text-left' : 'text-right'}`}>
                         <div className="text-4xl mb-3">{step.emoji}</div>
                         <h3 className="text-xl font-black text-slate-900 mb-2">{step.title}</h3>
                         <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{step.desc}</p>

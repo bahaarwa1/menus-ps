@@ -5,11 +5,69 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { Check } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const { language, direction } = useLanguage();
+  const isEn = language === 'en';
 
-  const plans = [
+  const plans = isEn ? [
+    {
+      id: 'starter',
+      name: 'Starter',
+      subtitle: 'For cafes, food trucks & small bistros',
+      monthlyPrice: 99,
+      yearlyPrice: 79,
+      popular: false,
+      features: [
+        'Unlimited digital menu items',
+        'Custom encrypted QR code per table',
+        'Real-time price & menu editing',
+        'Live stock & 86-item availability toggling',
+        'Priority technical support via WhatsApp'
+      ],
+      ctaText: 'Start with Starter',
+      ctaStyle: 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+    },
+    {
+      id: 'pro',
+      name: 'Pro Complete',
+      subtitle: 'Most popular for active busy dining rooms',
+      monthlyPrice: 149,
+      yearlyPrice: 119,
+      popular: true,
+      badge: 'Most Popular 🔥',
+      features: [
+        'Everything in Starter plan',
+        'Direct table ordering without waiting',
+        'Shared table dining & unified tabs',
+        'Smart AI upselling engine (+35% sales)',
+        'Live Kitchen Display Screen (KDS)',
+        'Promotions, discounts & combo builder'
+      ],
+      ctaText: 'Start 14-Day Free Trial',
+      ctaStyle: 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25'
+    },
+    {
+      id: 'enterprise',
+      name: 'Chains & Enterprise',
+      subtitle: 'For large venues and multi-branch brands',
+      monthlyPrice: 249,
+      yearlyPrice: 199,
+      popular: false,
+      features: [
+        'Everything in Pro plan',
+        'Multi-branch management under one login',
+        'Cross-branch performance analytics',
+        'Custom branding, domain & color palette',
+        'Unlimited staff & manager logins',
+        'Dedicated account manager & staff onboarding'
+      ],
+      ctaText: 'Contact Sales',
+      ctaStyle: 'bg-slate-900 hover:bg-slate-800 text-white'
+    }
+  ] : [
     {
       id: 'starter',
       name: 'الأساسية',
@@ -68,7 +126,7 @@ export default function PricingPage() {
 
   return (
     <PublicLayout>
-      <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] pt-10 sm:pt-20 pb-12 px-4 flex flex-col justify-center">
+      <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] pt-10 sm:pt-20 pb-12 px-4 flex flex-col justify-center" dir={direction}>
         <div className="container mx-auto max-w-6xl">
           
           {/* Header & Billing Toggle */}
@@ -78,41 +136,43 @@ export default function PricingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl sm:text-4xl font-black text-slate-900 mb-2"
             >
-              خطط أسعار واضحة بدون عمولات خفية
+              {isEn ? 'Transparent Pricing, Zero Hidden Fees' : 'خطط أسعار واضحة بدون عمولات خفية'}
             </motion.h1>
             <p className="text-xs sm:text-base text-slate-600 mb-4 max-w-xl mx-auto">
-              اختر الخطة المناسبة لحجم مطعمك وابدأ فوراً بتجربة مجانية كاملة لمدة 14 يوم.
+              {isEn 
+                ? 'Choose the right plan for your restaurant and start your 14-day free trial immediately.' 
+                : 'اختر الخطة المناسبة لحجم مطعمك وابدأ فوراً بتجربة مجانية كاملة لمدة 14 يوم.'}
             </p>
 
             {/* Toggle Billing */}
             <div className="inline-flex items-center bg-white p-1 rounded-2xl border border-slate-200/80 shadow-xs">
               <button
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   billingCycle === 'monthly'
                     ? 'bg-orange-500 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                دفع شهري
+                {isEn ? 'Monthly' : 'دفع شهري'}
               </button>
               <button
                 onClick={() => setBillingCycle('yearly')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   billingCycle === 'yearly'
                     ? 'bg-orange-500 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>دفع سنوي</span>
+                <span>{isEn ? 'Annual Billing' : 'دفع سنوي'}</span>
                 <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-md font-extrabold">
-                  وفر 20%
+                  {isEn ? 'Save 20%' : 'وفر 20%'}
                 </span>
               </button>
             </div>
           </div>
 
-          {/* 3 Plans Grid - Fully fitting without scroll */}
+          {/* 3 Plans Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {plans.map((plan, idx) => {
               const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
@@ -143,12 +203,14 @@ export default function PricingPage() {
                       <div className="mt-3 flex items-baseline gap-1">
                         <span className="text-4xl font-black text-slate-900">{price}</span>
                         <span className="text-lg font-bold text-orange-600">₪</span>
-                        <span className="text-xs text-slate-400 font-medium">/ شهر</span>
+                        <span className="text-xs text-slate-400 font-medium">
+                          {isEn ? '/ mo' : '/ شهر'}
+                        </span>
                       </div>
                     </div>
 
                     {/* Features List */}
-                    <ul className="space-y-2.5 mb-5 text-xs text-slate-700">
+                    <ul className={`space-y-2.5 mb-5 text-xs text-slate-700 ${isEn ? 'text-left' : 'text-right'}`}>
                       {plan.features.map((feat, fIdx) => (
                         <li key={fIdx} className="flex items-start gap-2">
                           <div className={`p-0.5 rounded-full shrink-0 mt-0.5 ${plan.popular ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
@@ -163,7 +225,7 @@ export default function PricingPage() {
                   {/* CTA Button */}
                   <div>
                     <Link
-                      href="/contact"
+                      href="/register"
                       className={`block w-full py-3 px-4 rounded-xl text-center text-xs font-black transition-all active:scale-98 ${plan.ctaStyle}`}
                     >
                       {plan.ctaText}
@@ -176,13 +238,13 @@ export default function PricingPage() {
 
           {/* Guarantee & Notes */}
           <div className="mt-6 text-center text-xs text-slate-400 flex flex-wrap justify-center items-center gap-4 font-medium">
-            <span>✓ تجربة 14 يوم مجاناً</span>
+            <span>{isEn ? '✓ 14-Day Free Trial' : '✓ تجربة 14 يوم مجاناً'}</span>
             <span>•</span>
-            <span>✓ بدون أي بطاقة بنكية</span>
+            <span>{isEn ? '✓ No Credit Card Required' : '✓ بدون أي بطاقة بنكية'}</span>
             <span>•</span>
-            <span>✓ إلغاء في أي وقت بنقرة واحدة</span>
+            <span>{isEn ? '✓ Cancel Anytime in 1-Click' : '✓ إلغاء في أي وقت بنقرة واحدة'}</span>
             <span>•</span>
-            <span>✓ إعداد القائمة خلال أقل من 10 دقائق</span>
+            <span>{isEn ? '✓ Live in Under 10 Minutes' : '✓ إعداد القائمة خلال أقل من 10 دقائق'}</span>
           </div>
 
         </div>

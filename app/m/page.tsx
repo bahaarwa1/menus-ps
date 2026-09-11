@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
-  Sparkles, ChefHat, ArrowLeft, Loader2
+  Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -486,6 +486,9 @@ function FastFrictionlessMenuContent() {
           <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
             {dbCategories.map((cat) => {
               const isActive = activeCategory === cat.id && !searchQuery;
+              const catName = language === 'en' 
+                ? (cat.id === 'burgers' ? 'Burgers' : cat.id === 'wraps' ? 'Wraps' : cat.id === 'sides' ? 'Sides' : cat.id === 'drinks' ? 'Drinks' : cat.id === 'desserts' ? 'Desserts' : cat.name)
+                : cat.name;
               return (
                 <button
                   key={cat.id}
@@ -501,7 +504,7 @@ function FastFrictionlessMenuContent() {
                   }`}
                 >
                   <span>{cat.icon}</span>
-                  <span>{cat.name}</span>
+                  <span>{catName}</span>
                 </button>
               );
             })}
@@ -517,7 +520,11 @@ function FastFrictionlessMenuContent() {
                 className="bg-emerald-500 text-white px-3.5 py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-md"
               >
                 <Check size={15} strokeWidth={3} />
-                <span>تم إشعار الويتر، وسيحضر إلى طاولة {tableNumber} فوراً!</span>
+                <span>
+                  {language === 'ar' 
+                    ? `تم إشعار الويتر، وسيحضر إلى طاولة ${tableNumber} فوراً!` 
+                    : `Waiter notified! They will arrive at Table ${tableNumber} shortly.`}
+                </span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -550,19 +557,29 @@ function FastFrictionlessMenuContent() {
           {menuLoading ? (
             <div className="py-20 text-center text-slate-400">
               <Loader2 size={32} className="mx-auto mb-3 animate-spin text-orange-500" />
-              <p className="text-sm font-bold text-slate-600">جاري تحميل قائمة الطعام...</p>
+              <p className="text-sm font-bold text-slate-600">
+                {language === 'ar' ? 'جاري تحميل قائمة الطعام...' : 'Loading digital menu...'}
+              </p>
             </div>
           ) : menuError ? (
             <div className="py-20 text-center text-slate-400">
               <AlertCircle size={32} className="mx-auto mb-3 text-rose-400" />
-              <p className="text-sm font-bold text-slate-700">{menuError}</p>
-              <p className="text-xs text-slate-400 mt-1">تواصل مع إدارة المطعم</p>
+              <p className="text-sm font-bold text-slate-700">
+                {language === 'ar' ? menuError : 'Unable to load menu'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                {language === 'ar' ? 'تواصل مع إدارة المطعم' : 'Please contact restaurant staff'}
+              </p>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="py-20 text-center text-slate-400">
               <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />
-              <p className="text-sm font-bold text-slate-700">لم يتم العثور على أطباق مطابقة</p>
-              <p className="text-xs text-slate-400 mt-1">جرّب البحث باسم آخر أو تصفح بقية الأقسام</p>
+              <p className="text-sm font-bold text-slate-700">
+                {language === 'ar' ? 'لم يتم العثور على أطباق مطابقة' : 'No matching dishes found'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                {language === 'ar' ? 'جرّب البحث باسم آخر أو تصفح بقية الأقسام' : 'Try searching for another dish or browse other categories'}
+              </p>
             </div>
           ) : (
             filteredItems.map((item: MenuItem) => {
@@ -588,11 +605,11 @@ function FastFrictionlessMenuContent() {
                       </h3>
                       {item.popular && (
                         <span className="bg-amber-50 text-amber-800 border border-amber-200/60 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Flame size={10} className="text-amber-500" /> الأكثر طلباً
+                          <Flame size={10} className="text-amber-500" /> {language === 'ar' ? 'الأكثر طلباً' : 'Popular'}
                         </span>
                       )}
                       {item.spicy && (
-                        <span className="text-xs" title="حار وسبايسي">🌶️</span>
+                        <span className="text-xs" title={language === 'ar' ? "حار وسبايسي" : "Spicy"}>🌶️</span>
                       )}
                     </div>
 
@@ -610,7 +627,11 @@ function FastFrictionlessMenuContent() {
                       {(note || extras.length > 0) && (
                         <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Edit3 size={10} />
-                          <span>مخصص ({extras.length > 0 ? `+${extras.length}` : 'ملاحظة'})</span>
+                          <span>
+                            {language === 'ar' 
+                              ? `مخصص (${extras.length > 0 ? `+${extras.length}` : 'ملاحظة'})` 
+                              : `Custom (${extras.length > 0 ? `+${extras.length}` : 'note'})`}
+                          </span>
                         </span>
                       )}
                     </div>
@@ -638,23 +659,23 @@ function FastFrictionlessMenuContent() {
                     {qty === 0 ? (
                       <button
                         onClick={(e) => addOne(item.id, e)}
-                        className="w-full min-h-[32px] px-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-all"
+                        className="w-full min-h-[32px] px-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
                       >
                         <Plus size={13} strokeWidth={3} />
-                        <span>أضف</span>
+                        <span>{language === 'ar' ? 'أضف' : 'Add'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center gap-1.5 bg-orange-500 text-white p-0.5 rounded-xl shadow-xs">
                         <button
                           onClick={(e) => removeOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
+                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
                         >
                           <Minus size={12} strokeWidth={3} />
                         </button>
                         <span className="font-extrabold text-xs min-w-[18px] text-center">{qty}</span>
                         <button
                           onClick={(e) => addOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all"
+                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
                         >
                           <Plus size={12} strokeWidth={3} />
                         </button>
@@ -680,17 +701,19 @@ function FastFrictionlessMenuContent() {
             >
               <button
                 onClick={() => setIsReviewOpen(true)}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3.5 rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-between active:scale-98 transition-all border border-orange-400/40"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3.5 rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-between active:scale-98 transition-all border border-orange-400/40 cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="w-7 h-7 rounded-xl bg-white text-orange-600 font-black text-xs flex items-center justify-center shadow-xs">
                     {totalCount}
                   </span>
-                  <span className="text-xs font-bold text-white">عرض السلة ومتابعة الطلب</span>
+                  <span className="text-xs font-bold text-white">
+                    {language === 'ar' ? 'عرض السلة ومتابعة الطلب' : 'View Cart & Checkout'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-black text-white">{totalAmount} ₪</span>
-                  <ArrowLeft size={16} className="text-white/80" />
+                  {direction === 'rtl' ? <ArrowLeft size={16} className="text-white/80" /> : <ArrowRight size={16} className="text-white/80" />}
                 </div>
               </button>
             </motion.div>
@@ -756,7 +779,7 @@ function FastFrictionlessMenuContent() {
                     <div>
                       <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <Sparkles size={14} className="text-orange-500" />
-                        <span>إضافات مميزة حسب الرغبة</span>
+                        <span>{language === 'ar' ? 'إضافات مميزة حسب الرغبة' : 'Optional Add-ons & Extras'}</span>
                       </h4>
                       <div className="space-y-2">
                         {selectedProduct.extras.map((extra: Extra) => {
@@ -791,17 +814,20 @@ function FastFrictionlessMenuContent() {
                   <div>
                     <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <ChefHat size={14} className="text-orange-500" />
-                      <span>ملاحظات خاصة للشيف</span>
+                      <span>{language === 'ar' ? 'ملاحظات خاصة للشيف' : 'Special Kitchen Instructions'}</span>
                     </h4>
 
                     {/* Preset Chips */}
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      {['بدون بصل', 'بدون مخلل', 'صوص خارجي', 'حار زيادة', 'استواء كامل'].map((chip) => (
+                      {(language === 'ar' 
+                        ? ['بدون بصل', 'بدون مخلل', 'صوص خارجي', 'حار زيادة', 'استواء كامل']
+                        : ['No onions', 'No pickles', 'Sauce on side', 'Extra spicy', 'Well done']
+                      ).map((chip) => (
                         <button
                           key={chip}
                           type="button"
                           onClick={() => setTempNote(prev => prev ? `${prev}، ${chip}` : chip)}
-                          className="text-xs font-medium bg-slate-100 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 border border-slate-200/60 px-2.5 py-1 rounded-full transition-colors"
+                          className="text-xs font-medium bg-slate-100 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 border border-slate-200/60 px-2.5 py-1 rounded-full transition-colors cursor-pointer"
                         >
                           + {chip}
                         </button>
@@ -810,7 +836,7 @@ function FastFrictionlessMenuContent() {
 
                     <textarea
                       rows={2}
-                      placeholder="مثلاً: صوص حار على جنب، خبز محمص قليلاً..."
+                      placeholder={language === 'ar' ? "مثلاً: صوص حار على جنب، خبز محمص قليلاً..." : "e.g., sauce on the side, well toasted bread..."}
                       value={tempNote}
                       onChange={(e) => setTempNote(e.target.value)}
                       className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-orange-500 resize-none text-slate-800"
@@ -822,9 +848,9 @@ function FastFrictionlessMenuContent() {
                 <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-3 shrink-0">
                   <button
                     onClick={handleSaveProductModal}
-                    className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-orange-500/25 transition-all"
+                    className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-orange-500/25 transition-all cursor-pointer"
                   >
-                    <span>حفظ وإضافة للطلب</span>
+                    <span>{language === 'ar' ? 'حفظ وإضافة للطلب' : 'Save & Add to Order'}</span>
                     <span>•</span>
                     <span>
                       {selectedProduct.price + tempExtras.reduce((acc, name) => {
@@ -862,12 +888,14 @@ function FastFrictionlessMenuContent() {
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                   <div>
                     <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                      <span>تأكيد الطلب — طاولة {tableNumber}</span>
+                      <span>{language === 'ar' ? `تأكيد الطلب — طاولة ${tableNumber}` : `Review Order — Table ${tableNumber}`}</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium">{totalCount} أصناف ستصل لمطبخ المطعم فوراً</p>
+                    <p className="text-xs text-slate-400 font-medium">
+                      {language === 'ar' ? `${totalCount} أصناف ستصل لمطبخ المطعم فوراً` : `${totalCount} items will be sent directly to the kitchen`}
+                    </p>
                   </div>
-                  <button onClick={() => setIsReviewOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center">
+                  <button onClick={() => setIsReviewOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer">
                     <X size={16} />
                   </button>
                 </div>
@@ -881,12 +909,12 @@ function FastFrictionlessMenuContent() {
                         
                         {ci.extras.length > 0 && (
                           <p className="text-xs text-slate-400 font-medium mt-0.5">
-                            إضافات: {ci.extras.join('، ')}
+                            {language === 'ar' ? 'إضافات: ' : 'Extras: '}{ci.extras.join('، ')}
                           </p>
                         )}
                         {ci.note && (
                           <p className="text-xs text-orange-600 font-medium mt-0.5">
-                            ملاحظة: {ci.note}
+                            {language === 'ar' ? 'ملاحظة: ' : 'Note: '}{ci.note}
                           </p>
                         )}
                         <p className="text-sm font-extrabold text-slate-900 mt-1">{ci.total} ₪</p>
@@ -894,11 +922,11 @@ function FastFrictionlessMenuContent() {
 
                       {/* Stepper inside cart */}
                       <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl">
-                        <button onClick={() => removeOne(ci.item.id)} className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-slate-700 active:scale-90">
+                        <button onClick={() => removeOne(ci.item.id)} className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-slate-700 active:scale-90 cursor-pointer">
                           <Minus size={12} strokeWidth={3} />
                         </button>
                         <span className="font-bold text-xs px-1.5">{ci.quantity}</span>
-                        <button onClick={() => addOne(ci.item.id)} className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-slate-700 active:scale-90">
+                        <button onClick={() => addOne(ci.item.id)} className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-slate-700 active:scale-90 cursor-pointer">
                           <Plus size={12} strokeWidth={3} />
                         </button>
                       </div>
@@ -916,21 +944,23 @@ function FastFrictionlessMenuContent() {
                   )}
 
                   <div className="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
-                    <span>المجموع النهائي:</span>
+                    <span>{language === 'ar' ? 'المجموع النهائي:' : 'Order Total:'}</span>
                     <span className="text-lg font-black text-slate-900">{totalAmount} ₪</span>
                   </div>
 
                   <button
                     onClick={handleSendOrder}
                     disabled={isSubmittingOrder}
-                    className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-orange-500/25 transition-all disabled:opacity-50"
+                    className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-orange-500/25 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmittingOrder ? (
-                      <span className="animate-pulse">جارٍ إرسال الطلب للمطبخ... ⏳</span>
+                      <span className="animate-pulse">
+                        {language === 'ar' ? 'جارٍ إرسال الطلب للمطبخ... ⏳' : 'Sending order to kitchen... ⏳'}
+                      </span>
                     ) : (
                       <>
-                        <span>تأكيد وإرسال للمطبخ فوراً</span>
-                        <ArrowLeft size={16} />
+                        <span>{language === 'ar' ? 'تأكيد وإرسال للمطبخ فوراً' : 'Confirm & Send to Kitchen Now'}</span>
+                        {direction === 'rtl' ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
                       </>
                     )}
                   </button>
@@ -954,9 +984,11 @@ function FastFrictionlessMenuContent() {
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full border border-emerald-200 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <span>طاولة {tableNumber}</span>
+                  <span>{language === 'ar' ? `طاولة ${tableNumber}` : `Table ${tableNumber}`}</span>
                 </div>
-                <span className="text-xs text-slate-500 font-mono font-bold">رقم الطلب: #{submittedOrderId}</span>
+                <span className="text-xs text-slate-500 font-mono font-bold">
+                  {language === 'ar' ? `رقم الطلب: #${submittedOrderId}` : `Order #${submittedOrderId}`}
+                </span>
               </div>
 
               {/* Main Body */}
@@ -967,22 +999,28 @@ function FastFrictionlessMenuContent() {
 
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1.5">
-                    طلبك وصل المطبخ الآن! 🎉
+                    {language === 'ar' ? 'طلبك وصل المطبخ الآن! 🎉' : 'Your Order Arrived in the Kitchen! 🎉'}
                   </h2>
                   <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                    الشيف بدأ بتحضير أطباقك بعناية، وسيقوم الويتر بتقديمها لطاولتك فور جاهزيتها.
+                    {language === 'ar' 
+                      ? 'الشيف بدأ بتحضير أطباقك بعناية، وسيقوم الويتر بتقديمها لطاولتك فور جاهزيتها.'
+                      : 'Our kitchen crew is preparing your meal with care, and staff will serve it to your table once ready.'}
                   </p>
                 </div>
 
                 {/* 3-Step Live Tracker */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4 text-right">
+                <div className={`bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4 ${direction === 'rtl' ? 'text-right' : 'text-left'}`}>
                   <div className="flex items-center gap-3.5">
                     <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <Check size={18} strokeWidth={3} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">1. استلام الطلب</p>
-                      <p className="text-[11px] text-emerald-600 font-bold">تم الاستلام بنجاح</p>
+                      <p className="text-xs font-bold text-slate-900">
+                        {language === 'ar' ? '1. استلام الطلب' : '1. Order Received'}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 font-bold">
+                        {language === 'ar' ? 'تم الاستلام بنجاح' : 'Received successfully'}
+                      </p>
                     </div>
                   </div>
 
@@ -995,9 +1033,13 @@ function FastFrictionlessMenuContent() {
                       <ChefHat size={18} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">2. قيد التحضير في المطبخ</p>
+                      <p className="text-xs font-bold text-slate-900">
+                        {language === 'ar' ? '2. قيد التحضير في المطبخ' : '2. Cooking in Kitchen'}
+                      </p>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {liveOrderStatus === 'cooking' ? 'جارٍ الشواء والتجهيز الآن 👨‍🍳' : 'في قائمة الانتظار'}
+                        {liveOrderStatus === 'cooking' 
+                          ? (language === 'ar' ? 'جارٍ الشواء والتجهيز الآن 👨‍🍳' : 'Currently grilling & prepping 👨‍🍳')
+                          : (language === 'ar' ? 'في قائمة الانتظار' : 'In prep queue')}
                       </p>
                     </div>
                   </div>
@@ -1011,9 +1053,13 @@ function FastFrictionlessMenuContent() {
                       <Sparkles size={18} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">3. جاهز للتقديم</p>
+                      <p className="text-xs font-bold text-slate-900">
+                        {language === 'ar' ? '3. جاهز للتقديم' : '3. Ready to Serve'}
+                      </p>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {liveOrderStatus === 'ready' ? 'الطلب جاهز على طاولتك! ✨' : 'خلال دقائق معدودة'}
+                        {liveOrderStatus === 'ready' 
+                          ? (language === 'ar' ? 'الطلب جاهز على طاولتك! ✨' : 'Meal is ready at your table! ✨')
+                          : (language === 'ar' ? 'خلال دقائق معدودة' : 'In a few minutes')}
                       </p>
                     </div>
                   </div>
@@ -1021,7 +1067,8 @@ function FastFrictionlessMenuContent() {
 
                 {serverVerifiedTotal && (
                   <p className="text-xs font-bold text-slate-600">
-                    المجموع المحسوب بالسيرفر: <span className="text-orange-600 font-black text-sm">{serverVerifiedTotal} ₪</span>
+                    {language === 'ar' ? 'المجموع المحسوب بالسيرفر: ' : 'Server Verified Total: '}
+                    <span className="text-orange-600 font-black text-sm">{serverVerifiedTotal} ₪</span>
                   </p>
                 )}
               </div>
@@ -1029,9 +1076,9 @@ function FastFrictionlessMenuContent() {
               {/* Bottom Return Button */}
               <button
                 onClick={() => setIsOrderSubmitted(false)}
-                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
               >
-                طلب وجبات إضافية لنفس الطاولة ➕
+                {language === 'ar' ? 'طلب وجبات إضافية لنفس الطاولة ➕' : 'Order More for This Table ➕'}
               </button>
             </motion.div>
           )}
