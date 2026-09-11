@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -638,7 +637,7 @@ export default function RegisterPage() {
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
                 <span className="font-bold text-slate-700">الأكواد جاهزة للطباعة على الطاولات</span>
                 <Link
-                  href="/dashboard/tables"
+                  href={`/dashboard/tables?created=${createdRestaurant.slug}`}
                   className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 text-xs"
                 >
                   <span>طباعة الستاندات</span>

@@ -32,8 +32,11 @@ export default function ProductionSidebar({
   const [activeSlug, setActiveSlug] = useState(restaurantSlug);
   const [activeName, setActiveName] = useState(restaurantName);
 
+  const [appOrigin, setAppOrigin] = useState('https://menus-ps.vercel.app');
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      setAppOrigin(window.location.origin);
       const params = new URLSearchParams(window.location.search);
       const created = params.get('created');
       if (created) {
@@ -43,8 +46,8 @@ export default function ProductionSidebar({
     }
   }, [pathname]);
 
-  const liveUrl = `https://${activeSlug}.menus-ps.vercel.app`;
-  const directMenuUrl = `/m?restaurant=${activeSlug}`;
+  const liveUrl = `${appOrigin}/r/${activeSlug}`;
+  const directMenuUrl = `/r/${activeSlug}`;
 
   const copyLiveUrl = () => {
     navigator.clipboard.writeText(liveUrl);

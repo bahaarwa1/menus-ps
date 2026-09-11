@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, X, Search, Flame, Utensils, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, X, Search, Flame, Utensils, RefreshCw, Edit3, Loader2 } from 'lucide-react';
 
 interface MenuItemType {
   id: string;
@@ -34,6 +34,15 @@ export default function ProductionMenuPage() {
   const [newDescription, setNewDescription] = useState('');
   const [newPopular, setNewPopular] = useState(false);
   const [newSpicy, setNewSpicy] = useState(false);
+
+  // Form State for Editing Existing Item
+  const [editingItem, setEditingItem] = useState<MenuItemType | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPopular, setEditPopular] = useState(false);
+  const [editSpicy, setEditSpicy] = useState(false);
+  const [isEditingSaving, setIsEditingSaving] = useState(false);
 
   const loadMenu = useCallback(async (slug?: string) => {
     setIsLoading(true);
@@ -164,6 +173,59 @@ export default function ProductionMenuPage() {
       console.error('Error adding menu item:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const openEditModal = (item: MenuItemType) => {
+    setEditingItem(item);
+    setEditName(item.name);
+    setEditPrice(String(item.price));
+    setEditDescription(item.description);
+    setEditPopular(Boolean(item.popular));
+    setEditSpicy(Boolean(item.spicy));
+  };
+
+  const handleEditItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !editName.trim() || !editPrice) return;
+    setIsEditingSaving(true);
+
+    try {
+      const res = await fetch('/api/v1/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: editingItem.id,
+          name: editName.trim(),
+          price: parseFloat(editPrice),
+          description: editDescription.trim(),
+          isPopular: editPopular,
+          isSpicy: editSpicy,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === editingItem.id
+              ? {
+                  ...it,
+                  name: editName.trim(),
+                  price: parseFloat(editPrice),
+                  description: editDescription.trim(),
+                  popular: editPopular,
+                  spicy: editSpicy,
+                }
+              : it
+          )
+        );
+        setEditingItem(null);
+      }
+    } catch (err) {
+      console.error('Failed to update menu item:', err);
+    } finally {
+      setIsEditingSaving(false);
     }
   };
 
@@ -315,13 +377,22 @@ export default function ProductionMenuPage() {
                   </button>
                 </div>
 
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="حذف الصنف من المنيو"
-                >
-                  <Trash2 size={15} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditModal(item)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+                    title="تعديل الصنف والسعر"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="حذف الصنف من المنيو"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -428,6 +499,101 @@ export default function ProductionMenuPage() {
                   className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/20 transition-all cursor-pointer"
                 >
                   {isSaving ? 'جاري الحفظ...' : 'حفظ الصنف في المنيو'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Edit3 size={18} className="text-orange-500" />
+                <h2 className="text-base font-black text-slate-900">تعديل الصنف والسعر</h2>
+              </div>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditItem} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">اسم الصنف / الوجبة *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">السعر (₪) *</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  required
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">الوصف والمكونات</label>
+                <textarea
+                  rows={2}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-4 pt-1">
+                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editPopular}
+                    onChange={(e) => setEditPopular(e.target.checked)}
+                    className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span>الأكثر طلباً</span>
+                </label>
+
+                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editSpicy}
+                    onChange={(e) => setEditSpicy(e.target.checked)}
+                    className="rounded border-slate-300 text-rose-500 focus:ring-rose-500"
+                  />
+                  <span>وجبة حارة 🌶️</span>
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 font-bold transition-colors cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditingSaving}
+                  className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {isEditingSaving && <Loader2 size={14} className="animate-spin" />}
+                  <span>{isEditingSaving ? 'جاري الحفظ...' : 'حفظ التعديلات'}</span>
                 </button>
               </div>
             </form>

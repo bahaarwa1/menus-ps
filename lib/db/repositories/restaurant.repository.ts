@@ -435,3 +435,85 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
   inFlightRestaurantRequests.set(cleanSlug, fetchPromise);
   return fetchPromise;
 }
+
+export interface UpdateRestaurantSettingsInput {
+  slug: string;
+  name?: string;
+  phone?: string;
+  city?: string;
+  currency?: string;
+  staffPin?: string;
+}
+
+/**
+ * Updates restaurant profile, contact, city, currency, and staff PIN with cache invalidation.
+ */
+export async function updateRestaurantSettings(input: UpdateRestaurantSettingsInput): Promise<boolean> {
+  const cleanSlug = input.slug.trim().toLowerCase();
+
+  // 1. Update in-memory store
+  const existing = global.__menusRestaurantsStore?.get(cleanSlug);
+  if (existing) {
+    if (input.name) existing.name = input.name.trim();
+    if (input.phone) existing.phone = input.phone.trim();
+    if (input.city) existing.city = input.city.trim();
+    if (input.currency) existing.currency = input.currency.trim();
+    global.__menusRestaurantsStore?.set(cleanSlug, existing);
+  }
+
+  // 2. Update Supabase if configured
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createAdminClient();
+      const updates: any = {};
+      if (input.name) updates.name = input.name.trim();
+      if (input.phone) updates.phone = input.phone.trim();
+      if (input.city) updates.city = input.city.trim();
+      if (input.currency) updates.currency = input.currency.trim();
+
+      if (Object.keys(updates).length > 0) {
+        await (supabase as any)
+          .from('restaurants')
+          .update(updates)
+          .eq('slug', cleanSlug);
+      }
+
+      // Update primary branch city/name if changed
+      if (input.city || input.name) {
+        const { data: rest } = await (supabase as any)
+          .from('restaurants')
+          .select('id')
+          .eq('slug', cleanSlug)
+          .maybeSingle();
+
+        if (rest) {
+          const branchUpdates: any = {};
+          if (input.city) branchUpdates.city = input.city.trim();
+          await (supabase as any)
+            .from('branches')
+            .update(branchUpdates)
+            .eq('restaurant_id', rest.id);
+
+          // Update staff PIN if provided
+          if (input.staffPin && input.staffPin.length >= 4) {
+            const pinHash = await hashPin(input.staffPin);
+            await (supabase as any)
+              .from('staff_users')
+              .update({ pin_hash: pinHash })
+              .eq('branch_id', existing?.branchId || rest.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update restaurant settings in database:', err);
+    }
+  }
+
+  // 3. Invalidate caches
+  appCache.invalidateTag('restaurants');
+  appCache.invalidateTag(`restaurant:${cleanSlug}`);
+  appCache.delete(`restaurant:slug:${cleanSlug}`);
+
+  return true;
+}
+

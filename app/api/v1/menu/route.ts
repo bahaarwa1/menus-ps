@@ -199,3 +199,52 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    if (!session || !['owner', 'admin', 'branch_manager'].includes(session.role)) {
+      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { itemId, name, price, description, isPopular, isSpicy, isAvailable } = body;
+
+    if (!itemId) {
+      return NextResponse.json({ success: false, error: 'معرف الصنف مطلوب' }, { status: 400 });
+    }
+
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      const updates: any = {};
+      if (name !== undefined) updates.name_ar = String(name).trim();
+      if (price !== undefined) updates.price = Number(price);
+      if (description !== undefined) updates.description_ar = description ? String(description).trim() : null;
+      if (isPopular !== undefined) updates.is_popular = Boolean(isPopular);
+      if (isSpicy !== undefined) updates.is_spicy = Boolean(isSpicy);
+      if (isAvailable !== undefined) updates.is_available = Boolean(isAvailable);
+
+      const { error: updateErr } = await (supabase as any)
+        .from('menu_items')
+        .update(updates)
+        .eq('id', itemId);
+
+      if (updateErr) {
+        return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
+      }
+    }
+
+    // Invalidate caches
+    appCache.invalidateTag('menu');
+    appCache.delete(`item_price:${itemId}`);
+
+    return NextResponse.json({ success: true, message: 'تم تحديث الصنف بنجاح' });
+  } catch (err) {
+    console.error('Update menu item error:', err);
+    return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
+  }
+}
+

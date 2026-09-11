@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 
 interface RestaurantRedirectProps {
   params: { slug: string };
@@ -7,12 +7,13 @@ interface RestaurantRedirectProps {
 
 export default function RestaurantRedirectPage({ params, searchParams }: RestaurantRedirectProps) {
   const { slug } = params;
-  const token = searchParams.t || searchParams.token;
-  
   const queryParams = new URLSearchParams();
   queryParams.set('restaurant', slug);
-  if (token && typeof token === 'string') {
-    queryParams.set('t', token);
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (key !== 'restaurant' && typeof value === 'string') {
+      queryParams.set(key, value);
+    }
   }
 
   redirect(`/m?${queryParams.toString()}`);

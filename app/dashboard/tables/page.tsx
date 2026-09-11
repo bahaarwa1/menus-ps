@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Sparkles } from 'lucide-react';
+import { Plus, Printer, ExternalLink, Copy, Check, QrCode } from 'lucide-react';
 import QRCode from 'qrcode';
 import { printTableStand, printAllTableStands } from '@/lib/print-utils';
 
