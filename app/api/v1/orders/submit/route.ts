@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAndCalculateOrder } from '@/lib/pricing/price-validator';
 import { createOrder } from '@/lib/db/repositories/order.repository';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { getTableByQrToken } from '@/lib/db/repositories/table.repository';
+import { getRestaurantBySlug } from '@/lib/db/repositories/restaurant.repository';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { branchId, tableNumber, items, customerNote } = body;
+    const { branchId, tableNumber, items, customerNote, tableToken, restaurantSlug } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -36,10 +38,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tableNum = Number(tableNumber) || 12;
-    const branch = branchId || 'b0000000-0000-0000-0000-000000000001';
+    // 1. Strict Table Number Validation (No fake Table 12 fallbacks)
+    const tableNum = Number(tableNumber);
+    if (!tableNum || isNaN(tableNum) || tableNum <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'رقم الطاولة مطلوب وغير صالح. يرجى مسح كود الطاولة أو اختيار رقم طاولتك.' },
+        { status: 400 }
+      );
+    }
 
-    // 1. Authoritative Server-Side Price Recalculation
+    // 2. Authoritative Branch & Token Security Resolution
+    let resolvedBranch = branchId;
+
+    // Check QR Token if provided
+    if (tableToken && typeof tableToken === 'string' && tableToken.trim().length > 0) {
+      const verified = await getTableByQrToken(tableToken.trim());
+      if (verified) {
+        // Prevent table spoofing: Ensure QR token corresponds to the requested table number
+        if (verified.tableNumber !== tableNum) {
+          return NextResponse.json(
+            { success: false, error: 'رمز الـ QR لا يتطابق مع رقم الطاولة المحدد. يرجى مسح الرمز من جديد.' },
+            { status: 400 }
+          );
+        }
+        if (verified.branchId) {
+          resolvedBranch = verified.branchId;
+        }
+      }
+    }
+
+    // Resolve branch from restaurant slug if branch is missing or fallback
+    if ((!resolvedBranch || resolvedBranch === 'b0000000-0000-0000-0000-000000000001') && restaurantSlug) {
+      const cleanSlug = String(restaurantSlug).trim();
+      if (cleanSlug && cleanSlug !== 'burger-house-nablus' && cleanSlug !== 'demo') {
+        const restaurant = await getRestaurantBySlug(cleanSlug);
+        if (restaurant?.branchId) {
+          resolvedBranch = restaurant.branchId;
+        }
+      }
+    }
+
+    const branch = resolvedBranch || 'b0000000-0000-0000-0000-000000000001';
+
+    // 3. Authoritative Server-Side Price Recalculation
     const validation = await validateAndCalculateOrder(items);
 
     if (!validation.isValid) {
@@ -49,13 +90,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Sanitize overall customer note
+    // 4. Sanitize overall customer note
     const sanitizedGeneralNote = (customerNote || '')
       .replace(/<[^>]*>/g, '')
       .trim()
       .slice(0, 300);
 
-    // 3. Atomically persist order to PostgreSQL repository
+    // 5. Atomically persist order to PostgreSQL repository
     const orderResult = await createOrder({
       branchId: branch,
       tableId: `table-num-${tableNum}`,

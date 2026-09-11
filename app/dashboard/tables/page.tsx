@@ -357,29 +357,47 @@ export default function ProductionTablesPage() {
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
             
             {/* Printable Preview Frame */}
-            <div className="border border-slate-200 rounded-3xl p-6 bg-white mb-5 relative shadow-xs">
-              <h3 className="text-xl font-black text-slate-900 mb-1">
-                {restaurantName || 'أهلاً بكم'}
+            <div className="border-2 border-amber-400 rounded-3xl p-6 bg-gradient-to-b from-amber-50/50 via-white to-white mb-5 relative shadow-lg text-center">
+              <div className="flex items-center justify-center gap-1.5 text-amber-600 text-xs font-black mb-1">
+                <span>✦</span>
+                <span>🍽️</span>
+                <span>✦</span>
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-0.5">
+                {restaurantName || 'أهلاً وسهلاً بكم'}
               </h3>
-              <div className="inline-flex items-center justify-center px-4 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 mb-4">
-                طاولة {selectedPrintTable.tableNumber}
+              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-3">
+                قائمة الطعام الرقمية والطلب المباشر
+              </p>
+
+              <div className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full bg-slate-900 text-white text-xs font-black border border-amber-400 mb-4 shadow-sm">
+                <span>طاولة رقم</span>
+                <span className="text-yellow-300 text-sm font-black">{selectedPrintTable.tableNumber}</span>
               </div>
 
-              <div className="w-44 h-44 bg-white p-3 rounded-2xl border border-slate-200 mx-auto shadow-xs mb-4 flex items-center justify-center">
+              <div className="w-44 h-44 bg-white p-3 rounded-2xl border-2 border-amber-200 mx-auto shadow-md mb-3 flex items-center justify-center">
                 {selectedPrintTable.qrDataUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={selectedPrintTable.qrDataUrl}
                     alt="QR"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain rounded-lg"
                   />
                 ) : (
                   <QrCode size={60} className="text-slate-300" />
                 )}
               </div>
 
-              <p className="text-xs font-bold text-slate-800 mb-1">امسح الكود لطلب الطعام</p>
-              <p className="text-[11px] text-slate-400">وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
+              <p className="text-xs font-black text-slate-900 mb-0.5">امسح الرمز لطلب طعامك مباشرة 📲</p>
+              <p className="text-[10px] text-slate-500 font-medium max-w-[200px] mx-auto mb-3">
+                وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك
+              </p>
+
+              <div className="flex items-center justify-center gap-1.5 pt-2.5 border-t border-amber-100 text-[10px] font-extrabold text-amber-800">
+                <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">📷 ١. وجّه الكاميرا</span>
+                <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">🍔 ٢. اختر وجبتك</span>
+                <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">⚡ ٣. يجهز فوراً</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">

@@ -197,7 +197,7 @@ export function printTableStand(stand: {
     <html dir="rtl" lang="ar">
     <head>
       <meta charset="utf-8">
-      <title>طاولة ${stand.tableNumber}</title>
+      <title>طاولة ${stand.tableNumber} - ${stand.restaurantName || 'مطعمنا'}</title>
       <style>
         @page {
           size: A5 portrait;
@@ -215,7 +215,7 @@ export function printTableStand(stand: {
           }
           .stand-card {
             box-shadow: none !important;
-            border: 1.5px solid #e2e8f0 !important;
+            border: 2px solid #eab308 !important;
           }
         }
         * { box-sizing: border-box; }
@@ -233,115 +233,173 @@ export function printTableStand(stand: {
         .stand-card {
           width: 132mm;
           background: #ffffff;
-          border-radius: 24px;
-          border: 1.5px solid #e2e8f0;
-          padding: 32px 24px 28px 24px;
+          border-radius: 28px;
+          border: 2px solid #eab308;
+          padding: 26px 22px 22px 22px;
           text-align: center;
           position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 10px 30px rgba(217, 119, 6, 0.08);
+          background-image: radial-gradient(circle at top, rgba(254, 243, 199, 0.35) 0%, #ffffff 70%);
+        }
+        .luxury-crest {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: #d97706;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          margin-bottom: 6px;
+        }
+        .crest-icon {
+          font-size: 18px;
         }
         .restaurant-title {
-          font-size: 26px;
-          font-weight: 800;
+          font-size: 28px;
+          font-weight: 900;
           color: #0f172a;
           margin: 0;
           letter-spacing: -0.5px;
+          line-height: 1.2;
         }
-        .table-pill {
+        .menu-subtitle {
+          font-size: 11px;
+          font-weight: 700;
+          color: #b45309;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          margin: 4px 0 14px 0;
+        }
+        .table-badge {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: #f8fafc;
-          color: #0f172a;
-          padding: 6px 20px;
+          gap: 8px;
+          background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+          color: #ffffff;
+          padding: 8px 30px;
           border-radius: 999px;
-          font-size: 14px;
-          font-weight: 700;
-          margin: 12px 0 16px 0;
-          border: 1px solid #cbd5e1;
+          font-size: 15px;
+          font-weight: 900;
+          margin-bottom: 16px;
+          border: 1.5px solid #eab308;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+        }
+        .table-badge span.num {
+          font-size: 20px;
+          color: #fde047;
+          font-weight: 900;
         }
         .qr-frame {
           width: 76mm;
           height: 76mm;
           background: #ffffff;
-          border: 1.5px solid #e2e8f0;
-          border-radius: 20px;
+          border: 2px solid #fde68a;
+          border-radius: 24px;
           padding: 12px;
-          margin: 0 auto 16px auto;
+          margin: 0 auto 14px auto;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 6px 20px rgba(217, 119, 6, 0.12);
+          position: relative;
         }
         .qr-frame img {
           width: 100%;
           height: 100%;
           object-fit: contain;
           display: block;
+          border-radius: 12px;
         }
         .instructions {
-          margin-top: 4px;
+          margin-top: 2px;
         }
         .instructions h3 {
-          font-size: 15px;
-          font-weight: 800;
-          color: #1e293b;
+          font-size: 16px;
+          font-weight: 900;
+          color: #0f172a;
           margin: 0 0 4px 0;
         }
         .instructions p {
           font-size: 12px;
           color: #64748b;
-          font-weight: 500;
+          font-weight: 600;
           margin: 0;
+          max-width: 110mm;
         }
         .steps-container {
           display: flex;
           justify-content: center;
-          gap: 16px;
+          gap: 8px;
           width: 100%;
-          margin-top: 18px;
-          padding-top: 14px;
-          border-top: 1px solid #f1f5f9;
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid #fef3c7;
         }
         .step-item {
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          padding: 6px 12px;
+          border-radius: 12px;
           font-size: 11px;
-          font-weight: 600;
-          color: #475569;
+          font-weight: 800;
+          color: #92400e;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
+        }
+        .footer-note {
+          margin-top: 12px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #b45309;
+        }
+        .secure-tag {
+          margin-top: 4px;
+          font-size: 9px;
+          font-weight: 600;
+          color: #94a3b8;
         }
       </style>
     </head>
     <body>
       <div class="stand-card">
-        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً بكم'}</h1>
-
-        <div class="table-pill">
-          طاولة ${stand.tableNumber}
+        <div class="luxury-crest">
+          <span>✦</span>
+          <span class="crest-icon">🍽️</span>
+          <span>✦</span>
         </div>
 
-        <!-- Clean Luxury QR Stand Frame -->
+        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً وسهلاً بكم'}</h1>
+        <div class="menu-subtitle">قائمة الطعام الرقمية والطلب المباشر</div>
+
+        <div class="table-badge">
+          <span>طاولة رقم</span>
+          <span class="num">${stand.tableNumber}</span>
+        </div>
+
         <div class="qr-frame">
           <img src="${stand.qrDataUrl}" alt="كود طاولة ${stand.tableNumber}" />
         </div>
 
         <div class="instructions">
-          <h3>امسح الكود لطلب الطعام</h3>
-          <p>وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
+          <h3>امسح الرمز لطلب طعامك مباشرة 📲</h3>
+          <p>وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك</p>
         </div>
 
-        <!-- Minimal Steps -->
         <div class="steps-container">
-          <div class="step-item"><span>١. امسح الكود</span></div>
-          <div class="step-item"><span>•</span></div>
-          <div class="step-item"><span>٢. اختر وجبتك</span></div>
-          <div class="step-item"><span>•</span></div>
-          <div class="step-item"><span>٣. أرسل طلبك</span></div>
+          <div class="step-item"><span>📷</span><span>١. وجّه الكاميرا</span></div>
+          <div class="step-item"><span>🍔</span><span>٢. اختر وجبتك</span></div>
+          <div class="step-item"><span>⚡</span><span>٣. طلبك يجهز فوراً</span></div>
         </div>
+
+        <div class="footer-note">نتمنى لكم وقتاً ممتعاً ووجبة شهية ✨</div>
+        <div class="secure-tag">🔒 رمز طلب مشفر ومعتمد للطاولة</div>
       </div>
     </body>
     </html>
@@ -388,26 +446,37 @@ export function printAllTableStands(stands: Array<{
   const cardsHtml = stands.map((stand, idx) => `
     <div class="stand-wrapper ${idx < stands.length - 1 ? 'page-break' : ''}">
       <div class="stand-card">
-        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً بكم'}</h1>
+        <div class="luxury-crest">
+          <span>✦</span>
+          <span class="crest-icon">🍽️</span>
+          <span>✦</span>
+        </div>
 
-        <div class="table-pill">طاولة ${stand.tableNumber}</div>
+        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً وسهلاً بكم'}</h1>
+        <div class="menu-subtitle">قائمة الطعام الرقمية والطلب المباشر</div>
+
+        <div class="table-badge">
+          <span>طاولة رقم</span>
+          <span class="num">${stand.tableNumber}</span>
+        </div>
 
         <div class="qr-frame">
           <img src="${stand.qrDataUrl}" alt="كود طاولة ${stand.tableNumber}" />
         </div>
 
         <div class="instructions">
-          <h3>امسح الكود لطلب الطعام</h3>
-          <p>وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
+          <h3>امسح الرمز لطلب طعامك مباشرة 📲</h3>
+          <p>وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك</p>
         </div>
 
         <div class="steps-container">
-          <div class="step-item"><span>١. امسح الكود</span></div>
-          <div class="step-item"><span>•</span></div>
-          <div class="step-item"><span>٢. اختر وجبتك</span></div>
-          <div class="step-item"><span>•</span></div>
-          <div class="step-item"><span>٣. أرسل طلبك</span></div>
+          <div class="step-item"><span>📷</span><span>١. وجّه الكاميرا</span></div>
+          <div class="step-item"><span>🍔</span><span>٢. اختر وجبتك</span></div>
+          <div class="step-item"><span>⚡</span><span>٣. طلبك يجهز فوراً</span></div>
         </div>
+
+        <div class="footer-note">نتمنى لكم وقتاً ممتعاً ووجبة شهية ✨</div>
+        <div class="secure-tag">🔒 رمز طلب مشفر ومعتمد للطاولة</div>
       </div>
     </div>
   `).join('');
@@ -417,7 +486,7 @@ export function printAllTableStands(stands: Array<{
     <html dir="rtl" lang="ar">
     <head>
       <meta charset="utf-8">
-      <title>طباعة بطاقات الطاولات</title>
+      <title>طباعة بطاقات الطاولات الفاخرة</title>
       <style>
         @page { size: A5 portrait; margin: 0; }
         @media print {
@@ -429,7 +498,7 @@ export function printAllTableStands(stands: Array<{
             print-color-adjust: exact !important;
           }
           .page-break { page-break-after: always; break-after: page; }
-          .stand-card { box-shadow: none !important; border: 1.5px solid #e2e8f0 !important; }
+          .stand-card { box-shadow: none !important; border: 2px solid #eab308 !important; }
         }
         * { box-sizing: border-box; }
         body {
@@ -440,18 +509,25 @@ export function printAllTableStands(stands: Array<{
           width: 148mm; height: 210mm; display: flex; align-items: center; justify-content: center; padding: 8mm; box-sizing: border-box;
         }
         .stand-card {
-          width: 132mm; background: #ffffff; border-radius: 24px; border: 1.5px solid #e2e8f0;
-          padding: 32px 24px 28px 24px; text-align: center; position: relative;
+          width: 132mm; background: #ffffff; border-radius: 28px; border: 2px solid #eab308;
+          padding: 26px 22px 22px 22px; text-align: center; position: relative;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
+          background-image: radial-gradient(circle at top, rgba(254, 243, 199, 0.35) 0%, #ffffff 70%);
         }
-        .restaurant-title { font-size: 26px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px; }
-        .table-pill { display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; color: #0f172a; padding: 6px 20px; border-radius: 999px; font-size: 14px; font-weight: 700; margin: 12px 0 16px 0; border: 1px solid #cbd5e1; }
-        .qr-frame { width: 76mm; height: 76mm; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 12px; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
-        .qr-frame img { width: 100%; height: 100%; object-fit: contain; }
-        .instructions h3 { margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e293b; }
-        .instructions p { margin: 0; font-size: 12px; color: #64748b; font-weight: 500; }
-        .steps-container { display: flex; justify-content: center; gap: 16px; width: 100%; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
-        .step-item { font-size: 11px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px; }
+        .luxury-crest { display: flex; align-items: center; justify-content: center; gap: 6px; color: #d97706; font-size: 13px; font-weight: 800; letter-spacing: 2px; margin-bottom: 6px; }
+        .crest-icon { font-size: 18px; }
+        .restaurant-title { font-size: 28px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: -0.5px; line-height: 1.2; }
+        .menu-subtitle { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 1.5px; margin: 4px 0 14px 0; }
+        .table-badge { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 8px 30px; border-radius: 999px; font-size: 15px; font-weight: 900; margin-bottom: 16px; border: 1.5px solid #eab308; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15); }
+        .table-badge span.num { font-size: 20px; color: #fde047; font-weight: 900; }
+        .qr-frame { width: 76mm; height: 76mm; background: #ffffff; border: 2px solid #fde68a; border-radius: 24px; padding: 12px; margin: 0 auto 14px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(217, 119, 6, 0.12); }
+        .qr-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
+        .instructions h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 900; color: #0f172a; }
+        .instructions p { margin: 0; font-size: 12px; color: #64748b; font-weight: 600; max-width: 110mm; }
+        .steps-container { display: flex; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding-top: 12px; border-top: 1px solid #fef3c7; }
+        .step-item { background: #fffbeb; border: 1px solid #fde68a; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 5px; }
+        .footer-note { margin-top: 12px; font-size: 11px; font-weight: 700; color: #b45309; }
+        .secure-tag { margin-top: 4px; font-size: 9px; font-weight: 600; color: #94a3b8; }
       </style>
     </head>
     <body>

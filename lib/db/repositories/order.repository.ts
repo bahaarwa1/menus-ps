@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { OrderStatus, Json } from '@/types/database.types';
 import { broadcastOrderEvent } from '@/lib/realtime/order-events';
@@ -99,7 +99,7 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
     };
   } else {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data: rawOrder, error: orderError } = await (supabase.from('orders') as any)
         .insert({
           branch_id: dto.branchId,
@@ -196,7 +196,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
 
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { error } = await (supabase.from('orders') as any)
         .update({ status })
         .eq('id', orderId);
@@ -249,7 +249,7 @@ export async function getOrderById(orderId: string): Promise<StoredOrder | null>
   // 3. Fallback to Supabase if configured
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const cleanNum = orderId.replace(/^#/, '');
       const { data } = await (supabase.from('orders') as any)
         .select('*')

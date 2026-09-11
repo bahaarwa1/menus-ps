@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { tables as fallbackTables } from '@/data/demo-data';
 import { TableStatus } from '@/types/database.types';
@@ -43,7 +43,7 @@ export async function getTableByQrToken(qrToken: string): Promise<VerifiedTable 
   }
 
   try {
-    const supabase = createClient();
+    const supabase = createAdminClient();
     const { data: rawData, error } = await supabase
       .from('tables')
       .select(`

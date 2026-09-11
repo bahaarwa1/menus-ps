@@ -72,6 +72,7 @@ function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
   const restaurantParam = searchParams.get('restaurant') || '';
+  const tableParam = searchParams.get('table') || '';
   const defaultSlug = 'burger-house-nablus';
 
   // Instant extraction from QR token (e.g. qr_burger-house-nablus_t2_xyz)
@@ -79,6 +80,7 @@ function FastFrictionlessMenuContent() {
   const slugFromToken = tokenSlugMatch ? tokenSlugMatch[1] : '';
   const tokenTableMatch = qrTokenParam ? qrTokenParam.match(/_t(\d+)_/) : null;
   const tableFromToken = tokenTableMatch ? parseInt(tokenTableMatch[1], 10) : 0;
+  const tableFromParam = tableParam ? parseInt(tableParam, 10) : 0;
 
   const effectiveSlug = restaurantParam || slugFromToken || (qrTokenParam ? '' : defaultSlug);
   const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
@@ -93,10 +95,13 @@ function FastFrictionlessMenuContent() {
   const [activeCategory, setActiveCategory] = useState(isDemo ? (initialCategories[0]?.id || 'burgers') : '');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Table verification state - initialize immediately from token so it never shows Table 0
-  const [tableNumber, setTableNumber] = useState<number>(tableFromToken || (isDemo ? 1 : 0));
-  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(tableFromToken > 0 || isDemo);
+  // Table state: resolve from URL table param, QR token, or demo table 1
+  const initialTable = tableFromParam || tableFromToken || (isDemo ? 1 : 0);
+  const [tableNumber, setTableNumber] = useState<number>(initialTable);
+  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(initialTable > 0 || isDemo);
   const [tokenError, setTokenError] = useState<string>('');
+  const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
+  const [customTableInput, setCustomTableInput] = useState('');
 
   // Cart state
   const [cartQuantities, setCartQuantities] = useState<Record<string, number>>({});
@@ -220,7 +225,7 @@ function FastFrictionlessMenuContent() {
   const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>('');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
-  // Fetch restaurant details (logo, city, etc.)
+  // Fetch restaurant details (logo, city, branchId, etc.)
   useEffect(() => {
     if (!activeRestaurantSlug) return;
     fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeRestaurantSlug)}`)
@@ -230,17 +235,20 @@ function FastFrictionlessMenuContent() {
           if (data.settings.logoUrl) setActiveRestaurantLogo(data.settings.logoUrl);
           if (data.settings.name) setActiveRestaurantName(data.settings.name);
           if (data.settings.city) setActiveRestaurantCity(data.settings.city);
+          if (data.settings.branchId) setActiveBranchId(data.settings.branchId);
         }
       })
       .catch(() => {});
   }, [activeRestaurantSlug]);
 
-  // Dynamic QR Token Verification on Load — runs in parallel with menu fetch
+  // Dynamic QR Token & Table Verification on Load
   useEffect(() => {
     if (restaurantParam) {
       setActiveRestaurantSlug(restaurantParam);
-      setIsTokenVerified(true);
-      setTableNumber(0);
+      if (tableFromParam > 0) {
+        setTableNumber(tableFromParam);
+        setIsTokenVerified(true);
+      }
     }
     if (qrTokenParam) {
       fetch(`/api/v1/tables/verify-token?token=${encodeURIComponent(qrTokenParam)}`)
@@ -261,7 +269,7 @@ function FastFrictionlessMenuContent() {
           setTokenError('تعذر التحقق من رمز QR');
         });
     }
-  }, [qrTokenParam, restaurantParam]);
+  }, [qrTokenParam, restaurantParam, tableFromParam]);
 
   // Fetch menu with instant client-side SWR (Stale-While-Revalidate) cache
   useEffect(() => {
@@ -414,6 +422,13 @@ function FastFrictionlessMenuContent() {
 
   const handleSendOrder = async () => {
     if (Object.keys(cartQuantities).length === 0) return;
+
+    // If table number is missing or 0, open table picker modal instead of sending invalid order
+    if (!tableNumber || tableNumber <= 0) {
+      setIsTablePickerOpen(true);
+      return;
+    }
+
     setIsSubmittingOrder(true);
     setOrderError('');
 
@@ -429,7 +444,8 @@ function FastFrictionlessMenuContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          branchId: activeBranchId || 'b0000000-0000-0000-0000-000000000001',
+          branchId: activeBranchId || undefined,
+          restaurantSlug: activeRestaurantSlug,
           tableNumber,
           tableToken: qrTokenParam || undefined,
           items: itemsPayload,
@@ -470,76 +486,94 @@ function FastFrictionlessMenuContent() {
       <div className="w-full max-w-lg bg-white min-h-screen shadow-xl flex flex-col relative pb-12">
 
         {/* ============================================================
-            1. FIXED LUMINOUS APP BAR & CATEGORY BAR (تصميم فاتح راقي مريح للعين)
+            1. FIXED LUMINOUS APP BAR & CATEGORY BAR (تصميم مريح وأنيق على الجوال)
         ============================================================ */}
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs shrink-0">
           
           {/* Top Row: Brand + Table + Language + Waiter */}
-          <div className="px-3.5 py-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="px-3 py-2 sm:px-3.5 sm:py-2.5 flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               {activeRestaurantLogo ? (
-                <div className="w-10 h-10 rounded-2xl overflow-hidden border border-slate-200 shadow-xs shrink-0 bg-white">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-slate-200 shadow-2xs shrink-0 bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={activeRestaurantLogo} alt={activeRestaurantName || 'Logo'} className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-sm shadow-orange-500/20 shrink-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-2xs shrink-0">
                   {activeRestaurantName ? activeRestaurantName.slice(0, 1).toUpperCase() : 'M'}
                 </div>
               )}
-              <div className="truncate">
-                <div className="flex items-center gap-1.5">
-                  <h1 className="text-sm font-bold text-slate-900 truncate capitalize">
+              <div className="truncate min-w-0">
+                <div className="flex items-center gap-1">
+                  <h1 className="text-xs sm:text-sm font-black text-slate-900 truncate">
                     {activeRestaurantName || (restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'مطعمنا' : 'Our Restaurant'))}
                   </h1>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 </div>
-                <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-                  <span className="text-amber-500 font-bold flex items-center gap-0.5">
-                    <Star size={11} fill="currentColor" /> 4.9
+                <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1 leading-none mt-0.5">
+                  <span className="text-amber-500 font-bold flex items-center">
+                    <Star size={9} fill="currentColor" /> 4.9
                   </span>
-                  <span>· {activeRestaurantCity || (restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
+                  <span className="truncate">· {activeRestaurantCity || (restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
                 </p>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <LanguageSwitcher variant="subtle" />
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Table Button / Picker */}
+              <button
+                onClick={() => setIsTablePickerOpen(true)}
+                className={`px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 transition-all cursor-pointer ${
+                  tableNumber > 0
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-xs animate-pulse'
+                }`}
+                title={language === 'ar' ? 'تحديد أو تغيير رقم الطاولة' : 'Select or change table'}
+              >
+                {tableNumber > 0 ? (
+                  <>
+                    <span className="text-[10px] text-amber-700 font-bold">{language === 'ar' ? 'طاولة' : 'T.'}</span>
+                    <span className="text-xs font-black text-amber-950">{tableNumber}</span>
+                  </>
+                ) : (
+                  <>
+                    <Utensils size={11} />
+                    <span>{language === 'ar' ? 'حدد الطاولة' : 'Set Table'}</span>
+                  </>
+                )}
+              </button>
 
               <button
                 onClick={handleCallWaiter}
-                className="bg-slate-100 hover:bg-orange-50 active:scale-95 px-2.5 py-1.5 rounded-full border border-slate-200/80 text-slate-700 hover:text-orange-600 text-xs font-bold flex items-center gap-1 transition-all"
+                className="bg-slate-100 hover:bg-orange-50 active:scale-95 px-2 py-1 rounded-full border border-slate-200 text-slate-700 hover:text-orange-600 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
                 title={language === 'ar' ? 'طلب حضور الويتر للطاولة' : 'Call Waiter'}
               >
-                <Bell size={13} className="text-orange-500" />
-                <span>{language === 'ar' ? 'الويتر' : 'Waiter'}</span>
+                <Bell size={12} className="text-orange-500" />
+                <span className="hidden sm:inline text-[11px]">{language === 'ar' ? 'الويتر' : 'Waiter'}</span>
               </button>
 
-              <div className="bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-                <ShieldCheck size={13} className={isTokenVerified ? 'text-emerald-600' : 'text-orange-600'} />
-                <span>{language === 'ar' ? `طاولة ${tableNumber}` : `Table ${tableNumber}`}</span>
-              </div>
+              <LanguageSwitcher variant="subtle" />
             </div>
           </div>
 
           {/* Search Input Bar */}
-          <div className="px-3.5 pb-2.5">
+          <div className="px-3 pb-2">
             <div className="relative">
-              <Search size={15} className={`absolute ${direction === 'rtl' ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-slate-400`} />
+              <Search size={14} className={`absolute ${direction === 'rtl' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-slate-400`} />
               <input 
                 type="text"
                 placeholder={language === 'ar' ? "ابحث عن وجبة، صوص، أو عصير..." : "Search burger, sides, drinks..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-10 py-2 bg-slate-100/90 hover:bg-slate-100 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 border border-slate-200/80 rounded-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"
+                className="w-full pl-8 pr-8 py-1.5 bg-slate-100/90 hover:bg-slate-100 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 border border-slate-200/80 rounded-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -776,11 +810,11 @@ function FastFrictionlessMenuContent() {
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
-              className="fixed bottom-4 inset-x-4 max-w-md mx-auto z-40"
+              className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-3 sm:inset-x-4 max-w-md mx-auto z-40"
             >
               <button
                 onClick={() => setIsReviewOpen(true)}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3.5 rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-between active:scale-98 transition-all border border-orange-400/40 cursor-pointer"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 sm:py-3.5 rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-between active:scale-98 transition-all border border-orange-400/40 cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="w-7 h-7 rounded-xl bg-white text-orange-600 font-black text-xs flex items-center justify-center shadow-xs">
@@ -819,7 +853,7 @@ function FastFrictionlessMenuContent() {
                 <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-2 shrink-0 sm:hidden" />
 
                 {/* Product Image Header */}
-                <div className="relative h-52 w-full bg-orange-50 shrink-0 overflow-hidden">
+                <div className="relative h-44 sm:h-52 w-full bg-orange-50 shrink-0 overflow-hidden">
                   {selectedProduct.imageUrl || (selectedProduct.image && (selectedProduct.image.startsWith('http') || selectedProduct.image.startsWith('data:') || selectedProduct.image.startsWith('/'))) ? (
                     <img 
                       src={selectedProduct.imageUrl || selectedProduct.image} 
@@ -924,7 +958,7 @@ function FastFrictionlessMenuContent() {
                 </div>
 
                 {/* Modal Footer CTA */}
-                <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-3 shrink-0">
+                <div className="p-3.5 sm:p-4 bg-white border-t border-slate-100 flex items-center gap-3 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
                   <button
                     onClick={handleSaveProductModal}
                     className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-orange-500/25 transition-all cursor-pointer"
@@ -1014,7 +1048,7 @@ function FastFrictionlessMenuContent() {
                 </div>
 
                 {/* Total & Send Action */}
-                <div className="p-4 bg-white border-t border-slate-100 shrink-0 space-y-3">
+                <div className="p-4 bg-white border-t border-slate-100 shrink-0 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
                   {orderError && (
                     <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2">
                       <AlertCircle size={15} />
@@ -1160,6 +1194,108 @@ function FastFrictionlessMenuContent() {
                 {language === 'ar' ? 'طلب وجبات إضافية لنفس الطاولة ➕' : 'Order More for This Table ➕'}
               </button>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ============================================================
+            7. INTERACTIVE TABLE PICKER MODAL
+        ============================================================ */}
+        <AnimatePresence>
+          {isTablePickerOpen && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={() => setIsTablePickerOpen(false)} 
+                className="absolute inset-0 bg-slate-950/40 backdrop-blur-xs"
+              />
+              <motion.div 
+                initial={{ y: "100%" }} 
+                animate={{ y: 0 }} 
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                className="relative bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl p-5 sm:p-6 z-10 shadow-2xl border-t sm:border border-slate-200 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+              >
+                <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden" />
+                
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                      <Utensils size={16} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">
+                        {language === 'ar' ? 'حدد رقم طاولتك' : 'Select Your Table'}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {language === 'ar' ? 'ليصل طلبك إلى طاولتك مباشرة وبدون تأخير' : 'So your order is served directly to your table'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsTablePickerOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Quick Table Grid (1..16) */}
+                <div className="my-4">
+                  <p className="text-[11px] font-bold text-slate-400 mb-2">
+                    {language === 'ar' ? 'طاولات سريعة:' : 'Quick Select:'}
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 16 }, (_, i) => i + 1).map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => {
+                          setTableNumber(num);
+                          setIsTokenVerified(true);
+                          setIsTablePickerOpen(false);
+                        }}
+                        className={`py-2.5 rounded-xl font-black text-sm transition-all cursor-pointer ${
+                          tableNumber === num
+                            ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/30 ring-2 ring-orange-500/20'
+                            : 'bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-800 border border-slate-200/60'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Number Input */}
+                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    placeholder={language === 'ar' ? "أو اكتب رقم طاولة أخرى..." : "Or type other table number..."}
+                    value={customTableInput}
+                    onChange={(e) => setCustomTableInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500"
+                  />
+                  <button
+                    onClick={() => {
+                      const parsed = parseInt(customTableInput, 10);
+                      if (parsed > 0) {
+                        setTableNumber(parsed);
+                        setIsTokenVerified(true);
+                        setIsTablePickerOpen(false);
+                        setCustomTableInput('');
+                      }
+                    }}
+                    disabled={!customTableInput || parseInt(customTableInput, 10) <= 0}
+                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-xl text-xs font-black transition-all cursor-pointer"
+                  >
+                    {language === 'ar' ? 'تأكيد' : 'Confirm'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
