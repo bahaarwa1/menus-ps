@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, name, description, price, isAvailable } = body;
+    const { itemId, name, description, price, isAvailable, imageUrl } = body;
 
     if (!itemId) {
       return NextResponse.json(
@@ -43,12 +43,14 @@ export async function POST(request: NextRequest) {
     const sanitizedName = name ? sanitizeInput(String(name), 100) : undefined;
     const sanitizedDesc = description ? sanitizeInput(String(description), 500) : undefined;
     const numericPrice = price !== undefined ? Math.max(0, Number(price)) : undefined;
+    const sanitizedImage = typeof imageUrl === 'string' ? imageUrl.trim() : undefined;
 
     await updateMenuItem(String(itemId).slice(0, 64), {
       name: sanitizedName,
       description: sanitizedDesc,
       price: numericPrice,
       is_available: typeof isAvailable === 'boolean' ? isAvailable : undefined,
+      image_url: sanitizedImage,
     });
 
     return NextResponse.json({

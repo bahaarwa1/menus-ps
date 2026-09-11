@@ -695,9 +695,9 @@ function FastFrictionlessMenuContent() {
                   {/* Right (RTL Left): Food Image & Quick Action */}
                   <div className="flex flex-col items-center gap-2 shrink-0">
                     <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative shadow-2xs">
-                      {item.imageUrl ? (
+                      {item.imageUrl || (item.image && (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/'))) ? (
                         <img 
-                          src={item.imageUrl} 
+                          src={item.imageUrl || item.image} 
                           alt={item.name} 
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                           loading="lazy"
@@ -705,7 +705,7 @@ function FastFrictionlessMenuContent() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl bg-orange-50">
-                          {item.image}
+                          {item.image || '🍽️'}
                         </div>
                       )}
                     </div>
@@ -796,9 +796,9 @@ function FastFrictionlessMenuContent() {
 
                 {/* Product Image Header */}
                 <div className="relative h-52 w-full bg-orange-50 shrink-0 overflow-hidden">
-                  {selectedProduct.imageUrl ? (
+                  {selectedProduct.imageUrl || (selectedProduct.image && (selectedProduct.image.startsWith('http') || selectedProduct.image.startsWith('data:') || selectedProduct.image.startsWith('/'))) ? (
                     <img 
-                      src={selectedProduct.imageUrl} 
+                      src={selectedProduct.imageUrl || selectedProduct.image} 
                       alt={selectedProduct.name} 
                       className="w-full h-full object-cover" 
                       loading="lazy"
@@ -806,7 +806,7 @@ function FastFrictionlessMenuContent() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
-                      {selectedProduct.image}
+                      {selectedProduct.image || '🍽️'}
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

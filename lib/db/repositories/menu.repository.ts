@@ -201,7 +201,7 @@ function buildFallbackMenu(): PublicMenuCategory[] {
  */
 export async function updateMenuItem(
   itemId: string,
-  updates: { name?: string; description?: string; price?: number; is_available?: boolean }
+  updates: { name?: string; description?: string; price?: number; is_available?: boolean; image_url?: string }
 ): Promise<boolean> {
   if (isSupabaseConfigured()) {
     try {
@@ -211,6 +211,7 @@ export async function updateMenuItem(
       if (updates.description !== undefined) dbUpdates.description_ar = updates.description;
       if (updates.price !== undefined) dbUpdates.price = updates.price;
       if (updates.is_available !== undefined) dbUpdates.is_available = updates.is_available;
+      if (updates.image_url !== undefined) dbUpdates.image_url = updates.image_url;
 
       await (supabase.from('menu_items') as any).update(dbUpdates).eq('id', itemId);
     } catch (err) {

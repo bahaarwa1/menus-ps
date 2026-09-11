@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, price, description, categoryName, isPopular, isSpicy, slug } = body;
+    const { name, price, description, categoryName, isPopular, isSpicy, slug, imageUrl } = body;
 
     if (!name || price === undefined) {
       return NextResponse.json({ success: false, error: 'اسم الصنف والسعر مطلوبان' }, { status: 400 });
@@ -90,7 +90,16 @@ export async function POST(request: NextRequest) {
     const targetSlug = slug || session.restaurantSlug;
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ success: true, item: { id: `item-${Date.now()}`, name, price, description } });
+      return NextResponse.json({ 
+        success: true, 
+        item: { 
+          id: `item-${Date.now()}`, 
+          name, 
+          price, 
+          description, 
+          image: imageUrl || null 
+        } 
+      });
     }
 
     const supabase = createAdminClient();
@@ -132,7 +141,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'فشل تحديد قسم الصنف' }, { status: 500 });
     }
 
-    // 3. Insert menu item
+    // 3. Insert menu item with optional image_url
     const { data: newItem, error: itemErr } = await (supabase as any)
       .from('menu_items')
       .insert({
@@ -140,11 +149,12 @@ export async function POST(request: NextRequest) {
         name_ar: String(name).trim(),
         description_ar: description ? String(description).trim() : null,
         price: Number(price),
+        image_url: imageUrl ? String(imageUrl).trim() : null,
         is_popular: Boolean(isPopular),
         is_spicy: Boolean(isSpicy),
         is_available: true,
       })
-      .select('id, name_ar, description_ar, price, is_popular, is_spicy, is_available')
+      .select('id, name_ar, description_ar, price, image_url, is_popular, is_spicy, is_available')
       .single();
 
     if (itemErr) {
@@ -160,6 +170,7 @@ export async function POST(request: NextRequest) {
         name: newItem.name_ar,
         description: newItem.description_ar || '',
         price: Number(newItem.price),
+        image: newItem.image_url || undefined,
         popular: newItem.is_popular,
         spicy: newItem.is_spicy,
         available: newItem.is_available,
@@ -211,7 +222,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, name, price, description, isPopular, isSpicy, isAvailable } = body;
+    const { itemId, name, price, description, isPopular, isSpicy, isAvailable, imageUrl } = body;
 
     if (!itemId) {
       return NextResponse.json({ success: false, error: 'معرف الصنف مطلوب' }, { status: 400 });
@@ -223,6 +234,7 @@ export async function PUT(request: NextRequest) {
       if (name !== undefined) updates.name_ar = String(name).trim();
       if (price !== undefined) updates.price = Number(price);
       if (description !== undefined) updates.description_ar = description ? String(description).trim() : null;
+      if (imageUrl !== undefined) updates.image_url = imageUrl ? String(imageUrl).trim() : null;
       if (isPopular !== undefined) updates.is_popular = Boolean(isPopular);
       if (isSpicy !== undefined) updates.is_spicy = Boolean(isSpicy);
       if (isAvailable !== undefined) updates.is_available = Boolean(isAvailable);
