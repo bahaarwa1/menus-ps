@@ -57,11 +57,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Subdomain Root Routing:
-  // If a customer visits a restaurant's subdomain root (e.g. burgerhouse.menus-ps.vercel.app/),
-  // automatically serve the customer menu for that restaurant!
+  // 4. Subdomain Routing:
   let response: NextResponse;
-  if (currentSubdomain && pathname === '/') {
+
+  if (currentSubdomain === 'demo') {
+    // Dedicated Demo Subdomain (e.g. demo.menus.ps or demo.menus-ps.vercel.app)
+    if (pathname === '/') {
+      response = NextResponse.rewrite(new URL('/demo', request.url));
+    } else {
+      response = NextResponse.next();
+    }
+    response.headers.set('X-Site-Mode', 'demo');
+  } else if (currentSubdomain && pathname === '/') {
+    // Restaurant Subdomain (e.g. burgerhouse.menus.ps) -> serve customer menu
     const rewriteUrl = new URL(`/m?restaurant=${currentSubdomain}`, request.url);
     response = NextResponse.rewrite(rewriteUrl);
   } else {

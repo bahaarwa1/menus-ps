@@ -22,8 +22,8 @@ export default function Navbar() {
     { href: '/faq', label: t('nav.faq', 'الأسئلة الشائعة') },
   ];
 
-  // Hide navbar on demo pages, standalone mobile menu, and staff screen
-  if (pathname.startsWith('/demo') || pathname === '/m' || pathname === '/staff') return null;
+  // Hide navbar on demo pages, dashboard, standalone mobile menu, and staff screen
+  if (pathname.startsWith('/demo') || pathname.startsWith('/dashboard') || pathname === '/m' || pathname === '/staff') return null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-100 shadow-2xs" dir={direction}>
