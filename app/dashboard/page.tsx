@@ -6,7 +6,7 @@ import {
   TrendingUp, ShoppingBag, CreditCard,
   Copy, Check, ExternalLink,
   QrCode, ChefHat, ArrowUpRight,
-  Plus, Users
+  Plus, Users, Key
 } from 'lucide-react';
 
 export default function ProductionDashboardOverview() {
@@ -179,7 +179,7 @@ export default function ProductionDashboardOverview() {
       </div>
 
       {/* 3. Quick Action Hub */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
           href="/dashboard/menu"
           className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-500/50 hover:bg-orange-50/20 shadow-xs transition-all flex items-center gap-3 group"
@@ -220,9 +220,22 @@ export default function ProductionDashboardOverview() {
         </Link>
 
         <Link
+          href="/dashboard/staff/codes"
+          className="p-4 rounded-2xl bg-white border border-purple-200 hover:border-purple-500 hover:bg-purple-50/30 shadow-xs transition-all flex items-center gap-3 group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Key size={20} />
+          </div>
+          <div>
+            <p className="text-xs sm:text-sm font-black text-slate-900">رموز الموظفين</p>
+            <p className="text-[11px] text-purple-600 font-bold">كود 6 أرقام للمطبخ</p>
+          </div>
+        </Link>
+
+        <Link
           href="/staff"
           target="_blank"
-          className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all flex items-center gap-3 group"
+          className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all flex items-center gap-3 group col-span-2 sm:col-span-1"
         >
           <div className="w-10 h-10 rounded-xl bg-white/10 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <ChefHat size={20} />
@@ -231,6 +244,31 @@ export default function ProductionDashboardOverview() {
             <p className="text-xs sm:text-sm font-black text-white">شاشة المطبخ KDS</p>
             <p className="text-[11px] text-slate-300">لشاشات التابلت والجدار</p>
           </div>
+        </Link>
+      </div>
+
+      {/* Quick Staff Code Access Banner */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-100/50 border border-purple-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20">
+            <Key size={22} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="text-sm sm:text-base font-black text-slate-900">نظام رموز دخول الموظفين (كود 6 أرقام)</h3>
+              <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black">جديد</span>
+            </div>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              يمكنك توليد رمز دخول مؤقت مكوّن من 6 أرقام باسم الموظف وإعطائه له ليسجل دخوله مباشرة لشاشة المطبخ.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/staff/codes"
+          className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md shadow-purple-600/20 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+        >
+          <span>توليد كود موظف الآن</span>
+          <ArrowUpRight size={15} />
         </Link>
       </div>
 
