@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock, PlusCircle, RotateCcw, 
   Search, Printer, ChevronRight, Check, X, Bell, BellOff,
-  Sun, Moon, LogOut, QrCode
+  Sun, Moon, LogOut, Flame, ChefHat
 } from 'lucide-react';
 import { orders as initialOrders } from '@/data/demo-data';
-import RealQRCode from '@/components/common/RealQRCode';
+import { printThermalReceipt } from '@/lib/print-utils';
 
 // Audio chime using Web Audio API
 function playOrderChime() {
@@ -22,7 +22,7 @@ function playOrderChime() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
     osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -58,7 +58,6 @@ export default function StaffOrdersManagementPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
-  const [selectedTableForQr, setSelectedTableForQr] = useState<number | null>(null);
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
@@ -149,20 +148,18 @@ export default function StaffOrdersManagementPage() {
     router.push('/staff/login');
   };
 
-  const handlePrintReceipt = () => {
-    document.body.classList.add('printable-receipt-mode');
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove('printable-receipt-mode');
-    }, 1000);
-  };
-
-  const handlePrintStand = () => {
-    document.body.classList.add('printable-stand-mode');
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove('printable-stand-mode');
-    }, 1000);
+  // Dedicated single-page thermal receipt print (80mm) via isolated iframe
+  const handlePrintReceipt = (order: any) => {
+    if (!order) return;
+    printThermalReceipt({
+      id: order.id,
+      table: order.table,
+      time: order.time,
+      total: order.total,
+      items: order.items || [],
+      notes: order.notes,
+      restaurantName: 'Burger House نابلس'
+    });
   };
 
   // Filter orders
@@ -174,31 +171,36 @@ export default function StaffOrdersManagementPage() {
     return matchesFilter && matchesSearch;
   });
 
+  // Vibrant, high-contrast, saturated status badges
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'جديد':
         return (
-          <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+          <span className="bg-rose-500 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-rose-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
             <span>بانتظار التأكيد</span>
           </span>
         );
       case 'قيد التحضير':
         return (
-          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-spin" />
+          <span className="bg-amber-500 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-spin" />
             <span>قيد التحضير</span>
           </span>
         );
       case 'جاهز':
         return (
-          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="bg-emerald-600 text-white font-black text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm shadow-emerald-600/30">
+            <Check size={11} strokeWidth={3} />
             <span>جاهز للتسليم</span>
           </span>
         );
       case 'تم التسليم':
-        return <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">مكتمل</span>;
+        return (
+          <span className="bg-slate-700 text-slate-100 font-black text-[11px] px-2.5 py-0.5 rounded-full">
+            مكتمل
+          </span>
+        );
       default:
         return null;
     }
@@ -212,7 +214,7 @@ export default function StaffOrdersManagementPage() {
     if (!order) {
       return (
         <div className={`rounded-2xl border p-8 text-center text-slate-400 text-xs ${
-          isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/80'
+          isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
         }`}>
           اختر طلباً من القائمة لعرض تفاصيله
         </div>
@@ -220,40 +222,33 @@ export default function StaffOrdersManagementPage() {
     }
 
     return (
-      <div className={`space-y-3 ${
+      <div className={`space-y-3.5 ${
         isMobileModal 
           ? '' 
-          : `rounded-2xl border shadow-xs p-4 max-h-[calc(100vh-160px)] overflow-y-auto ${
-              isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200/80 text-slate-900'
+          : `rounded-2xl border shadow-sm p-4 max-h-[calc(100vh-160px)] overflow-y-auto ${
+              isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
             }`
       }`}>
         {/* Order Details Header */}
         <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-extrabold text-base">{order.id}</h3>
+              <span className="font-black text-lg text-slate-900 dark:text-white tracking-tight">{order.id}</span>
               {getStatusBadge(order.status)}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-              طلب طاولة {order.table} — الساعة {order.time}
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">
+              طلب طاولة <span className="text-orange-600 font-black">{order.table}</span> — الساعة {order.time}
             </p>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setSelectedTableForQr(order.table)}
-              className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-700"
-              title="عرض كود QR الخاص بهذه الطاولة"
-            >
-              <QrCode size={16} />
-            </button>
-
-            <button
               onClick={() => handlePrintReceipt(order)}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-700"
-              title="طباعة بون الطلب للمطبخ"
+              className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-black"
+              title="طباعة بون المطبخ (صفحة واحدة فورية)"
             >
-              <Printer size={16} />
+              <Printer size={15} />
+              <span>طباعة البون</span>
             </button>
 
             {isMobileModal && (
@@ -270,7 +265,7 @@ export default function StaffOrdersManagementPage() {
 
         {/* Items List */}
         <div className={`space-y-2 ${isMobileModal ? 'max-h-64' : 'max-h-60'} overflow-y-auto pr-0.5`}>
-          <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-black text-slate-700 dark:text-slate-300">
             محتويات الطلب ({order.items.length} أصناف)
           </p>
           {order.items.map((item: any, iIdx: number) => {
@@ -280,8 +275,8 @@ export default function StaffOrdersManagementPage() {
                 key={iIdx} 
                 className={`p-2.5 rounded-xl flex items-center justify-between gap-2.5 border transition-all ${
                   isDarkMode 
-                    ? 'bg-slate-800/80 border-slate-700 text-slate-100' 
-                    : 'bg-slate-50 border-slate-100 text-slate-900'
+                    ? 'bg-slate-800/90 border-slate-700 text-slate-100' 
+                    : 'bg-slate-50 border-slate-200/80 text-slate-900'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -295,16 +290,16 @@ export default function StaffOrdersManagementPage() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="font-bold text-xs sm:text-sm truncate">{item.name}</p>
+                    <p className="font-bold text-xs sm:text-sm truncate text-slate-900 dark:text-white">{item.name}</p>
                     {item.customization && (
-                      <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold block">• {item.customization}</span>
+                      <span className="text-[11px] text-orange-600 dark:text-orange-400 font-bold block">• {item.customization}</span>
                     )}
                     {item.extras && item.extras.length > 0 && (
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">• + {item.extras.join('، ')}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold block">• + {item.extras.join('، ')}</span>
                     )}
                   </div>
                 </div>
-                <span className="font-extrabold text-xs sm:text-sm shrink-0">{item.price * item.quantity} ₪</span>
+                <span className="font-black text-xs sm:text-sm shrink-0 text-slate-900 dark:text-white">{item.price * item.quantity} ₪</span>
               </div>
             );
           })}
@@ -312,27 +307,27 @@ export default function StaffOrdersManagementPage() {
 
         {/* Customer Notes */}
         {order.notes && (
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-xs font-bold text-amber-900 dark:text-amber-300">
-            <span className="block mb-1 font-extrabold text-amber-700 dark:text-amber-400">⚠️ ملاحظات الزبون:</span>
-            <p className="font-medium leading-relaxed">{order.notes}</p>
+          <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 rounded-xl p-3 text-xs font-bold text-amber-950 dark:text-amber-200 shadow-2xs">
+            <span className="block mb-1 font-black text-amber-700 dark:text-amber-400">⚠️ ملاحظات الزبون الخاصة:</span>
+            <p className="font-semibold leading-relaxed">{order.notes}</p>
           </div>
         )}
 
         {/* Bill Breakdown */}
-        <div className={`p-3 rounded-xl space-y-1.5 text-xs ${
-          isDarkMode ? 'bg-slate-800/60' : 'bg-slate-50'
+        <div className={`p-3.5 rounded-xl space-y-1.5 text-xs ${
+          isDarkMode ? 'bg-slate-800/70 border border-slate-700' : 'bg-slate-100/80 border border-slate-200/80'
         }`}>
-          <div className="flex justify-between text-slate-500 dark:text-slate-400 font-medium">
+          <div className="flex justify-between text-slate-600 dark:text-slate-400 font-semibold">
             <span>المجموع الفرعي:</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">{order.total} ₪</span>
+            <span className="font-bold text-slate-900 dark:text-slate-200">{order.total} ₪</span>
           </div>
-          <div className="flex justify-between text-slate-500 dark:text-slate-400 font-medium">
+          <div className="flex justify-between text-slate-600 dark:text-slate-400 font-semibold">
             <span>الضريبة والخدمة:</span>
-            <span className="font-bold text-emerald-600">مشمولة (0 ₪)</span>
+            <span className="font-bold text-emerald-600">مشمولة بالكامل (0 ₪)</span>
           </div>
           <div className="flex justify-between text-sm sm:text-base font-black pt-2 border-t border-slate-200 dark:border-slate-700">
-            <span>الإجمالي المطلوب:</span>
-            <span className="text-orange-600">{order.total} ₪</span>
+            <span className="text-slate-900 dark:text-white">الإجمالي المطلوب:</span>
+            <span className="text-orange-600 font-black">{order.total} ₪</span>
           </div>
         </div>
 
@@ -341,36 +336,36 @@ export default function StaffOrdersManagementPage() {
           {order.status === 'جديد' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
-              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
             >
-              <Check size={16} strokeWidth={3} />
-              <span>قبول الطلب وبدء التحضير 🔥</span>
+              <Flame size={17} />
+              <span>قبول الطلب وبدء التحضير فوراً 🔥</span>
             </button>
           )}
 
           {order.status === 'قيد التحضير' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'جاهز')}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
             >
-              <CheckCircle2 size={16} />
-              <span>الطلب جاهز للتقديم (طاولة {order.table}) ✅</span>
+              <CheckCircle2 size={17} />
+              <span>الطلب جاهز للتسليم (طاولة {order.table}) ✅</span>
             </button>
           )}
 
           {order.status === 'جاهز' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
             >
-              <Check size={16} />
+              <Check size={17} />
               <span>تم التسليم بنجاح وإغلاق الطلب 🚀</span>
             </button>
           )}
 
           {order.status === 'تم التسليم' && (
-            <div className="text-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-              تم تسليم هذا الطلب بنجاح ✓
+            <div className="text-center py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-slate-800 dark:text-emerald-400 rounded-xl text-xs sm:text-sm font-black">
+              ✓ تم تسليم هذا الطلب للزبون بنجاح
             </div>
           )}
         </div>
@@ -380,43 +375,43 @@ export default function StaffOrdersManagementPage() {
 
   return (
     <div className={`min-h-screen font-sans flex flex-col selection:bg-orange-500 selection:text-white transition-colors duration-200 ${
-      isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F8FAFC] text-slate-900'
+      isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F4F6F9] text-slate-900'
     }`} dir="rtl">
       
-      {/* 1. Header Bar - Matching Live Orders System */}
-      <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
-        isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/90'
+      {/* 1. Header Bar */}
+      <header className={`sticky top-0 z-30 border-b shadow-sm transition-colors backdrop-blur-md ${
+        isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
       }`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           
           {/* Logo & Title */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-bold shadow-xs">
-                <ClipboardList size={20} />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl flex items-center justify-center font-black shadow-md shadow-orange-500/20">
+                <ChefHat size={22} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-black leading-tight">إدارة الطلبات الحية</h1>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  <h1 className="text-base sm:text-lg font-black leading-tight text-slate-900 dark:text-white">إدارة الطلبات الحية</h1>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black ${
                     isRealtimeConnected 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' 
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      ? 'bg-emerald-500 text-white shadow-xs' 
+                      : 'bg-amber-500 text-white'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-                    <span className="hidden xs:inline">{isRealtimeConnected ? 'سحابي مباشر' : 'إعادة اتصال...'}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    <span>{isRealtimeConnected ? 'سحابي مباشر' : 'إعادة اتصال...'}</span>
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-medium">متابعة وتحديث طلبات الطاولات لحظة بلحظة · فرع نابلس</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Burger House نابلس · متابعة وتحديث طلبات الصالة</p>
               </div>
             </div>
 
-            {/* Mobile Actions Hamburger */}
-            <div className="flex md:hidden items-center gap-1">
+            {/* Mobile Actions */}
+            <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`p-2 rounded-xl border text-xs font-bold ${
-                  soundEnabled ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-slate-400 border-slate-200'
+                  soundEnabled ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-400 border-slate-200'
                 }`}
               >
                 {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
@@ -430,28 +425,19 @@ export default function StaffOrdersManagementPage() {
             </div>
           </div>
 
-          {/* Action Toolbar */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+          {/* Action Toolbar (Without QR code, purely staff order management) */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={addNewSimulatedOrder}
-              className="px-3 py-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-orange-500/20 transition-all"
+              className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
             >
-              <PlusCircle size={14} />
-              <span>+ محاكاة طلب QR</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedTableForQr(1)}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-200/80 dark:border-slate-700"
-              title="توليد كود QR حقيقي للطاولات"
-            >
-              <QrCode size={14} className="text-orange-500" />
-              <span className="hidden sm:inline">أكواد QR</span>
+              <PlusCircle size={15} />
+              <span>+ محاكاة طلب QR جديد</span>
             </button>
 
             <button
               onClick={resetOrders}
-              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors border border-slate-200/80 dark:border-slate-700"
+              className="p-2 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700 shadow-2xs"
               title="إعادة ضبط البيانات"
             >
               <RotateCcw size={15} />
@@ -462,9 +448,9 @@ export default function StaffOrdersManagementPage() {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playOrderChime();
               }}
-              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
                 soundEnabled
-                  ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
+                  ? 'bg-orange-500 text-white border-orange-500'
                   : 'bg-white text-slate-400 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
               }`}
               title={soundEnabled ? 'كتم الصوت' : 'تفعيل صوت التنبيه'}
@@ -474,9 +460,9 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
                 isDarkMode
-                  ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
+                  ? 'bg-amber-400 text-slate-900 border-amber-400'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
               }`}
               title="تبديل المظهر النهاري/الليلي"
@@ -486,7 +472,7 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={toggleFullscreen}
-              className="hidden lg:flex p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold"
+              className="hidden lg:flex p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold shadow-2xs"
               title="ملء الشاشة"
             >
               ⛶
@@ -494,7 +480,7 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shadow-2xs"
               title="تسجيل خروج"
             >
               <LogOut size={15} />
@@ -507,14 +493,14 @@ export default function StaffOrdersManagementPage() {
         <div className={`max-w-7xl mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
           isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'
         }`}>
-          {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs font-bold">
+          {/* Status Filter Tabs with Bold Vibrant Counters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs font-extrabold">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
               الكل ({ordersList.length})
@@ -525,7 +511,7 @@ export default function StaffOrdersManagementPage() {
               className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
                 statusFilter === 'جديد'
                   ? 'bg-rose-500 text-white shadow-xs'
-                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/80 hover:bg-rose-100'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 hover:bg-rose-200'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
@@ -537,7 +523,7 @@ export default function StaffOrdersManagementPage() {
               className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
                 statusFilter === 'قيد التحضير'
                   ? 'bg-amber-500 text-white shadow-xs'
-                  : 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 hover:bg-amber-100'
+                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 hover:bg-amber-200'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -548,11 +534,11 @@ export default function StaffOrdersManagementPage() {
               onClick={() => setStatusFilter('جاهز')}
               className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
                 statusFilter === 'جاهز'
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/80 hover:bg-emerald-100'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-200'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               <span>جاهز للتسليم ({readyCount})</span>
             </button>
 
@@ -561,7 +547,7 @@ export default function StaffOrdersManagementPage() {
               className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
                 statusFilter === 'تم التسليم'
                   ? 'bg-slate-700 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
               مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
@@ -576,28 +562,28 @@ export default function StaffOrdersManagementPage() {
               placeholder="بحث برقم الطلب أو الطاولة..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pr-9 pl-3.5 py-1.5 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${
+              className={`w-full pr-9 pl-3.5 py-1.5 border rounded-full text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${
                 isDarkMode 
                   ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' 
-                  : 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400'
+                  : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
               }`}
             />
           </div>
         </div>
       </header>
 
-      {/* 3. Main Split Master-Detail Interface (Identical to Live Orders Management) */}
+      {/* 3. Main Split Master-Detail Interface */}
       <main className="max-w-7xl mx-auto p-3 sm:p-5 w-full flex-1 pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-start">
           
-          {/* Orders Cards List (7 Cols on Desktop) */}
-          <div className="w-full lg:col-span-7 space-y-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5">
+          {/* Orders Cards Container: 2 COLUMNS ON DESKTOP & TABLET ("كل طاولتين فصف") */}
+          <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
             {filteredOrders.length === 0 ? (
-              <div className={`rounded-2xl border p-12 text-center ${
-                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200/80 text-slate-500'
+              <div className={`col-span-full rounded-2xl border p-12 text-center ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
               }`}>
                 <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">لا توجد طلبات مطابقة</p>
+                <p className="text-sm font-black text-slate-800 dark:text-slate-200">لا توجد طلبات مطابقة</p>
                 <p className="text-xs text-slate-400 mt-1">جرّب تغيير حالة الفلتر أو محاكاة طلب QR جديد</p>
               </div>
             ) : (
@@ -611,46 +597,47 @@ export default function StaffOrdersManagementPage() {
                       setSelectedOrderId(order.id);
                       setIsMobileDetailOpen(true);
                     }}
-                    className={`rounded-2xl p-3 sm:p-3.5 border transition-all cursor-pointer relative shadow-xs hover:shadow-md ${
+                    className={`rounded-2xl p-3 border transition-all cursor-pointer relative shadow-2xs hover:shadow-md flex flex-col justify-between ${
                       isSelected
-                        ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/10'
+                        ? 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/20 dark:bg-orange-950/20'
                         : isDarkMode
                         ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                        : 'bg-white border-slate-200/80 hover:border-orange-200'
+                        : 'bg-white border-slate-200/90 hover:border-orange-300'
                     }`}
                   >
-                    {/* Top Row: Order ID + Table badge + Status + Time */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm sm:text-base">{order.id}</span>
-                        <span className="bg-slate-900 text-white font-bold text-xs px-2.5 py-0.5 rounded-lg shadow-2xs">
+                    {/* Top Row: Order ID + Table badge */}
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-black text-sm text-slate-900 dark:text-white">{order.id}</span>
+                        <span className="bg-slate-900 text-amber-300 font-black text-[11px] px-2 py-0.5 rounded-md shadow-2xs">
                           طاولة {order.table}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(order.status)}
-                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                          <Clock size={12} />
-                          {order.time}
-                        </span>
-                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold flex items-center gap-0.5">
+                        <Clock size={11} />
+                        {order.time}
+                      </span>
                     </div>
 
-                    {/* Items preview */}
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium line-clamp-1 mb-2">
-                      {order.items.map((i: any) => `${i.name} (${i.quantity})`).join('، ')}
+                    {/* Status Badge */}
+                    <div className="mb-2">
+                      {getStatusBadge(order.status)}
+                    </div>
+
+                    {/* Items preview (compact) */}
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-bold line-clamp-2 mb-2 leading-relaxed">
+                      {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
                     </p>
 
-                    {/* Bottom Row: Total & Action Chevron */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    {/* Bottom Row: Total & Action Preview */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-baseline gap-1">
                         <span className="font-black text-orange-600 text-base">{order.total}</span>
                         <span className="text-xs text-orange-600 font-bold">₪</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
-                        <span className="lg:hidden text-orange-600">عرض التفاصيل والإجراءات</span>
-                        <span className="hidden lg:inline">معاينة الطلب</span>
-                        <ChevronRight size={14} className="rtl:rotate-180" />
+                      <div className="flex items-center gap-0.5 text-xs text-slate-500 font-black">
+                        <span className="text-[11px] text-orange-600">معاينة</span>
+                        <ChevronRight size={13} className="rtl:rotate-180 text-orange-600" />
                       </div>
                     </div>
                   </div>
@@ -702,158 +689,6 @@ export default function StaffOrdersManagementPage() {
           </div>
         )}
       </AnimatePresence>
-
-      {/* 5. Real QR Code Modal for Tables */}
-      <AnimatePresence>
-        {selectedTableForQr !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedTableForQr(null)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white rounded-3xl p-5 sm:p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl z-10 border border-slate-100 text-center"
-            >
-              <button
-                onClick={() => setSelectedTableForQr(null)}
-                className="absolute top-4 left-4 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="mb-3">
-                <div className="w-10 h-10 bg-orange-500 text-white rounded-2xl mx-auto flex items-center justify-center font-black text-lg mb-2 shadow-md shadow-orange-500/25">
-                  BH
-                </div>
-                <h3 className="text-base font-black text-slate-900">Burger House نابلس</h3>
-                <p className="text-xs text-orange-600 font-bold">كود QR الحقيقي لطاولة {selectedTableForQr}</p>
-              </div>
-
-              {/* Real QR Component */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 mb-3 flex flex-col items-center justify-center">
-                <RealQRCode
-                  value={
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/m?table=${selectedTableForQr}&t=qr_token_table_${selectedTableForQr}_nablus`
-                      : `https://menus-ps.vercel.app/m?table=${selectedTableForQr}&t=qr_token_table_${selectedTableForQr}_nablus`
-                  }
-                  size={190}
-                  tableNumber={selectedTableForQr}
-                  restaurantName="Burger House نابلس"
-                  showActions={true}
-                />
-
-                <p className="text-[11px] text-slate-500 mt-2 font-medium">
-                  امسح الكود بكاميرا أي هاتف لفتح منيو الطاولة فوراً
-                </p>
-              </div>
-
-              {/* Table Switcher */}
-              <div className="mb-4">
-                <p className="text-[11px] text-slate-400 font-bold mb-1.5">اختر طاولة أخرى لعرض كودها:</p>
-                <div className="flex gap-1 overflow-x-auto hide-scrollbar py-1">
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setSelectedTableForQr(num)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold shrink-0 transition-all ${
-                        selectedTableForQr === num
-                          ? 'bg-orange-500 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handlePrintStand}
-                  className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Printer size={15} />
-                  <span>طباعة الستاند</span>
-                </button>
-                <button
-                  onClick={() => setSelectedTableForQr(null)}
-                  className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
-                >
-                  إغلاق
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Hidden Thermal Receipt Print Layout (Prints ONLY on receipt print) */}
-      {selectedOrder && (
-        <div id="printable-receipt" className="hidden" dir="rtl">
-          <div className="w-[78mm] p-2 text-black bg-white font-mono text-xs mx-auto">
-            <div className="text-center border-b-2 border-dashed border-black pb-2 mb-2">
-              <h2 className="text-base font-bold">Burger House نابلس</h2>
-              <p className="text-[11px]">فرع رفيديا الرئيسي</p>
-              <p className="text-[11px]">هاتف: 0599123456</p>
-              <div className="mt-1 font-bold text-sm">
-                بون طلب — طاولة رقم {selectedOrder.table}
-              </div>
-              <p className="text-[10px]">{selectedOrder.id} • {selectedOrder.time}</p>
-            </div>
-
-            <table className="w-full text-right my-2">
-              <thead>
-                <tr className="border-b border-black">
-                  <th className="py-1">الصنف</th>
-                  <th className="text-center py-1">الكمية</th>
-                  <th className="text-left py-1">السعر</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedOrder.items?.map((item: any, idx: number) => (
-                  <tr key={idx} className="border-b border-dotted border-gray-400">
-                    <td className="py-1 leading-tight">
-                      <div className="font-bold">{item.name}</div>
-                      {item.customization && <div className="text-[10px]">• {item.customization}</div>}
-                      {item.extras && item.extras.length > 0 && (
-                        <div className="text-[10px]">• {item.extras.join('، ')}</div>
-                      )}
-                    </td>
-                    <td className="text-center py-1 font-bold">{item.quantity}</td>
-                    <td className="text-left py-1">{item.price * item.quantity} ₪</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {selectedOrder.notes && (
-              <div className="border border-black p-1.5 my-2 text-[11px]">
-                <span className="font-bold">ملاحظات: </span>
-                {selectedOrder.notes}
-              </div>
-            )}
-
-            <div className="border-t-2 border-dashed border-black pt-2 mt-2 space-y-1 text-left">
-              <div className="flex justify-between font-bold text-sm">
-                <span>الإجمالي:</span>
-                <span>{selectedOrder.total} ₪</span>
-              </div>
-            </div>
-
-            <div className="text-center mt-4 pt-2 border-t border-dotted border-gray-400 text-[10px]">
-              <p>شكراً لزيارتكم! ✨</p>
-              <p>نظام Menus.ps السحابي</p>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

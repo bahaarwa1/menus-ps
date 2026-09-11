@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Armchair, QrCode, X, Printer, Download, Users,
-  RefreshCw, Copy, Check, ShieldCheck
+  Armchair, QrCode, X, Users, RefreshCw, ShieldCheck
 } from 'lucide-react';
 import { tables as initialTables, TableInfo } from '@/data/demo-data';
 import RealQRCode from '@/components/common/RealQRCode';
@@ -17,7 +16,6 @@ export default function TablesManagementPage() {
 
   const occupiedCount = tablesList.filter(t => t.status === 'مشغولة').length;
   const freeCount = tablesList.filter(t => t.status === 'فارغة').length;
-  const reservedCount = tablesList.filter(t => t.status === 'محجوزة').length;
 
   const handleRotateToken = async (tableId: number) => {
     setIsRotatingToken(true);
@@ -248,54 +246,40 @@ export default function TablesManagementPage() {
                 <p className="text-xs text-orange-600 font-extrabold">طاولة رقم {selectedTableForQr.id}</p>
               </div>
 
-              {/* Real Standard QR Code */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 flex flex-col items-center justify-center">
+              {/* Real Standard QR Code with Mascot Character & 1-Page Print */}
+              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-5 mb-3 flex flex-col items-center justify-center">
                 <RealQRCode
-                  value={
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`
-                      : `https://menus.ps/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`
-                  }
-                  size={190}
+                  value={`https://menus-ps.vercel.app/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`}
+                  size={200}
                   tableNumber={selectedTableForQr.id}
                   restaurantName="Burger House نابلس"
                   showActions={true}
                 />
-                
-                <p className="text-[11px] text-slate-500 mt-2 font-medium">امسح الكود بكاميرا الجوال لفتح منيو الطاولة والطلب فوراً</p>
 
-                <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-emerald-600 font-bold">
-                  <ShieldCheck size={12} />
-                  <span>كود QR حقيقي مشفر متوافق مع كافة كاميرات الهواتف</span>
+                <div className="flex items-center justify-center gap-1 mt-3 text-[11px] text-emerald-600 font-extrabold">
+                  <ShieldCheck size={14} />
+                  <span>كود QR مشفر متوافق مع كافة كاميرات الهواتف</span>
                 </div>
               </div>
 
               {/* Rotate token action */}
-              <div className="mb-3">
+              <div className="mb-2">
                 <button
                   onClick={() => handleRotateToken(selectedTableForQr.id)}
                   disabled={isRotatingToken}
-                  className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   <RefreshCw size={13} className={isRotatingToken ? "animate-spin" : ""} />
                   <span>{isRotatingToken ? "جارٍ تجديد الرمز المشفر..." : "تجديد رمز QR (إبطال الرمز القديم)"}</span>
                 </button>
               </div>
 
-              <div className="flex gap-2">
+              <div className="pt-2">
                 <button
-                  onClick={() => window.print()}
-                  className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-1.5"
+                  onClick={() => setSelectedTableForQr(null)}
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
                 >
-                  <Printer size={15} />
-                  <span>طباعة الستاند</span>
-                </button>
-                <button
-                  onClick={() => alert('تم تنزيل ملف PDF المخصص للطباعة بجودة عالية 🖨️')}
-                  className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors flex items-center gap-1"
-                >
-                  <Download size={15} />
-                  <span>PDF</span>
+                  إغلاق النافذة
                 </button>
               </div>
             </motion.div>

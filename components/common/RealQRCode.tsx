@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import QRCode from 'qrcode';
-import { Download, Check, Copy, Printer } from 'lucide-react';
+import { Download, Check, Copy, Printer, Sparkles, Smartphone } from 'lucide-react';
+import { printTableStand } from '@/lib/print-utils';
 
 interface RealQRCodeProps {
   value: string;
@@ -25,16 +26,16 @@ export default function RealQRCode({
   const [error, setError] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  // Strictly sanitize the URL so phones ALWAYS recognize it as an actionable web link:
+  // Strictly format the URL so smartphone cameras ALWAYS recognize it as an actionable web link:
   // 1) Must start with https://
-  // 2) Never localhost (which phones reject or classify as text)
-  // 3) Complete and valid TLD
+  // 2) Point to the live public domain menus-ps.vercel.app
+  // 3) Clean query parameters without invalid characters
   const sanitizedUrl = useMemo(() => {
     if (!value) return '';
     let url = value.trim();
 
-    // If local or relative, route to live production deployment
-    if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('/')) {
+    // If local, relative, or placeholder domain, route to the live production deployment
+    if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('/') || url.includes('menus.ps')) {
       const match = url.match(/([?&].*)$/);
       const query = match ? match[1] : `?table=${tableNumber || 1}`;
       url = `https://menus-ps.vercel.app/m${query.startsWith('?') ? query : `?${query}`}`;
@@ -43,7 +44,7 @@ export default function RealQRCode({
     }
 
     // Force https protocol so phone cameras immediately detect URI schema
-    if (url.startsWith('http://') && !url.includes('localhost')) {
+    if (url.startsWith('http://')) {
       url = url.replace('http://', 'https://');
     }
 
@@ -55,7 +56,7 @@ export default function RealQRCode({
 
     // Generate high-resolution, high-contrast QR code
     QRCode.toDataURL(sanitizedUrl, {
-      width: size * 2.5, // Ultra crisp resolution for print and camera scanning
+      width: Math.max(size * 2.5, 450), // Ultra crisp resolution for print and camera scanning
       margin: 1, // Compact clean white border
       color: {
         dark: '#000000', // Pure black for 100% camera contrast
@@ -90,11 +91,13 @@ export default function RealQRCode({
   };
 
   const handlePrintStand = () => {
-    document.body.classList.add('printable-stand-mode');
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove('printable-stand-mode');
-    }, 1000);
+    if (!dataUrl) return;
+    printTableStand({
+      tableNumber: tableNumber || 1,
+      restaurantName,
+      qrDataUrl: dataUrl,
+      targetUrl: sanitizedUrl
+    });
   };
 
   return (
@@ -124,7 +127,8 @@ export default function RealQRCode({
       {/* Target Link Information */}
       <div className="mt-2.5 text-center max-w-[280px]">
         <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold mb-1">
-          <span>✓ رابط ويب مباشر (HTTPS)</span>
+          <Smartphone size={11} />
+          <span>رابط مباشر فوري للكاميرا (HTTPS)</span>
         </div>
         <p className="text-[11px] font-mono text-slate-600 truncate dir-ltr font-semibold">
           {sanitizedUrl}
@@ -155,61 +159,14 @@ export default function RealQRCode({
 
           <button
             onClick={handlePrintStand}
-            className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+            className="w-full py-2.5 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 transition-all"
           >
             <Printer size={15} />
-            <span>طباعة ستاند طاولة {tableNumber || ''}</span>
+            <span>طباعة ستاند مميز مع الكركتر (طاولة {tableNumber || ''})</span>
+            <Sparkles size={13} className="text-amber-200" />
           </button>
         </div>
       )}
-
-      {/* 2. Hidden Dedicated Print Stand Layout (Used ONLY when printing) */}
-      <div id="printable-qr-stand" className="hidden">
-        <div className="w-[120mm] border-4 border-slate-900 rounded-3xl p-8 text-center bg-white flex flex-col items-center justify-between mx-auto my-auto shadow-none">
-          
-          {/* Stand Header */}
-          <div className="mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white font-black text-xl flex items-center justify-center mx-auto mb-2 border-2 border-slate-900">
-              BH
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 mb-1">{restaurantName}</h1>
-            <div className="inline-block px-4 py-1 rounded-full bg-slate-900 text-white font-black text-sm">
-              طاولة رقم {tableNumber || 1}
-            </div>
-          </div>
-
-          {/* Large Sharp QR Code for table stand */}
-          <div className="w-56 h-56 p-2 bg-white border-2 border-slate-300 rounded-2xl my-2 flex items-center justify-center">
-            {dataUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={dataUrl} 
-                alt={`كود طاولة ${tableNumber || 1}`} 
-                className="w-full h-full object-contain"
-              />
-            )}
-          </div>
-
-          {/* Instructions */}
-          <div className="mt-4 space-y-1">
-            <h2 className="text-lg font-black text-slate-900">امسح الكود لطلب الطعام والدفع</h2>
-            <p className="text-xs text-slate-600 font-bold">
-              افتح كاميرا جوالك ووجّهها نحو الكود لتصفح المنيو فوراً
-            </p>
-            <p className="text-[10px] font-mono text-slate-400 dir-ltr pt-2">
-              {sanitizedUrl}
-            </p>
-          </div>
-
-          {/* Stand Footer */}
-          <div className="mt-6 pt-3 border-t border-slate-200 w-full flex items-center justify-between text-[10px] text-slate-500 font-bold">
-            <span>نتمنى لكم وجبة شهية! ✨</span>
-            <span>بواسطة Menus.ps</span>
-          </div>
-
-        </div>
-      </div>
-
     </div>
   );
 }
