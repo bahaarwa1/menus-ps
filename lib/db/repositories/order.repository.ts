@@ -34,6 +34,8 @@ export interface StoredOrder extends OrderResult {
   items: CreateOrderDTO['items'];
 }
 
+import { orders as fallbackDemoOrders } from '@/data/demo-data';
+
 // Global active orders store for stateful demo & dev resilience
 declare global {
   // eslint-disable-next-line no-var
@@ -42,6 +44,29 @@ declare global {
 
 if (!global.__menusActiveOrdersStore) {
   global.__menusActiveOrdersStore = new Map<string, StoredOrder>();
+
+  // Seed baseline active orders for burger-house-nablus so dashboard and kitchen are never empty
+  fallbackDemoOrders.forEach((o, index) => {
+    const orderId = `seed-${o.id}`;
+    const createdAt = new Date(Date.now() - (index * 15 * 60 * 1000)).toISOString();
+    global.__menusActiveOrdersStore!.set(orderId, {
+      id: orderId,
+      orderNumber: o.id,
+      status: o.status as OrderStatus,
+      totalAmount: o.total,
+      createdAt,
+      branchId: 'b0000000-0000-0000-0000-000000000001',
+      tableId: `table-num-${o.table}`,
+      tableNumber: o.table,
+      customerNote: undefined,
+      items: o.items.map((it) => ({
+        itemName: it.name,
+        quantity: it.quantity,
+        unitPrice: it.price,
+        selectedExtras: it.extras?.map((name) => ({ name, price: 5 })),
+      })),
+    });
+  });
 }
 
 const activeOrdersStore = global.__menusActiveOrdersStore;
