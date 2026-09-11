@@ -30,18 +30,14 @@ export default function ProductionDashboardOverview() {
       if (urlSlug) slug = urlSlug;
     }
 
-    fetch('/api/auth/session')
-      .then((res) => res.json())
-      .then((data) => {
-        const userSlug = data.user?.restaurantSlug || slug;
-        if (userSlug) setCreatedSlug(userSlug);
-        return fetch(`/api/v1/dashboard/stats${userSlug ? `?slug=${encodeURIComponent(userSlug)}` : ''}`);
-      })
+    // Direct, immediate stats fetch without waiting for session roundtrip
+    fetch(`/api/v1/dashboard/stats${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           if (data.stats) setStats(data.stats);
           if (Array.isArray(data.recentOrders)) setRecentOrders(data.recentOrders);
+          if (data.restaurantSlug) setCreatedSlug(data.restaurantSlug);
         }
       })
       .catch((err) => console.error('Dashboard stats fetch error:', err))

@@ -4,9 +4,23 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { generateSecureTableToken } from '@/lib/tables/table-tokens';
 import { tables as fallbackTables } from '@/data/demo-data';
 
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+
 export async function GET(request: NextRequest) {
   const branchIdParam = request.nextUrl.searchParams.get('branchId');
-  const slug = request.nextUrl.searchParams.get('slug') || request.nextUrl.searchParams.get('restaurant') || 'burger-house-nablus';
+  let slug = request.nextUrl.searchParams.get('slug') || request.nextUrl.searchParams.get('restaurant') || '';
+
+  if (!slug) {
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      const session = token ? await verifySession(token) : null;
+      if (session?.restaurantSlug) slug = session.restaurantSlug;
+    } catch {}
+  }
+  if (!slug) slug = 'burger-house-nablus';
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
 
   if (isSupabaseConfigured()) {

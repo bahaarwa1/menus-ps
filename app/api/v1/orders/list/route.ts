@@ -3,12 +3,24 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { listActiveOrders } from '@/lib/db/repositories/order.repository';
 
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const branchId = request.nextUrl.searchParams.get('branchId');
+    let branchId = request.nextUrl.searchParams.get('branchId');
     const orderId = request.nextUrl.searchParams.get('orderId');
+
+    if (!branchId) {
+      try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+        const session = token ? await verifySession(token) : null;
+        if (session?.branchId) branchId = session.branchId;
+      } catch {}
+    }
 
     if (!isSupabaseConfigured()) {
       // Fallback: in-memory store

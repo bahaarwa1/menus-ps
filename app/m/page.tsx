@@ -147,8 +147,13 @@ function FastFrictionlessMenuContent() {
   const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
-  // Dynamic QR Token Verification on Load — resolves table + branch + slug
+  // Dynamic QR Token Verification on Load — runs in parallel with menu fetch
   useEffect(() => {
+    if (restaurantParam) {
+      setActiveRestaurantSlug(restaurantParam);
+      setIsTokenVerified(true);
+      setTableNumber(0);
+    }
     if (qrTokenParam) {
       fetch(`/api/v1/tables/verify-token?token=${encodeURIComponent(qrTokenParam)}`)
         .then((res) => res.json())
@@ -167,18 +172,32 @@ function FastFrictionlessMenuContent() {
         .catch(() => {
           setTokenError('تعذر التحقق من رمز QR');
         });
-    } else if (restaurantParam) {
-      // Fallback: direct ?restaurant= param (no QR scan)
-      setActiveRestaurantSlug(restaurantParam);
-      setIsTokenVerified(true);
-      setTableNumber(0);
     }
   }, [qrTokenParam, restaurantParam]);
 
-  // Fetch menu from DB when slug is resolved
+  // Fetch menu with instant client-side SWR (Stale-While-Revalidate) cache
   useEffect(() => {
     if (!activeRestaurantSlug) return;
-    setMenuLoading(true);
+
+    // 1. Instant Cache Hydration from sessionStorage
+    const cacheKey = `menus_cache_${activeRestaurantSlug}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDbCategories(parsed);
+          const allItems: MenuItem[] = parsed.flatMap(cat =>
+            cat.items.map((item: any) => ({ ...item, category: cat.id }))
+          );
+          setDbMenuItems(allItems);
+          setActiveCategory((prev) => prev || parsed[0].id);
+          setMenuLoading(false); // Render immediately without waiting for network!
+        }
+      }
+    } catch {}
+
+    // 2. Background Revalidation / Initial Fetch
     setMenuError('');
     fetch(`/api/v1/menu?slug=${encodeURIComponent(activeRestaurantSlug)}`)
       .then(r => r.json())
@@ -186,17 +205,26 @@ function FastFrictionlessMenuContent() {
         if (data.categories && Array.isArray(data.categories)) {
           const cats: MenuCategory[] = data.categories;
           setDbCategories(cats);
-          // Flatten all items with their category id
           const allItems: MenuItem[] = cats.flatMap(cat =>
             cat.items.map(item => ({ ...item, category: cat.id }))
           );
           setDbMenuItems(allItems);
-          if (cats.length > 0) setActiveCategory(cats[0].id);
+          setActiveCategory((prev) => prev || (cats.length > 0 ? cats[0].id : ''));
+          // Update cache for instant future loads
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(cats));
+          } catch {}
         } else {
           setMenuError('لم يتم العثور على قائمة الطعام');
         }
       })
-      .catch(() => setMenuError('تعذر تحميل قائمة الطعام'))
+      .catch(() => {
+        // If error and we don't even have cached items, show error
+        setDbCategories(prev => {
+          if (prev.length === 0) setMenuError('تعذر تحميل قائمة الطعام');
+          return prev;
+        });
+      })
       .finally(() => setMenuLoading(false));
   }, [activeRestaurantSlug]);
 

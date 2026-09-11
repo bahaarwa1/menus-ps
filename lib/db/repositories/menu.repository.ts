@@ -35,51 +35,49 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
   try {
     const supabase = createClient();
 
-    // 1. Get restaurant ID
-    const { data: rawRestaurant, error: restError } = await supabase
+    // 1. Single joined query: fetch restaurant, categories, items, and extras in ONE roundtrip
+    const { data: rawRestaurant, error: restError } = await (supabase as any)
       .from('restaurants')
-      .select('id')
+      .select(`
+        id,
+        menu_categories (
+          id,
+          name_ar,
+          icon,
+          sort_order,
+          is_active,
+          menu_items (
+            id,
+            name_ar,
+            description_ar,
+            price,
+            image_url,
+            is_available,
+            is_popular,
+            is_spicy,
+            sort_order,
+            item_extras (
+              id,
+              name_ar,
+              price
+            )
+          )
+        )
+      `)
       .eq('slug', restaurantSlug)
-      .single();
+      .maybeSingle();
 
-    const restaurant = rawRestaurant as { id: string } | null;
-
-    if (restError || !restaurant) {
+    if (restError || !rawRestaurant) {
       console.warn('Supabase restaurant fetch failed, using fallback:', restError?.message);
       return buildFallbackMenu();
     }
 
-    // 2. Fetch categories with items and extras in a single efficient query
-    const { data: categoriesData, error: catError } = await supabase
-      .from('menu_categories')
-      .select(`
-        id,
-        name_ar,
-        icon,
-        sort_order,
-        menu_items (
-          id,
-          name_ar,
-          description_ar,
-          price,
-          image_url,
-          is_available,
-          is_popular,
-          is_spicy,
-          sort_order,
-          item_extras (
-            id,
-            name_ar,
-            price
-          )
-        )
-      `)
-      .eq('restaurant_id', restaurant.id)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+    const rawCats = (rawRestaurant.menu_categories || []) as any[];
+    const categoriesData = rawCats
+      .filter((c: any) => c.is_active !== false)
+      .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    if (catError || !categoriesData) {
-      console.warn('Supabase categories fetch failed, using fallback:', catError?.message);
+    if (categoriesData.length === 0) {
       return buildFallbackMenu();
     }
 

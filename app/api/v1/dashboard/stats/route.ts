@@ -66,8 +66,6 @@ export async function GET(request: NextRequest) {
       todayOrdersQuery = todayOrdersQuery.eq('branch_id', targetBranchId);
     }
 
-    const { data: todayOrders, error: ordersError } = await todayOrdersQuery;
-
     // 2. Fetch all recent orders (up to 5)
     let recentQuery = (supabase as any)
       .from('orders')
@@ -79,8 +77,6 @@ export async function GET(request: NextRequest) {
       recentQuery = recentQuery.eq('branch_id', targetBranchId);
     }
 
-    const { data: recentOrdersData } = await recentQuery;
-
     // 3. Fetch tables count
     let tablesQuery = (supabase as any)
       .from('tables')
@@ -90,7 +86,16 @@ export async function GET(request: NextRequest) {
       tablesQuery = tablesQuery.eq('branch_id', targetBranchId);
     }
 
-    const { data: tablesData } = await tablesQuery;
+    // Run today's orders, recent orders, and tables queries concurrently with Promise.all
+    const [todayOrdersRes, recentOrdersRes, tablesRes] = await Promise.all([
+      todayOrdersQuery,
+      recentQuery,
+      tablesQuery,
+    ]);
+
+    const todayOrders = todayOrdersRes.data;
+    const recentOrdersData = recentOrdersRes.data;
+    const tablesData = tablesRes.data;
 
     // Calculate real figures
     const ordersList = (todayOrders || []) as any[];
@@ -100,9 +105,9 @@ export async function GET(request: NextRequest) {
 
     const allTables = (tablesData || []) as any[];
     const totalTablesCount = allTables.length;
-    const activeTablesCount = allTables.filter((t) => t.status === 'مشغولة' || t.status === 'busy').length;
+    const activeTablesCount = allTables.filter((t: any) => t.status === 'مشغولة' || t.status === 'busy').length;
 
-    const recentOrders = ((recentOrdersData || []) as any[]).map((o) => {
+    const recentOrders = ((recentOrdersData || []) as any[]).map((o: any) => {
       const itemsList = Array.isArray(o.order_items)
         ? o.order_items.map((it: any) => `${it.quantity}x ${it.item_name}`).join('، ')
         : 'طلب من المنيو';
@@ -122,6 +127,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      restaurantSlug: targetSlug,
       stats: {
         todaySales,
         todayOrdersCount,

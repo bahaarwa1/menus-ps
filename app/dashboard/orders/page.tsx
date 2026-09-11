@@ -77,14 +77,17 @@ export default function ProductionOrdersPage() {
   }, []);
 
   useEffect(() => {
+    // Load orders immediately on mount
+    loadOrders();
+
+    // Concurrently cache branchId if available
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {
         const bid = data.user?.branchId || '';
-        setBranchId(bid);
-        loadOrders(bid);
+        if (bid) setBranchId(bid);
       })
-      .catch(() => loadOrders());
+      .catch(() => {});
   }, [loadOrders]);
 
   const advanceOrderStatus = async (rawId: string, currentStatus: Order['status']) => {

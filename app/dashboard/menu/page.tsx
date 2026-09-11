@@ -78,14 +78,17 @@ export default function ProductionMenuPage() {
   }, []);
 
   useEffect(() => {
+    // Fire menu fetch immediately on mount
+    loadMenu();
+
+    // Concurrently cache currentSlug if needed
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {
         const slug = data.user?.restaurantSlug || '';
-        setCurrentSlug(slug);
-        loadMenu(slug);
+        if (slug) setCurrentSlug(slug);
       })
-      .catch(() => loadMenu());
+      .catch(() => {});
   }, [loadMenu]);
 
   const toggleAvailability = async (id: string) => {

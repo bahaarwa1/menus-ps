@@ -8,7 +8,15 @@ import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const slug = searchParams.get('slug') || '';
+  let slug = searchParams.get('slug') || '';
+  if (!slug) {
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      const session = token ? await verifySession(token) : null;
+      slug = session?.restaurantSlug || '';
+    } catch {}
+  }
   if (!slug) {
     return NextResponse.json({ restaurantSlug: '', categories: [] });
   }
@@ -24,7 +32,7 @@ export async function GET(request: NextRequest) {
         {
           status: 200,
           headers: {
-            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+            'Cache-Control': 'public, max-age=30, s-maxage=180, stale-while-revalidate=600',
             'X-Cache': 'HIT',
             'X-Edge-Cache-Policy': 'in-memory-lru',
           },
@@ -35,8 +43,8 @@ export async function GET(request: NextRequest) {
     // 2. Fetch from repository
     const menu = await getRestaurantMenu(slug);
 
-    // 3. Populate memory cache with 60s TTL and 'menu' tag
-    appCache.set(cacheKey, menu, 60, ['menu', `menu:${slug}`]);
+    // 3. Populate memory cache with 180s TTL and 'menu' tag
+    appCache.set(cacheKey, menu, 180, ['menu', `menu:${slug}`]);
 
     return NextResponse.json(
       {
@@ -47,7 +55,7 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'public, max-age=30, s-maxage=180, stale-while-revalidate=600',
           'X-Cache': 'MISS',
           'X-Edge-Cache-Policy': 'stale-while-revalidate',
         },
