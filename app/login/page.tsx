@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, ChefHat, KeyRound, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, ChefHat, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -14,8 +14,8 @@ function LoginForm() {
 
   const [activeTab, setActiveTab] = useState<'admin' | 'staff'>(initialRole);
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('admin@menus.ps');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -179,15 +179,15 @@ function LoginForm() {
         {activeTab === 'admin' && (
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 mr-2">البريد الإلكتروني</label>
+              <label className="text-xs font-semibold text-slate-700 mr-2">البريد الإلكتروني أو معرف المطعم (Slug)</label>
               <div className="relative">
                 <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
-                  type="email" 
+                  type="text" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="admin@menus.ps"
+                  placeholder="admin@restaurant.ps أو معرف المطعم"
                   className="w-full pr-11 pl-4 py-3 bg-white border border-slate-200/80 rounded-2xl text-xs font-medium focus:outline-none focus:border-orange-500 transition-all text-slate-800 placeholder-slate-400 text-left shadow-2xs"
                   dir="ltr"
                 />
@@ -243,7 +243,7 @@ function LoginForm() {
         {activeTab === 'staff' && (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-xs text-slate-500 font-medium mb-3">أدخل رمز الدخول السريع (الافتراضي: 1234)</p>
+              <p className="text-xs text-slate-500 font-medium mb-3">أدخل رمز الدخول السريع (PIN)</p>
               
               {/* PIN Dots Display */}
               <div className="flex justify-center gap-3 my-2" dir="ltr">
@@ -296,18 +296,6 @@ function LoginForm() {
                 className="h-12 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 transition-all"
               >
                 ←
-              </button>
-            </div>
-
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => handleStaffPinLogin('1234')}
-                disabled={isLoading}
-                className="text-xs text-orange-600 hover:text-orange-700 font-extrabold underline inline-flex items-center gap-1"
-              >
-                <KeyRound size={14} />
-                <span>دخول تجريبي بـ PIN: 1234</span>
               </button>
             </div>
           </div>

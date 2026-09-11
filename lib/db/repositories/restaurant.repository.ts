@@ -245,6 +245,35 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
               }
             ] as never);
           }
+
+          // Insert staff user record for owner authentication
+          await supabase.from('staff_users').insert({
+            branch_id: dbBranchId,
+            full_name: registeredRecord.name,
+            role: 'owner',
+            pin_hash: input.password || '1234',
+            is_active: true,
+          } as never);
+
+          // Provision Supabase Auth account if email & password are provided
+          if (input.ownerEmail && input.password && input.password.length >= 6) {
+            try {
+              await supabase.auth.admin.createUser({
+                email: input.ownerEmail.trim().toLowerCase(),
+                password: input.password,
+                email_confirm: true,
+                user_metadata: {
+                  full_name: registeredRecord.name,
+                  role: 'admin',
+                  restaurant_id: dbRestId,
+                  restaurant_slug: slug,
+                  branch_id: dbBranchId,
+                },
+              });
+            } catch (authCreateErr) {
+              console.warn('Could not provision Supabase Auth user:', authCreateErr);
+            }
+          }
         }
       } else if (restErr) {
         console.error('Supabase restaurant insert error:', restErr);
