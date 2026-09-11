@@ -224,9 +224,44 @@ function FastFrictionlessMenuContent() {
   }, [isOrderSubmitted, submittedOrderId]);
 
   const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(effectiveSlug);
-  const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
-  const [activeRestaurantLogo, setActiveRestaurantLogo] = useState<string>('');
-  const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>('');
+  const [activeRestaurantName, setActiveRestaurantName] = useState<string>(() => {
+    if (isDemo) return 'Burger House نابلس';
+    if (typeof window !== 'undefined' && effectiveSlug) {
+      try {
+        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.name) return parsed.name;
+        }
+      } catch {}
+    }
+    return '';
+  });
+  const [activeRestaurantLogo, setActiveRestaurantLogo] = useState<string>(() => {
+    if (typeof window !== 'undefined' && effectiveSlug) {
+      try {
+        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.logoUrl) return parsed.logoUrl;
+        }
+      } catch {}
+    }
+    return '';
+  });
+  const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>(() => {
+    if (isDemo) return 'نابلس';
+    if (typeof window !== 'undefined' && effectiveSlug) {
+      try {
+        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.city) return parsed.city;
+        }
+      } catch {}
+    }
+    return '';
+  });
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
   // Fetch restaurant details (logo, city, branchId, etc.) and strictly verify validity
@@ -261,6 +296,15 @@ function FastFrictionlessMenuContent() {
           if (data.settings.name) setActiveRestaurantName(data.settings.name);
           if (data.settings.city) setActiveRestaurantCity(data.settings.city);
           if (data.settings.branchId) setActiveBranchId(data.settings.branchId);
+
+          try {
+            sessionStorage.setItem(`restaurant_meta_${activeRestaurantSlug}`, JSON.stringify({
+              name: data.settings.name,
+              logoUrl: data.settings.logoUrl || '',
+              city: data.settings.city || '',
+              branchId: data.settings.branchId || '',
+            }));
+          } catch {}
         } else {
           setIsRestaurantNotFound(true);
           setMenuLoading(false);
@@ -638,24 +682,34 @@ function FastFrictionlessMenuContent() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={activeRestaurantLogo} alt={activeRestaurantName || 'Logo'} className="w-full h-full object-cover" />
                 </div>
-              ) : (
+              ) : activeRestaurantName ? (
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-2xs shrink-0">
-                  {activeRestaurantName ? activeRestaurantName.slice(0, 1).toUpperCase() : 'M'}
+                  {activeRestaurantName.slice(0, 1).toUpperCase()}
                 </div>
+              ) : (
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-200/80 animate-pulse shrink-0" />
               )}
               <div className="truncate min-w-0">
                 <div className="flex items-center gap-1">
-                  <h1 className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                    {activeRestaurantName || (isDemo ? 'Burger House نابلس' : (language === 'ar' ? 'قائمة الطعام' : 'Menu'))}
-                  </h1>
+                  {activeRestaurantName ? (
+                    <h1 className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                      {activeRestaurantName}
+                    </h1>
+                  ) : (
+                    <div className="h-4 w-28 bg-slate-200/80 rounded-md animate-pulse my-0.5" />
+                  )}
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 </div>
-                <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1 leading-none mt-0.5">
-                  <span className="text-amber-500 font-bold flex items-center">
-                    <Star size={9} fill="currentColor" /> 4.9
-                  </span>
-                  <span className="truncate">· {activeRestaurantCity || (isDemo ? 'نابلس' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
-                </p>
+                {activeRestaurantName ? (
+                  <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1 leading-none mt-0.5">
+                    <span className="text-amber-500 font-bold flex items-center">
+                      <Star size={9} fill="currentColor" /> 4.9
+                    </span>
+                    <span className="truncate">· {activeRestaurantCity || (language === 'ar' ? 'فلسطين' : 'Palestine')}</span>
+                  </p>
+                ) : (
+                  <div className="h-2.5 w-16 bg-slate-200/60 rounded-sm animate-pulse mt-1" />
+                )}
               </div>
             </div>
 
