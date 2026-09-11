@@ -47,12 +47,17 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
     return inFlightMenuRequests.get(cacheKey)!;
   }
 
+  const isDemoRestaurant = restaurantSlug === 'burger-house-nablus' || restaurantSlug === 'demo';
+
   const fetchPromise = (async () => {
     try {
       if (!isSupabaseConfigured()) {
-        const fallback = buildFallbackMenu();
-        appCache.set(cacheKey, fallback, 300, ['menu', `menu:${restaurantSlug}`]);
-        return fallback;
+        if (isDemoRestaurant) {
+          const fallback = buildFallbackMenu();
+          appCache.set(cacheKey, fallback, 300, ['menu', `menu:${restaurantSlug}`]);
+          return fallback;
+        }
+        return [];
       }
 
       const supabase = createClient();
@@ -90,10 +95,13 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
         .maybeSingle();
 
       if (restError || !rawRestaurant) {
-        console.warn('Supabase restaurant fetch failed, using fallback:', restError?.message);
-        const fallback = buildFallbackMenu();
-        appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
-        return fallback;
+        if (isDemoRestaurant) {
+          console.warn('Supabase restaurant fetch failed, using fallback for demo:', restError?.message);
+          const fallback = buildFallbackMenu();
+          appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
+          return fallback;
+        }
+        return [];
       }
 
       const rawCats = (rawRestaurant.menu_categories || []) as any[];
@@ -102,9 +110,13 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
         .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
       if (categoriesData.length === 0) {
-        const fallback = buildFallbackMenu();
-        appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
-        return fallback;
+        if (isDemoRestaurant) {
+          const fallback = buildFallbackMenu();
+          appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
+          return fallback;
+        }
+        // Real registered restaurants start with 0 items cleanly
+        return [];
       }
 
       const result: PublicMenuCategory[] = ((categoriesData || []) as any[]).map((cat) => ({
@@ -146,9 +158,12 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
       return result;
     } catch (error) {
       console.error('Error fetching menu from Supabase:', error);
-      const fallback = buildFallbackMenu();
-      appCache.set(cacheKey, fallback, 60, ['menu', `menu:${restaurantSlug}`]);
-      return fallback;
+      if (isDemoRestaurant) {
+        const fallback = buildFallbackMenu();
+        appCache.set(cacheKey, fallback, 60, ['menu', `menu:${restaurantSlug}`]);
+        return fallback;
+      }
+      return [];
     } finally {
       inFlightMenuRequests.delete(cacheKey);
     }

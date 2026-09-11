@@ -74,15 +74,16 @@ function FastFrictionlessMenuContent() {
   const restaurantParam = searchParams.get('restaurant') || '';
   const defaultSlug = 'burger-house-nablus';
   const effectiveSlug = restaurantParam || (qrTokenParam ? '' : defaultSlug);
+  const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
   const { direction, language } = useLanguage();
 
-  // Instant 0ms menu state pre-hydrated from bundled data
-  const [dbCategories, setDbCategories] = useState<MenuCategory[]>(initialCategories);
-  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [menuLoading, setMenuLoading] = useState(false);
+  // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean
+  const [dbCategories, setDbCategories] = useState<MenuCategory[]>(isDemo ? initialCategories : []);
+  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(isDemo ? initialMenuItems : []);
+  const [menuLoading, setMenuLoading] = useState(!isDemo);
   const [menuError, setMenuError] = useState('');
 
-  const [activeCategory, setActiveCategory] = useState(initialCategories[0]?.id || 'burgers');
+  const [activeCategory, setActiveCategory] = useState(isDemo ? (initialCategories[0]?.id || 'burgers') : '');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Table verification state
@@ -247,19 +248,21 @@ function FastFrictionlessMenuContent() {
             cat.items.map(item => ({ ...item, category: cat.id }))
           );
           setDbMenuItems(allItems);
-          setActiveCategory((prev) => prev || (cats.length > 0 ? cats[0].id : ''));
+          setActiveCategory(cats.length > 0 ? cats[0].id : '');
           // Update cache for instant future loads
           try {
             sessionStorage.setItem(cacheKey, JSON.stringify(cats));
           } catch {}
         } else {
-          setMenuError('لم يتم العثور على قائمة الطعام');
+          setDbCategories([]);
+          setDbMenuItems([]);
+          setActiveCategory('');
         }
       })
       .catch(() => {
-        // If error and we don't even have cached items, show error
+        // If network error and no cached items, show error
         setDbCategories(prev => {
-          if (prev.length === 0) setMenuError('تعذر تحميل قائمة الطعام');
+          if (prev.length === 0 && isDemo) setMenuError('تعذر تحميل قائمة الطعام');
           return prev;
         });
       })
@@ -483,32 +486,34 @@ function FastFrictionlessMenuContent() {
           </div>
 
           {/* Categories Pill Slider */}
-          <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
-            {dbCategories.map((cat) => {
-              const isActive = activeCategory === cat.id && !searchQuery;
-              const catName = language === 'en' 
-                ? (cat.id === 'burgers' ? 'Burgers' : cat.id === 'wraps' ? 'Wraps' : cat.id === 'sides' ? 'Sides' : cat.id === 'drinks' ? 'Drinks' : cat.id === 'desserts' ? 'Desserts' : cat.name)
-                : cat.name;
-              return (
-                <button
-                  key={cat.id}
-                  id={`cat-btn-${cat.id}`}
-                  onClick={() => {
-                    setActiveCategory(cat.id);
-                    setSearchQuery('');
-                  }}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-2 ring-orange-500/20'
-                      : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{catName}</span>
-                </button>
-              );
-            })}
-          </div>
+          {dbCategories.length > 0 && (
+            <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
+              {dbCategories.map((cat) => {
+                const isActive = activeCategory === cat.id && !searchQuery;
+                const catName = language === 'en' 
+                  ? (cat.id === 'burgers' ? 'Burgers' : cat.id === 'wraps' ? 'Wraps' : cat.id === 'sides' ? 'Sides' : cat.id === 'drinks' ? 'Drinks' : cat.id === 'desserts' ? 'Desserts' : cat.name)
+                  : cat.name;
+                return (
+                  <button
+                    key={cat.id}
+                    id={`cat-btn-${cat.id}`}
+                    onClick={() => {
+                      setActiveCategory(cat.id);
+                      setSearchQuery('');
+                    }}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-2 ring-orange-500/20'
+                        : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{catName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Waiter Alert Toast Notification */}
           <AnimatePresence>
@@ -569,6 +574,20 @@ function FastFrictionlessMenuContent() {
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 {language === 'ar' ? 'تواصل مع إدارة المطعم' : 'Please contact restaurant staff'}
+              </p>
+            </div>
+          ) : dbMenuItems.length === 0 ? (
+            <div className="py-24 text-center px-4">
+              <div className="w-16 h-16 rounded-3xl bg-orange-50 border border-orange-200/80 flex items-center justify-center mx-auto mb-4 text-orange-500 shadow-xs">
+                <Utensils size={30} />
+              </div>
+              <h3 className="text-base font-black text-slate-800 mb-1">
+                {language === 'ar' ? 'قائمة الطعام قيد التجهيز' : 'Menu is Being Prepared'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                {language === 'ar' 
+                  ? 'لم تقم إدارة المطعم بإضافة وجبات بعد. سيتم تحديث القائمة فور إضافة ونشر الأصناف من لوحة التحكم.' 
+                  : 'The restaurant has not added any dishes yet. The menu will update once items are published from the dashboard.'}
               </p>
             </div>
           ) : filteredItems.length === 0 ? (
