@@ -33,7 +33,7 @@ function LoginForm() {
         body: JSON.stringify({
           email,
           password,
-          redirectTo: redirectFrom || '/demo',
+          redirectTo: redirectFrom || '/dashboard',
         }),
       });
 
@@ -45,7 +45,7 @@ function LoginForm() {
         return;
       }
 
-      router.push(data.redirectTo || '/demo');
+      router.push(data.redirectTo || '/dashboard');
       router.refresh();
     } catch {
       setErrorMsg('تعذر الاتصال بخادم المصادقة. يرجى المحاولة لاحقاً.');

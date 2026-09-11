@@ -531,7 +531,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <Link
-                  href="/demo/tables"
+                  href="/dashboard/tables"
                   className="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 text-xs"
                 >
                   <span>طباعة الستاندات</span>
