@@ -6,7 +6,8 @@ import {
   TrendingUp, ShoppingBag, CreditCard,
   Copy, Check, ExternalLink,
   QrCode, ChefHat, ArrowUpRight,
-  Plus, Users, Key
+  Plus, Users, Key, Sparkles, Utensils, ShieldCheck,
+  Clock, ArrowRight
 } from 'lucide-react';
 
 export default function ProductionDashboardOverview() {
@@ -45,11 +46,8 @@ export default function ProductionDashboardOverview() {
         .finally(() => { if (!silent) setIsLoading(false); });
     };
 
-    // Immediate first load
     fetchStats(false);
-
-    // Auto-refresh every 30s
-    const interval = setInterval(() => fetchStats(true), 30000);
+    const interval = setInterval(() => fetchStats(true), 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -68,31 +66,43 @@ export default function ProductionDashboardOverview() {
   const kpis = [
     {
       title: 'مبيعات اليوم',
-      value: `${stats.todaySales.toLocaleString()}₪`,
-      change: stats.todayOrdersCount > 0 ? `${stats.todayOrdersCount} طلبات مسجلة` : 'لا توجد مبيعات بعد',
+      value: `${stats.todaySales.toLocaleString()} ₪`,
+      change: stats.todayOrdersCount > 0 ? `${stats.todayOrdersCount} طلبات` : 'لا توجد مبيعات',
       isUp: stats.todaySales > 0,
       icon: TrendingUp,
+      accent: 'from-amber-500 to-orange-600',
+      bgGlow: 'bg-orange-500/10',
+      textColor: 'text-orange-600',
     },
     {
       title: 'طلبات اليوم',
-      value: `${stats.todayOrdersCount} طلب`,
-      change: stats.todayOrdersCount > 0 ? 'نشط اليوم' : 'فارغ حتى الآن',
+      value: `${stats.todayOrdersCount}`,
+      change: stats.todayOrdersCount > 0 ? 'نشط الآن' : 'بانتظار أول طلب',
       isUp: stats.todayOrdersCount > 0,
       icon: ShoppingBag,
+      accent: 'from-emerald-500 to-teal-600',
+      bgGlow: 'bg-emerald-500/10',
+      textColor: 'text-emerald-600',
     },
     {
-      title: 'طاولات نشطة الآن',
-      value: `${stats.activeTablesCount} / ${stats.totalTablesCount}`,
-      change: stats.totalTablesCount > 0 ? `${Math.round((stats.activeTablesCount / stats.totalTablesCount) * 100)}% إشغال` : '0% إشغال',
+      title: 'إشغال الطاولات',
+      value: `${stats.activeTablesCount} / ${stats.totalTablesCount || 10}`,
+      change: stats.totalTablesCount > 0 ? `${Math.round((stats.activeTablesCount / stats.totalTablesCount) * 100)}% إشغال` : 'جاهزة للزبائن',
       isUp: stats.activeTablesCount > 0,
       icon: Users,
+      accent: 'from-blue-500 to-indigo-600',
+      bgGlow: 'bg-blue-500/10',
+      textColor: 'text-blue-600',
     },
     {
       title: 'متوسط الفاتورة',
-      value: `${stats.avgTicket}₪`,
-      change: stats.todayOrdersCount > 0 ? 'معدل الحساب' : '0₪',
+      value: `${stats.avgTicket} ₪`,
+      change: stats.todayOrdersCount > 0 ? 'معدل الحساب' : '0 ₪',
       isUp: stats.avgTicket > 0,
       icon: CreditCard,
+      accent: 'from-purple-500 to-violet-600',
+      bgGlow: 'bg-purple-500/10',
+      textColor: 'text-purple-600',
     },
   ];
 
@@ -104,46 +114,51 @@ export default function ProductionDashboardOverview() {
     'completed': { bg: 'bg-emerald-500/10 text-emerald-600 border-emerald-200', text: 'مكتمل' },
   };
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-900" dir="rtl">
-      
-      {/* 1. Header Banner & Live Link Alert */}
-      <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-l from-orange-500 via-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/15 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none -mr-20 -mt-20"></div>
+  const displayName = createdSlug ? createdSlug.replace(/-/g, ' ') : 'مطعمك';
 
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-          <div>
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-black backdrop-blur-xs flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
-                <span>النظام الإنتاجي فعال 100%</span>
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-slate-900" dir="rtl">
+      
+      {/* 1. Hero Hub — Luxurious Obsidian Card */}
+      <div className="relative rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 sm:p-8 border border-slate-800 shadow-2xl overflow-hidden">
+        {/* Ambient Light Effects */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/15 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20"></div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-bold text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>النظام الإنتاجي متصل ويعمل لحظياً</span>
               </span>
-              <span className="text-white/80 text-xs font-medium">الفرع الرئيسي</span>
+              <span className="text-xs text-slate-400 font-medium">الفرع الرئيسي • فلسطين</span>
             </div>
             
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-black capitalize">
-              مرحباً بك في لوحة تحكم {createdSlug.replace(/-/g, ' ')}
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black capitalize tracking-tight text-white flex items-center gap-2.5">
+              <span>أهلاً بك، {displayName}</span>
+              <ShieldCheck size={26} className="text-orange-400 shrink-0" />
             </h1>
             
-            <p className="text-white/90 text-xs sm:text-sm mt-1 max-w-2xl font-medium leading-relaxed">
-              رابط موقع مطعمك ومنيو الزبائن الحصري متاح على الإنترنت وجاهز لمسح أكواد الطاولات واستقبال الطلبات فوراً.
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
+              منيو مطعمك الحصري جاهز على الإنترنت لاستقبال مسح أكواد QR وتلقي الطلبات فوراً مع جرس تنبيه للمطبخ.
             </p>
           </div>
 
-          {/* Quick Action Button Box */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
-            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-white/20">
-              <div className="min-w-0 pr-1">
-                <span className="text-[10px] text-white/70 font-bold block">رابط مطعمك الحصري:</span>
-                <a href={directMenuUrl} target="_blank" className="font-mono text-xs font-bold text-white hover:underline block truncate max-w-[190px]" dir="ltr">
+          {/* Live URL Pill & Actions */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 flex items-center justify-between gap-3 shadow-inner">
+              <div className="min-w-0 pr-2">
+                <span className="text-[10px] font-bold text-slate-400 block">رابط مطعمك الحصري:</span>
+                <a href={directMenuUrl} target="_blank" className="font-mono text-xs font-bold text-white hover:text-orange-300 block truncate max-w-[200px]" dir="ltr">
                   {liveUrl}
                 </a>
               </div>
               <button
                 onClick={copyUrl}
-                className="px-3 py-1.5 rounded-xl bg-white text-orange-600 hover:bg-orange-50 font-black text-xs flex items-center gap-1 shadow-sm transition-all cursor-pointer shrink-0"
+                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border border-white/10"
               >
-                {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                 <span>{copied ? 'تم النسخ!' : 'نسخ'}</span>
               </button>
             </div>
@@ -151,141 +166,176 @@ export default function ProductionDashboardOverview() {
             <a
               href={directMenuUrl}
               target="_blank"
-              className="px-4 py-3 rounded-2xl bg-white text-slate-900 hover:bg-orange-50 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all text-center"
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all text-center hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>فتح المنيو</span>
-              <ExternalLink size={14} className="text-orange-500" />
+              <span>فتح منيو الزبائن</span>
+              <ExternalLink size={14} />
             </a>
           </div>
         </div>
       </div>
 
-      {/* 2. Fast KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 2. Sleek KPI Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <div key={idx} className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
+            <div 
+              key={idx} 
+              className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold text-slate-500">{kpi.title}</span>
-                <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
-                  <Icon size={16} />
+                <div className={`w-9 h-9 rounded-xl ${kpi.bgGlow} ${kpi.textColor} flex items-center justify-center`}>
+                  <Icon size={18} />
                 </div>
               </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-lg sm:text-2xl font-black text-slate-900">{kpi.value}</span>
-                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
-                  {kpi.change}
-                </span>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-1">
+                  {kpi.value}
+                </div>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                  <span className={`px-2 py-0.5 rounded-md ${kpi.isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {kpi.change}
+                  </span>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* 3. Quick Action Hub */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Link
-          href="/dashboard/menu"
-          className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-500/50 hover:bg-orange-50/20 shadow-xs transition-all flex items-center gap-3 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Plus size={20} />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-black text-slate-900">إضافة طبق جديد</p>
-            <p className="text-[11px] text-slate-400">تعديل المنيو والأسعار</p>
-          </div>
-        </Link>
+      {/* 3. Modern Action Hub */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+            <Sparkles size={16} className="text-orange-500" />
+            <span>الوصول السريع والإدارة</span>
+          </h2>
+          <span className="text-xs text-slate-400 font-medium">كل ما تحتاجه لإدارة الصالة والمطبخ</span>
+        </div>
 
-        <Link
-          href="/dashboard/tables"
-          className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-500/50 hover:bg-orange-50/20 shadow-xs transition-all flex items-center gap-3 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <QrCode size={20} />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-black text-slate-900">طباعة بطاقات QR</p>
-            <p className="text-[11px] text-slate-400">تنزيل باركود الطاولات</p>
-          </div>
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <Link
+            href="/dashboard/menu"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-500/40 hover:shadow-md transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                <Utensils size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-orange-600 transition-colors">قائمة الطعام</p>
+                <p className="text-[11px] text-slate-400">إضافة أطباق وتعديل أسعار</p>
+              </div>
+            </div>
+            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-orange-500 transition-colors" />
+          </Link>
 
-        <Link
-          href="/dashboard/orders"
-          className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-500/50 hover:bg-orange-50/20 shadow-xs transition-all flex items-center gap-3 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <ShoppingBag size={20} />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-black text-slate-900">متابعة الطلبات</p>
-            <p className="text-[11px] text-slate-400">طلبات المطبخ اللحظية</p>
-          </div>
-        </Link>
+          <Link
+            href="/dashboard/tables"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-blue-500/40 hover:shadow-md transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                <QrCode size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">أكواد الطاولات</p>
+                <p className="text-[11px] text-slate-400">تنزيل وطباعة باركود QR</p>
+              </div>
+            </div>
+            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+          </Link>
 
-        <Link
-          href="/dashboard/staff/codes"
-          className="p-4 rounded-2xl bg-white border border-purple-200 hover:border-purple-500 hover:bg-purple-50/30 shadow-xs transition-all flex items-center gap-3 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Key size={20} />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-black text-slate-900">رموز الموظفين</p>
-            <p className="text-[11px] text-purple-600 font-bold">كود 6 أرقام للمطبخ</p>
-          </div>
-        </Link>
+          <Link
+            href="/dashboard/orders"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-emerald-500/40 hover:shadow-md transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                <ShoppingBag size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">متابعة الطلبات</p>
+                <p className="text-[11px] text-slate-400">طلبات حية وتحديث فوري</p>
+              </div>
+            </div>
+            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+          </Link>
 
-        <Link
-          href="/staff"
-          target="_blank"
-          className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all flex items-center gap-3 group col-span-2 sm:col-span-1"
-        >
-          <div className="w-10 h-10 rounded-xl bg-white/10 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <ChefHat size={20} />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-black text-white">شاشة المطبخ KDS</p>
-            <p className="text-[11px] text-slate-300">لشاشات التابلت والجدار</p>
-          </div>
-        </Link>
+          <Link
+            href="/dashboard/staff/codes"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-purple-500/40 hover:shadow-md transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                <Key size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors">رموز الموظفين</p>
+                <p className="text-[11px] text-purple-600 font-semibold">كود 6 أرقام مؤقت</p>
+              </div>
+            </div>
+            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-purple-500 transition-colors" />
+          </Link>
+
+          <Link
+            href="/staff"
+            target="_blank"
+            className="group p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-md transition-all flex items-center justify-between sm:col-span-2 lg:col-span-1"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-white/10 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                <ChefHat size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">شاشة المطبخ KDS</p>
+                <p className="text-[11px] text-slate-400">للشاشات الكبيرة والتابلت</p>
+              </div>
+            </div>
+            <ArrowUpRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+          </Link>
+        </div>
       </div>
 
-      {/* Quick Staff Code Access Banner */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-100/50 border border-purple-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20">
+      {/* 4. Staff Access Code Feature Strip */}
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/30">
             <Key size={22} />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="text-sm sm:text-base font-black text-slate-900">نظام رموز دخول الموظفين (كود 6 أرقام)</h3>
-              <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black">جديد</span>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sm sm:text-base font-black text-white">نظام رموز دخول الموظفين والشيفات (كود 6 أرقام)</h3>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-bold">بدون بريد</span>
             </div>
-            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              يمكنك توليد رمز دخول مؤقت مكوّن من 6 أرقام باسم الموظف وإعطائه له ليسجل دخوله مباشرة لشاشة المطبخ.
+            <p className="text-xs text-slate-300 max-w-xl font-normal leading-relaxed">
+              أنشئ كوداً مؤقتاً لكل موظف خدمة أو شيف مطبخ ليدخل مباشرة من شاشة المطبخ KDS بـ 6 أرقام فقط.
             </p>
           </div>
         </div>
+
         <Link
           href="/dashboard/staff/codes"
-          className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md shadow-purple-600/20 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+          className="relative z-10 px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95"
         >
-          <span>توليد كود موظف الآن</span>
-          <ArrowUpRight size={15} />
+          <span>توليد كود موظف</span>
+          <ArrowLeftIcon />
         </Link>
       </div>
 
-      {/* 4. Live Orders Feed */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+      {/* 5. Live Orders Feed */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-slate-900">آخر طلبات الطاولات الحية</h2>
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              <h2 className="text-lg font-black text-slate-900">أحدث طلبات الطاولات الحية</h2>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">تحديث تلقائي وفوري للطلبات الواردة عبر مسح الـ QR</p>
+            <p className="text-xs text-slate-500 mt-0.5">تحديث فوري تلقائي عند إرسال أي طلب من طاولات المطعم</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -293,46 +343,81 @@ export default function ProductionDashboardOverview() {
               href="/dashboard/orders"
               className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 hover:underline"
             >
-              <span>عرض كل الطلبات الحية</span>
+              <span>عرض شاشة الطلبات الكاملة</span>
               <ArrowUpRight size={14} />
             </Link>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="py-12 text-center text-xs text-slate-400 font-medium">
-            جاري تحميل بيانات الطلبات المباشرة...
+          <div className="py-14 text-center text-xs text-slate-400 font-medium">
+            جاري فحص الطلبات الحية...
           </div>
         ) : recentOrders.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto mb-3">
+          <div className="py-10 text-center max-w-lg mx-auto">
+            <div className="w-16 h-16 rounded-3xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto mb-4 border border-orange-100 shadow-xs">
               <ShoppingBag size={28} />
             </div>
-            <h3 className="font-bold text-slate-800 text-sm mb-1">لا توجد طلبات مسجلة بعد</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-              بمجرد أن يقوم الزبائن بمسح كود الطاولة وإرسال طلباتهم من المنيو، ستظهر الطلبات الحية هنا فوراً.
+            <h3 className="font-black text-slate-900 text-base mb-1.5">لا توجد طلبات واردة حتى الآن</h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              بمجرد أن يجلس الزبون على طاولته ويمسح باركود الـ QR، سيصلك الطلب هنا ولشاشة المطبخ في أجزاء من الثانية مع صوت تنبيهي فوري.
             </p>
-            <Link
-              href="/dashboard/tables"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-md shadow-orange-500/20 hover:bg-orange-600 transition-colors"
-            >
-              <QrCode size={14} />
-              <span>عرض أكواد الطاولات</span>
-            </Link>
+
+            {/* 3 Step Guide */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-right bg-slate-50 p-4 rounded-2xl border border-slate-200/60 mb-6">
+              <div className="flex items-start gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-800">اطبع كود الطاولة</p>
+                  <p className="text-[11px] text-slate-400">من صفحة الطاولات</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-800">يمسح الزبون الباركود</p>
+                  <p className="text-[11px] text-slate-400">بكاميرا الهاتف مباشرة</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-800">يصلك إشعار فوري</p>
+                  <p className="text-[11px] text-slate-400">مع صوت جرس الطلب</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                href="/dashboard/tables"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-sm cursor-pointer"
+              >
+                <QrCode size={14} />
+                <span>عرض وطباعة أكواد الطاولات</span>
+              </Link>
+              <a
+                href={directMenuUrl}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-xs transition-all cursor-pointer"
+              >
+                <span>تجربة فتح المنيو</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
           </div>
         ) : (
-          /* Orders Table */
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                  <th className="pb-3 pr-2">رقم الطلب</th>
+                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase">
+                  <th className="pb-3 pr-3">رقم الطلب</th>
                   <th className="pb-3">الطاولة</th>
                   <th className="pb-3">الأطباق والوجبات</th>
                   <th className="pb-3">المجموع</th>
                   <th className="pb-3">الحالة</th>
                   <th className="pb-3">الوقت</th>
-                  <th className="pb-3 pl-2 text-center">إجراء</th>
+                  <th className="pb-3 pl-3 text-center">إجراء</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -340,21 +425,21 @@ export default function ProductionDashboardOverview() {
                   const badge = statusBadges[order.status] || { bg: 'bg-slate-100 text-slate-600', text: order.status };
                   return (
                     <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 pr-2 font-mono font-bold text-slate-900">
+                      <td className="py-3.5 pr-3 font-mono font-bold text-slate-900">
                         {order.id}
                         {order.isNew && (
                           <span className="mr-1.5 px-1.5 py-0.5 rounded bg-rose-500 text-white text-[9px] font-black">جديد</span>
                         )}
                       </td>
                       <td className="py-3.5">
-                        <span className="font-extrabold bg-slate-100 text-slate-800 px-2 py-1 rounded-lg">
+                        <span className="font-bold bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg">
                           طاولة {order.table}
                         </span>
                       </td>
                       <td className="py-3.5 font-medium text-slate-700 max-w-xs truncate">
                         {order.items}
                       </td>
-                      <td className="py-3.5 font-extrabold text-slate-900">
+                      <td className="py-3.5 font-black text-slate-900">
                         {order.total} ₪
                       </td>
                       <td className="py-3.5">
@@ -365,10 +450,10 @@ export default function ProductionDashboardOverview() {
                       <td className="py-3.5 text-slate-400 font-medium">
                         {order.time}
                       </td>
-                      <td className="py-3.5 pl-2 text-center">
+                      <td className="py-3.5 pl-3 text-center">
                         <Link
                           href="/dashboard/orders"
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-orange-500 hover:text-white font-bold text-[11px] text-slate-600 transition-colors inline-block"
+                          className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-orange-500 hover:text-white font-bold text-[11px] text-slate-600 transition-colors inline-block"
                         >
                           إدارة
                         </Link>
@@ -383,5 +468,13 @@ export default function ProductionDashboardOverview() {
       </div>
 
     </div>
+  );
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
   );
 }
