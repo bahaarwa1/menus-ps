@@ -6,6 +6,8 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, ChefHat, AlertCircle,
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import Logo from '@/components/common/Logo';
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -123,11 +125,9 @@ function LoginForm() {
 
         {/* Logo / Header */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-block mb-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/20 mx-auto hover:scale-105 transition-transform font-black text-2xl">
-              M
-            </div>
-          </Link>
+          <div className="flex justify-center mb-3">
+            <Logo size="lg" href="/" />
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">تسجيل الدخول</h1>
           <p className="text-xs font-medium text-slate-500">نظام إدارة ومطابخ المطاعم الذكية MENUS.ps</p>
         </div>

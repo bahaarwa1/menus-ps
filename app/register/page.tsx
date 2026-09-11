@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { registerRestaurantAction } from '@/app/actions/register-restaurant';
 import { RegisteredRestaurantResult } from '@/lib/db/repositories/restaurant.repository';
+import Logo from '@/components/common/Logo';
 
 // --- Validation helpers ---
 function validateEmail(email: string): string {
@@ -230,7 +231,7 @@ export default function RegisterPage() {
       return;
     }
     if (!/[0-9]/.test(password)) {
-      setFormError('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل');
+      setFormError('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل (0-9)');
       return;
     }
 
@@ -254,7 +255,6 @@ export default function RegisterPage() {
     });
   };
 
-
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
@@ -262,28 +262,28 @@ export default function RegisterPage() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-950 text-white selection:bg-orange-500 selection:text-white flex flex-col justify-between relative overflow-hidden font-sans">
+    <div dir="rtl" className="min-h-screen bg-slate-50 text-slate-900 selection:bg-orange-500 selection:text-white flex flex-col justify-between relative overflow-hidden font-sans">
       
       {/* Background Lighting Effects */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Image src="/logo.png" alt="MENUS Logo" width={28} height={28} className="object-contain" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-orange-500/15 group-hover:scale-105 transition-transform shrink-0 border border-orange-200/60 bg-orange-500">
+              <img src="/logo.png" alt="MENUS Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <span className="text-lg font-black tracking-tight text-white block leading-none">MENUS<span className="text-orange-500">.ps</span></span>
-              <span className="text-[10px] text-slate-400 font-bold">نظام تشغيل المطاعم السحابي</span>
+              <span className="text-lg font-black tracking-tight text-slate-900 block leading-none">MENUS<span className="text-orange-500">.ps</span></span>
+              <span className="text-[10px] text-slate-500 font-bold">نظام تشغيل المطاعم السحابي</span>
             </div>
           </Link>
 
           <div className="flex items-center gap-4 text-xs font-bold">
-            <span className="hidden sm:inline text-slate-400">لديك حساب بالفعل؟</span>
-            <Link href="/login" className="text-orange-400 hover:text-orange-300 transition-colors border border-orange-500/30 px-3 py-1.5 rounded-lg hover:bg-orange-500/10">
+            <span className="hidden sm:inline text-slate-500">لديك حساب بالفعل؟</span>
+            <Link href="/login" className="text-orange-600 hover:text-orange-700 transition-colors border border-orange-200 bg-orange-50 hover:bg-orange-100/80 px-3.5 py-1.5 rounded-xl font-black">
               تسجيل الدخول
             </Link>
           </div>
@@ -303,24 +303,27 @@ export default function RegisterPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl"
+              className="bg-white border border-slate-200/80 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)]"
             >
               <div className="text-center max-w-xl mx-auto mb-8">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold mb-3">
-                  <Sparkles size={14} />
+                <div className="flex justify-center mb-4">
+                  <Logo size="lg" href="/" />
+                </div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-xs font-bold mb-3">
+                  <Sparkles size={14} className="text-orange-500" />
                   <span>تفعيل فوري خلال 30 ثانية • تجربة مجانية 14 يوم</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">
                   سجّل مطعمك واحصل على رابطك الخاص فوراً
                 </h1>
-                <p className="text-slate-400 text-xs sm:text-sm">
+                <p className="text-slate-500 text-xs sm:text-sm font-medium">
                   سيقوم النظام بإنشاء الرابط، منيو الزبائن، شاشة المطبخ، وأول 10 طاولات بـ QR تلقائياً.
                 </p>
               </div>
 
               {formError && (
-                <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2">
-                  <XCircle size={16} className="shrink-0 text-rose-400" />
+                <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <XCircle size={16} className="shrink-0 text-rose-500" />
                   <span>{formError}</span>
                 </div>
               )}
@@ -330,8 +333,8 @@ export default function RegisterPage() {
                   
                   {/* 1. Restaurant Name */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                      <Store size={15} className="text-orange-400" />
+                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <Store size={15} className="text-orange-500" />
                       <span>اسم المطعم أو الكافيه *</span>
                     </label>
                     <input
@@ -340,24 +343,24 @@ export default function RegisterPage() {
                       placeholder="مثال: برجر هاوس، بيتزا فاكتوري"
                       value={restaurantName}
                       onChange={(e) => setRestaurantName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-bold"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all font-bold"
                     />
                     <span className="text-[11px] text-slate-500 mt-1 block">يظهر هذا الاسم لزبائنك وفي شاشة المطبخ</span>
                   </div>
 
                   {/* 2. City */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                      <MapPin size={15} className="text-orange-400" />
+                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <MapPin size={15} className="text-orange-500" />
                       <span>المدينة *</span>
                     </label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-bold"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all font-bold"
                     >
                       {PALESTINIAN_CITIES.map((c) => (
-                        <option key={c} value={c} className="bg-slate-900 text-white">
+                        <option key={c} value={c} className="bg-white text-slate-900">
                           {c}
                         </option>
                       ))}
@@ -367,20 +370,20 @@ export default function RegisterPage() {
                 </div>
 
                 {/* 3. Automatic Subdomain Slug Engine */}
-                <div className="bg-slate-950/80 border border-slate-800 p-5 rounded-2xl">
+                <div className="bg-slate-50 border border-slate-200/90 p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <Globe size={15} className="text-orange-400" />
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Globe size={15} className="text-orange-500" />
                       <span>رابط موقعك الحصري (Subdomain) *</span>
                     </label>
-                    <span className="text-[10px] text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] text-orange-600 bg-orange-100/80 px-2.5 py-0.5 rounded-full font-bold border border-orange-200/60">
                       يتم إنشاؤه تلقائياً
                     </span>
                   </div>
 
                   {/* URL Input Bar */}
-                  <div className="flex items-center rounded-xl bg-slate-900 border border-slate-700 overflow-hidden focus-within:border-orange-500 transition-colors">
-                    <div className="px-3 py-3 bg-slate-800/80 text-slate-400 text-xs font-bold border-l border-slate-700 select-none">
+                  <div className="flex items-center rounded-xl bg-white border border-slate-200 overflow-hidden focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/15 transition-all shadow-xs">
+                    <div className="px-3 py-3 bg-slate-100/80 text-slate-500 text-xs font-bold border-l border-slate-200 select-none">
                       https://
                     </div>
                     <input
@@ -392,9 +395,9 @@ export default function RegisterPage() {
                         setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
                       }}
                       placeholder="اسم-المطعم"
-                      className="flex-1 px-3 py-3 bg-transparent text-orange-400 font-mono font-bold text-sm focus:outline-none placeholder-slate-600"
+                      className="flex-1 px-3 py-3 bg-transparent text-orange-600 font-mono font-bold text-sm focus:outline-none placeholder-slate-400"
                     />
-                    <div className="px-3 py-3 bg-slate-800/80 text-slate-400 text-xs font-bold border-r border-slate-700 select-none">
+                    <div className="px-3 py-3 bg-slate-100/80 text-slate-500 text-xs font-bold border-r border-slate-200 select-none">
                       .menus-ps.vercel.app
                     </div>
                   </div>
@@ -402,20 +405,20 @@ export default function RegisterPage() {
                   {/* Live Status Indicator */}
                   <div className="mt-2.5 flex items-center gap-2 text-xs font-bold">
                     {slugStatus === 'checking' && (
-                      <span className="text-slate-400 flex items-center gap-1.5">
-                        <Loader2 size={13} className="animate-spin text-orange-400" />
+                      <span className="text-slate-500 flex items-center gap-1.5">
+                        <Loader2 size={13} className="animate-spin text-orange-500" />
                         <span>جاري فحص توفر الرابط...</span>
                       </span>
                     )}
                     {slugStatus === 'available' && (
-                      <span className="text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle2 size={15} className="text-emerald-400" />
+                      <span className="text-emerald-600 flex items-center gap-1.5">
+                        <CheckCircle2 size={15} className="text-emerald-500" />
                         <span>{slugMessage}</span>
                       </span>
                     )}
                     {slugStatus === 'taken' && (
-                      <span className="text-rose-400 flex items-center gap-1.5">
-                        <XCircle size={15} className="text-rose-400" />
+                      <span className="text-rose-600 flex items-center gap-1.5">
+                        <XCircle size={15} className="text-rose-500" />
                         <span>{slugMessage}</span>
                       </span>
                     )}
@@ -431,8 +434,8 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                      <Phone size={15} className="text-orange-400" />
+                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <Phone size={15} className="text-orange-500" />
                       <span>رقم الهاتف أو الجوال للتواصل *</span>
                     </label>
                     <input
@@ -442,20 +445,20 @@ export default function RegisterPage() {
                       value={phone}
                       onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
                       onBlur={() => setPhoneError(validatePhone(phone))}
-                      className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 transition-all font-mono ${
-                        phoneError ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:border-orange-500 focus:ring-orange-500'
+                      className={`w-full px-4 py-3 rounded-xl bg-slate-50 border text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:bg-white focus:ring-2 transition-all font-mono font-bold ${
+                        phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/15'
                       }`}
                     />
                     {phoneError && (
-                      <p className="text-rose-400 text-[11px] font-bold mt-1 flex items-center gap-1">
+                      <p className="text-rose-600 text-[11px] font-bold mt-1 flex items-center gap-1">
                         <AlertTriangle size={11} /> {phoneError}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                      <Mail size={15} className="text-slate-400" />
+                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <Mail size={15} className="text-slate-500" />
                       <span>البريد الإلكتروني للإدارة (اختياري)</span>
                     </label>
                     <input
@@ -464,20 +467,20 @@ export default function RegisterPage() {
                       value={ownerEmail}
                       onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
                       onBlur={() => ownerEmail.trim() && setEmailError(validateEmail(ownerEmail.trim()))}
-                      className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 transition-all ${
-                        emailError ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:border-orange-500 focus:ring-orange-500'
+                      className={`w-full px-4 py-3 rounded-xl bg-slate-50 border text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:bg-white focus:ring-2 transition-all font-bold ${
+                        emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/15'
                       }`}
                     />
                     {emailError && (
-                      <p className="text-rose-400 text-[11px] font-bold mt-1 flex items-center gap-1">
+                      <p className="text-rose-600 text-[11px] font-bold mt-1 flex items-center gap-1">
                         <AlertTriangle size={11} /> {emailError}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                      <Lock size={15} className="text-orange-400" />
+                    <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <Lock size={15} className="text-orange-500" />
                       <span>كلمة المرور للوحة التحكم *</span>
                     </label>
                     <div className="relative">
@@ -487,12 +490,12 @@ export default function RegisterPage() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 pr-11 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
+                        className="w-full px-4 py-3 pr-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all font-mono font-bold"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(v => !v)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -503,17 +506,17 @@ export default function RegisterPage() {
                         <div className="flex gap-1 mb-1">
                           {[0,1,2,3].map(i => (
                             <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                              i < pwdStrength.score ? pwdStrength.color : 'bg-slate-700'
+                              i < pwdStrength.score ? pwdStrength.color : 'bg-slate-200'
                             }`} />
                           ))}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-slate-400">قوة كلمة المرور: <span className="text-white">{pwdStrength.label}</span></span>
+                          <span className="text-[11px] font-bold text-slate-500">قوة كلمة المرور: <span className="text-slate-800">{pwdStrength.label}</span></span>
                         </div>
                         {pwdStrength.errors.length > 0 && (
                           <ul className="mt-1 space-y-0.5">
                             {pwdStrength.errors.map(err => (
-                              <li key={err} className="text-[11px] text-rose-400 flex items-center gap-1">
+                              <li key={err} className="text-[11px] text-rose-600 flex items-center gap-1">
                                 <AlertTriangle size={10} /> {err}
                               </li>
                             ))}
@@ -526,10 +529,10 @@ export default function RegisterPage() {
                 </div>
 
                 {/* 5. Initial Tables Count */}
-                <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <div>
-                    <span className="text-xs font-bold text-white block">عدد الطاولات المبدئي للتوليد السريع:</span>
-                    <span className="text-[11px] text-slate-400">سنقوم بإنشاء أكواد QR جاهزة للطباعة لكل طاولة.</span>
+                    <span className="text-xs font-bold text-slate-800 block">عدد الطاولات المبدئي للتوليد السريع:</span>
+                    <span className="text-[11px] text-slate-500">سنقوم بإنشاء أكواد QR جاهزة للطباعة لكل طاولة.</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {[5, 10, 15, 20].map((count) => (
@@ -537,10 +540,10 @@ export default function RegisterPage() {
                         type="button"
                         key={count}
                         onClick={() => setTablesCount(count)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
                           tablesCount === count
                             ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
-                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                         }`}
                       >
                         {count} طاولات
@@ -568,7 +571,7 @@ export default function RegisterPage() {
                   )}
                 </button>
 
-                <p className="text-center text-[11px] text-slate-500 font-medium">
+                <p className="text-center text-[11px] text-slate-400 font-medium">
                   بالتسجيل، أنت توافق على شروط الخدمة. تجربة مجانية 14 يوماً بدون بطاقة بنكية.
                 </p>
 
@@ -582,36 +585,40 @@ export default function RegisterPage() {
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl text-center max-w-2xl mx-auto"
+              className="bg-white border border-slate-200/80 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] text-center max-w-2xl mx-auto"
             >
-              <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
+              <div className="flex justify-center mb-4">
+                <Logo size="lg" href="/" />
+              </div>
+
+              <div className="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
                 <CheckCircle2 size={36} />
               </div>
 
-              <div className="inline-block px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-bold mb-2">
+              <div className="inline-block px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-xs font-bold mb-2">
                 جاهز أونلاين الآن 100%
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2">
                 تهانينا! أصبح موقع مطعمك متاحاً على الإنترنت 🎉
               </h2>
-              <p className="text-slate-400 text-xs sm:text-sm mb-6">
-                تم حجز الرابط، وإنشاء <strong className="text-white">{createdRestaurant.tablesCount} طاولات</strong> بأكواد QR مشفرة، وتجهيز لوحة التحكم بنجاح.
+              <p className="text-slate-500 text-xs sm:text-sm mb-6 font-medium">
+                تم حجز الرابط، وإنشاء <strong className="text-slate-800">{createdRestaurant.tablesCount} طاولات</strong> بأكواد QR مشفرة، وتجهيز لوحة التحكم بنجاح.
               </p>
 
               {/* Subdomain URL Card */}
-              <div className="bg-slate-950 border border-orange-500/40 rounded-2xl p-4 mb-6 text-right">
-                <span className="text-[11px] font-bold text-slate-400 block mb-1">
+              <div className="bg-slate-50 border border-orange-200 rounded-2xl p-4 mb-6 text-right">
+                <span className="text-[11px] font-bold text-slate-600 block mb-1">
                   رابط موقعك ومنيو الزبائن الحصري:
                 </span>
-                <div className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
-                  <span className="font-mono text-sm sm:text-base font-bold text-orange-400 select-all truncate" dir="ltr">
+                <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                  <span className="font-mono text-sm sm:text-base font-bold text-orange-600 select-all truncate" dir="ltr">
                     {`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`}
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => copyUrl(`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold transition-colors cursor-pointer"
                     >
                       {copiedLink ? <Check size={14} /> : <Copy size={14} />}
                       <span>{copiedLink ? 'تم النسخ!' : 'نسخ الرابط'}</span>
@@ -619,7 +626,7 @@ export default function RegisterPage() {
                     <a
                       href={`/r/${createdRestaurant.slug}`}
                       target="_blank"
-                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
                       title="فتح منيو المطعم"
                     >
                       <ExternalLink size={15} />
@@ -642,37 +649,37 @@ export default function RegisterPage() {
                 <Link
                   href={`/m?restaurant=${createdRestaurant.slug}`}
                   target="_blank"
-                  className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex flex-col items-center justify-center gap-2 border border-slate-700 transition-all"
+                  className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex flex-col items-center justify-center gap-2 border border-slate-200 transition-all shadow-xs"
                 >
-                  <QrCode size={20} className="text-orange-400" />
+                  <QrCode size={20} className="text-orange-500" />
                   <span>معاينة منيو الزبون</span>
                 </Link>
 
                 <Link
                   href="/staff"
                   target="_blank"
-                  className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex flex-col items-center justify-center gap-2 border border-slate-700 transition-all"
+                  className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex flex-col items-center justify-center gap-2 border border-slate-200 transition-all shadow-xs"
                 >
-                  <ChefHat size={20} className="text-emerald-400" />
+                  <ChefHat size={20} className="text-emerald-600" />
                   <span>فتح شاشة المطبخ</span>
                 </Link>
 
               </div>
 
               {/* Table QR Sample */}
-              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
-                    <QrCode size={24} className="text-slate-950" />
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                    <QrCode size={24} className="text-slate-800" />
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-white block">طاولة رقم 1 جاهزة للطباعة</span>
+                    <span className="font-bold text-slate-800 block">طاولة رقم 1 جاهزة للطباعة</span>
                     <span className="text-[10px] text-slate-500">كود QR آمن ومشفر جاهز للاستخدام المباشر</span>
                   </div>
                 </div>
                 <Link
                   href="/dashboard/tables"
-                  className="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 text-xs"
+                  className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 text-xs"
                 >
                   <span>طباعة الستاندات</span>
                   <ExternalLink size={12} />
@@ -686,7 +693,7 @@ export default function RegisterPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <p>© 2026 Menus.ps — منصة إدارة وقوائم طعام المطاعم الذكية في فلسطين</p>
       </footer>
 
