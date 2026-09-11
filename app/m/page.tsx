@@ -11,6 +11,8 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 
+import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
+
 // --- DB-driven types (mirrors PublicMenuCategory from menu.repository) ---
 interface Extra { id: string; name: string; price: number; }
 interface MenuItem {
@@ -32,19 +34,55 @@ interface MenuCategory {
   items: MenuItem[];
 }
 
+// Pre-compute instant 0ms fallback dataset
+const initialCategories: MenuCategory[] = fallbackCategories.map((cat) => ({
+  id: cat.id,
+  name: cat.name,
+  icon: cat.icon,
+  items: fallbackMenuItems
+    .filter((item) => item.category === cat.id)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      image: item.image,
+      imageUrl: item.imageUrl,
+      popular: item.popular,
+      spicy: item.spicy,
+      category: item.category,
+      extras: item.extras,
+    })),
+}));
+
+const initialMenuItems: MenuItem[] = fallbackMenuItems.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  price: item.price,
+  image: item.image,
+  imageUrl: item.imageUrl,
+  popular: item.popular,
+  spicy: item.spicy,
+  category: item.category,
+  extras: item.extras,
+}));
+
 function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
   const restaurantParam = searchParams.get('restaurant') || '';
-  const { t, direction, language } = useLanguage();
+  const defaultSlug = 'burger-house-nablus';
+  const effectiveSlug = restaurantParam || (qrTokenParam ? '' : defaultSlug);
+  const { direction, language } = useLanguage();
 
-  // DB menu state
-  const [dbCategories, setDbCategories] = useState<MenuCategory[]>([]);
-  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>([]);
-  const [menuLoading, setMenuLoading] = useState(true);
+  // Instant 0ms menu state pre-hydrated from bundled data
+  const [dbCategories, setDbCategories] = useState<MenuCategory[]>(initialCategories);
+  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState('');
 
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeCategory, setActiveCategory] = useState(initialCategories[0]?.id || 'burgers');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Table verification state
@@ -143,7 +181,7 @@ function FastFrictionlessMenuContent() {
     };
   }, [isOrderSubmitted, submittedOrderId]);
 
-  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(restaurantParam || '');
+  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(effectiveSlug);
   const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
@@ -587,6 +625,7 @@ function FastFrictionlessMenuContent() {
                           alt={item.name} 
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                           loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl bg-orange-50">
@@ -684,6 +723,8 @@ function FastFrictionlessMenuContent() {
                       src={selectedProduct.imageUrl} 
                       alt={selectedProduct.name} 
                       className="w-full h-full object-cover" 
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
