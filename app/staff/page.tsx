@@ -149,6 +149,22 @@ export default function StaffOrdersManagementPage() {
     router.push('/staff/login');
   };
 
+  const handlePrintReceipt = () => {
+    document.body.classList.add('printable-receipt-mode');
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('printable-receipt-mode');
+    }, 1000);
+  };
+
+  const handlePrintStand = () => {
+    document.body.classList.add('printable-stand-mode');
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('printable-stand-mode');
+    }, 1000);
+  };
+
   // Filter orders
   const filteredOrders = ordersList.filter(o => {
     const matchesFilter = statusFilter === 'all' || o.status === statusFilter;
@@ -233,7 +249,7 @@ export default function StaffOrdersManagementPage() {
             </button>
 
             <button
-              onClick={() => window.print()}
+              onClick={() => handlePrintReceipt(order)}
               className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-700"
               title="طباعة بون الطلب للمطبخ"
             >
@@ -760,7 +776,7 @@ export default function StaffOrdersManagementPage() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={handlePrintStand}
                   className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-1.5"
                 >
                   <Printer size={15} />
@@ -777,6 +793,67 @@ export default function StaffOrdersManagementPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Hidden Thermal Receipt Print Layout (Prints ONLY on receipt print) */}
+      {selectedOrder && (
+        <div id="printable-receipt" className="hidden" dir="rtl">
+          <div className="w-[78mm] p-2 text-black bg-white font-mono text-xs mx-auto">
+            <div className="text-center border-b-2 border-dashed border-black pb-2 mb-2">
+              <h2 className="text-base font-bold">Burger House نابلس</h2>
+              <p className="text-[11px]">فرع رفيديا الرئيسي</p>
+              <p className="text-[11px]">هاتف: 0599123456</p>
+              <div className="mt-1 font-bold text-sm">
+                بون طلب — طاولة رقم {selectedOrder.table}
+              </div>
+              <p className="text-[10px]">{selectedOrder.id} • {selectedOrder.time}</p>
+            </div>
+
+            <table className="w-full text-right my-2">
+              <thead>
+                <tr className="border-b border-black">
+                  <th className="py-1">الصنف</th>
+                  <th className="text-center py-1">الكمية</th>
+                  <th className="text-left py-1">السعر</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrder.items?.map((item: any, idx: number) => (
+                  <tr key={idx} className="border-b border-dotted border-gray-400">
+                    <td className="py-1 leading-tight">
+                      <div className="font-bold">{item.name}</div>
+                      {item.customization && <div className="text-[10px]">• {item.customization}</div>}
+                      {item.extras && item.extras.length > 0 && (
+                        <div className="text-[10px]">• {item.extras.join('، ')}</div>
+                      )}
+                    </td>
+                    <td className="text-center py-1 font-bold">{item.quantity}</td>
+                    <td className="text-left py-1">{item.price * item.quantity} ₪</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {selectedOrder.notes && (
+              <div className="border border-black p-1.5 my-2 text-[11px]">
+                <span className="font-bold">ملاحظات: </span>
+                {selectedOrder.notes}
+              </div>
+            )}
+
+            <div className="border-t-2 border-dashed border-black pt-2 mt-2 space-y-1 text-left">
+              <div className="flex justify-between font-bold text-sm">
+                <span>الإجمالي:</span>
+                <span>{selectedOrder.total} ₪</span>
+              </div>
+            </div>
+
+            <div className="text-center mt-4 pt-2 border-t border-dotted border-gray-400 text-[10px]">
+              <p>شكراً لزيارتكم! ✨</p>
+              <p>نظام Menus.ps السحابي</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
