@@ -8,6 +8,7 @@ export interface ClientOrderItemInput {
   quantity: number;
   note?: string;
   selectedExtras?: string[]; // Extra IDs or names
+  extras?: string[];
 }
 
 export interface ValidatedOrderItem {
@@ -190,8 +191,9 @@ export async function validateAndCalculateOrder(
     const validSelectedExtras: Array<{ id?: string; name: string; price: number }> = [];
     let extrasTotalPerUnit = 0;
 
-    if (clientItem.selectedExtras && Array.isArray(clientItem.selectedExtras)) {
-      for (const extraIdOrName of clientItem.selectedExtras) {
+    const extrasInput = clientItem.selectedExtras || clientItem.extras;
+    if (extrasInput && Array.isArray(extrasInput)) {
+      for (const extraIdOrName of extrasInput) {
         const foundExtra = catalogItem.extras?.find(
           (e) => e.id === extraIdOrName || e.name === extraIdOrName
         );

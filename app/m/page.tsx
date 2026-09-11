@@ -547,6 +547,7 @@ function FastFrictionlessMenuContent() {
         quantity: qty,
         note: itemNotes[id] || undefined,
         extras: selectedExtras[id] || undefined,
+        selectedExtras: selectedExtras[id] || undefined,
       }));
 
       const res = await fetch('/api/v1/orders/submit', {

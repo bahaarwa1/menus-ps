@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         // 1. Fetch today's orders
         let todayOrdersQuery = (supabase as any)
           .from('orders')
-          .select('id, total_amount, status, created_at, table_number, customer_note, order_items(item_name, quantity)')
+          .select('id, total_amount, status, created_at, customer_note, tables(table_number), order_items(item_name, quantity)')
           .gte('created_at', startOfToday);
 
         if (targetBranchId) {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         // 2. Fetch all recent orders (up to 8)
         let recentQuery = (supabase as any)
           .from('orders')
-          .select('id, order_number, total_amount, status, created_at, table_number, customer_note, order_items(item_name, quantity)')
+          .select('id, order_number, total_amount, status, created_at, customer_note, tables(table_number), order_items(item_name, quantity)')
           .order('created_at', { ascending: false })
           .limit(8);
 
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
             return {
               id: o.order_number || `#${o.id.slice(0, 6)}`,
               rawId: o.id,
-              table: o.table_number || 0,
+              table: o.tables?.table_number ?? o.table_number ?? 0,
               items: itemsList,
               total: Number(o.total_amount) || 0,
               status: o.status || 'جديد',

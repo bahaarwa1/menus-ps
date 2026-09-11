@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Build query: fetch orders with their items
+    // Build query: fetch orders with their items and joined table number
     let query = (supabase as any)
       .from('orders')
       .select(`
@@ -121,11 +121,13 @@ export async function GET(request: NextRequest) {
         order_number,
         branch_id,
         table_id,
-        table_number,
         status,
         total_amount,
         customer_note,
         created_at,
+        tables (
+          table_number
+        ),
         order_items (
           id,
           item_id,
@@ -136,13 +138,19 @@ export async function GET(request: NextRequest) {
           notes
         )
       `)
-      .in('status', ['جديد', 'قيد التحضير', 'جاهز'])
+      .in('status', ['جديد', 'قيد التحضير', 'جاهز', 'تم التسليم', 'new', 'cooking', 'ready', 'completed'])
       .order('created_at', { ascending: false })
       .limit(100);
 
     if (orderId) {
       // Single order lookup (e.g. customer tracking their own order)
-      query = query.eq('id', orderId.slice(0, 64));
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+      if (isUuid) {
+        query = query.eq('id', orderId.slice(0, 64));
+      } else {
+        const cleanNum = orderId.replace(/^#/, '');
+        query = query.or(`order_number.eq.${cleanNum},order_number.eq.#${cleanNum}`);
+      }
     } else if (branchId) {
       // Strict branch isolation — ALWAYS filter by branch_id
       query = query.eq('branch_id', branchId.slice(0, 64));
@@ -158,16 +166,19 @@ export async function GET(request: NextRequest) {
 
     // Map to normalized shape
     const enriched = (orders || []).map((o: any) => {
-      const tableNum = typeof o.table_number === 'number'
-        ? o.table_number
-        : typeof o.table_id === 'string' && /^\d+$/.test(o.table_id)
-          ? parseInt(o.table_id, 10)
-          : 0;
+      const tableNum = typeof o.tables?.table_number === 'number'
+        ? o.tables.table_number
+        : typeof o.table_number === 'number'
+          ? o.table_number
+          : typeof o.table_id === 'string' && /^\d+$/.test(o.table_id)
+            ? parseInt(o.table_id, 10)
+            : 0;
       return {
         ...o,
         table_number: tableNum,
+        tableNumber: tableNum,
         orderNumber: o.order_number,
-        totalAmount: o.total_amount,
+        totalAmount: Number(o.total_amount) || 0,
         customerNote: o.customer_note,
       };
     });

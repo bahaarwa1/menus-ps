@@ -116,6 +116,25 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
           .maybeSingle();
         if (tableRow?.id) {
           resolvedTableId = tableRow.id;
+        } else {
+          // Auto-create table if it doesn't exist yet so orders never fail
+          try {
+            const { data: newTable } = await (supabase.from('tables') as any)
+              .insert({
+                branch_id: dto.branchId,
+                table_number: tableNum,
+                seats: 4,
+                qr_token: `qr_${dto.branchId.slice(0, 8)}_t${tableNum}_${Math.random().toString(36).slice(2, 8)}`,
+                status: 'فارغة',
+              })
+              .select('id')
+              .maybeSingle();
+            if (newTable?.id) {
+              resolvedTableId = newTable.id;
+            }
+          } catch (createTblErr) {
+            console.warn('Auto-create table fallback warning:', createTblErr);
+          }
         }
       }
 
@@ -274,11 +293,18 @@ export async function getOrderById(orderId: string): Promise<StoredOrder | null>
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
-      const cleanNum = orderId.replace(/^#/, '');
-      const { data } = await (supabase.from('orders') as any)
-        .select('*')
-        .or(`id.eq.${orderId},order_number.eq.${cleanNum}`)
-        .maybeSingle();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+      let query = (supabase.from('orders') as any)
+        .select('*, tables(table_number), order_items(id, item_id, item_name, quantity, unit_price, selected_extras, notes)');
+
+      if (isUuid) {
+        query = query.eq('id', orderId);
+      } else {
+        const cleanNum = orderId.replace(/^#/, '');
+        query = query.or(`order_number.eq.${cleanNum},order_number.eq.#${cleanNum}`);
+      }
+
+      const { data } = await query.maybeSingle();
 
       if (data) {
         return {
@@ -289,8 +315,15 @@ export async function getOrderById(orderId: string): Promise<StoredOrder | null>
           createdAt: data.created_at,
           branchId: data.branch_id,
           tableId: data.table_id,
-          tableNumber: data.table_number || 0,
-          items: data.items || [],
+          tableNumber: data.tables?.table_number ?? data.table_number ?? 0,
+          items: (data.order_items || []).map((it: any) => ({
+            itemId: it.item_id,
+            itemName: it.item_name,
+            quantity: Number(it.quantity) || 1,
+            unitPrice: Number(it.unit_price) || 0,
+            selectedExtras: it.selected_extras,
+            notes: it.notes,
+          })),
         };
       }
     } catch {}
