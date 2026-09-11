@@ -357,16 +357,15 @@ export default function ProductionTablesPage() {
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
             
             {/* Printable Preview Frame */}
-            <div className="border-4 border-slate-900 rounded-3xl p-6 bg-gradient-to-b from-orange-500/5 to-transparent mb-5 relative overflow-hidden">
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 block mb-1">
-                MENUS.ps — مسح للطلب المباشر
-              </span>
-              <h3 className="text-2xl font-black text-slate-900 mb-1">
-                طاولة رقم {selectedPrintTable.tableNumber}
+            <div className="border border-slate-200 rounded-3xl p-6 bg-white mb-5 relative shadow-xs">
+              <h3 className="text-xl font-black text-slate-900 mb-1">
+                {restaurantName || 'أهلاً بكم'}
               </h3>
-              <p className="text-[11px] text-slate-500 mb-4">امسح الكود بكاميرا هاتفك لتصفح المنيو والطلب فوراً</p>
+              <div className="inline-flex items-center justify-center px-4 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 mb-4">
+                طاولة {selectedPrintTable.tableNumber}
+              </div>
 
-              <div className="w-44 h-44 bg-white p-2 rounded-2xl border-2 border-slate-900 mx-auto shadow-md mb-3 flex items-center justify-center">
+              <div className="w-44 h-44 bg-white p-3 rounded-2xl border border-slate-200 mx-auto shadow-xs mb-4 flex items-center justify-center">
                 {selectedPrintTable.qrDataUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -379,9 +378,8 @@ export default function ProductionTablesPage() {
                 )}
               </div>
 
-              <span className="text-[10px] font-bold text-slate-400 block">
-                بدون تحميل تطبيق · سريع وآمن 100%
-              </span>
+              <p className="text-xs font-bold text-slate-800 mb-1">امسح الكود لطلب الطعام</p>
+              <p className="text-[11px] text-slate-400">وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
             </div>
 
             <div className="flex items-center gap-2">

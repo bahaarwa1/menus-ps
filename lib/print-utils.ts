@@ -150,7 +150,6 @@ export function printThermalReceipt(order: {
 
       <div class="text-center" style="font-size: 10px; margin-top: 6px; color: #333;">
         <div>شكراً لزيارتكم! نتمنى لكم وجبة شهية ✨</div>
-        <div style="font-weight: bold; margin-top: 2px;">نظام Menus.ps للطلبات الحية</div>
       </div>
     </body>
     </html>
@@ -198,7 +197,7 @@ export function printTableStand(stand: {
     <html dir="rtl" lang="ar">
     <head>
       <meta charset="utf-8">
-      <title>ستاند طاولة ${stand.tableNumber}</title>
+      <title>طاولة ${stand.tableNumber}</title>
       <style>
         @page {
           size: A5 portrait;
@@ -216,91 +215,66 @@ export function printTableStand(stand: {
           }
           .stand-card {
             box-shadow: none !important;
-            border: 4px solid #1e293b !important;
+            border: 1.5px solid #e2e8f0 !important;
           }
         }
+        * { box-sizing: border-box; }
         body {
-          font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Segoe UI', system-ui, -apple-system, Tahoma, Geneva, Verdana, sans-serif;
           margin: 0;
           padding: 8mm;
-          background: #f8fafc;
+          background: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           min-height: 100vh;
-          box-sizing: border-box;
           direction: rtl;
         }
-        * { box-sizing: border-box; }
         .stand-card {
           width: 132mm;
           background: #ffffff;
-          border-radius: 28px;
-          border: 4px solid #0f172a;
-          padding: 24px 20px;
+          border-radius: 24px;
+          border: 1.5px solid #e2e8f0;
+          padding: 32px 24px 28px 24px;
           text-align: center;
           position: relative;
-          overflow: hidden;
           display: flex;
           flex-direction: column;
           align-items: center;
-        }
-        .accent-bar {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 10px;
-          background: linear-gradient(90deg, #f97316, #ea580c, #f59e0b);
-        }
-        .mascot-badge {
-          width: 64px;
-          height: 64px;
-          border-radius: 20px;
-          background: #fff7ed;
-          border: 2px solid #ea580c;
-          display: flex;
-          align-items: center;
           justify-content: center;
-          margin-bottom: 8px;
-          margin-top: 6px;
         }
         .restaurant-title {
-          font-size: 24px;
-          font-weight: 900;
+          font-size: 26px;
+          font-weight: 800;
           color: #0f172a;
           margin: 0;
           letter-spacing: -0.5px;
         }
-        .restaurant-sub {
-          font-size: 11px;
-          color: #64748b;
-          font-weight: 700;
-          margin-top: 2px;
-        }
         .table-pill {
-          display: inline-block;
-          background: #0f172a;
-          color: #ffffff;
-          padding: 6px 22px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #f8fafc;
+          color: #0f172a;
+          padding: 6px 20px;
           border-radius: 999px;
-          font-size: 15px;
-          font-weight: 900;
-          margin: 12px 0 10px 0;
-          border: 2px solid #f97316;
+          font-size: 14px;
+          font-weight: 700;
+          margin: 12px 0 16px 0;
+          border: 1px solid #cbd5e1;
         }
         .qr-frame {
-          width: 72mm;
-          height: 72mm;
+          width: 76mm;
+          height: 76mm;
           background: #ffffff;
-          border: 3px solid #f97316;
-          border-radius: 24px;
-          padding: 8px;
-          margin: 6px auto;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 20px;
+          padding: 12px;
+          margin: 0 auto 16px auto;
           display: flex;
           align-items: center;
           justify-content: center;
-          position: relative;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         }
         .qr-frame img {
           width: 100%;
@@ -309,124 +283,64 @@ export function printTableStand(stand: {
           display: block;
         }
         .instructions {
-          margin-top: 10px;
+          margin-top: 4px;
         }
         .instructions h3 {
-          font-size: 16px;
-          font-weight: 900;
-          color: #0f172a;
+          font-size: 15px;
+          font-weight: 800;
+          color: #1e293b;
           margin: 0 0 4px 0;
         }
         .instructions p {
-          font-size: 11px;
-          color: #475569;
-          font-weight: 700;
+          font-size: 12px;
+          color: #64748b;
+          font-weight: 500;
           margin: 0;
-          line-height: 1.4;
         }
         .steps-container {
           display: flex;
-          justify-content: space-around;
+          justify-content: center;
+          gap: 16px;
           width: 100%;
-          margin-top: 12px;
-          padding-top: 10px;
-          border-top: 1.5px dashed #cbd5e1;
+          margin-top: 18px;
+          padding-top: 14px;
+          border-top: 1px solid #f1f5f9;
         }
         .step-item {
-          flex: 1;
-          font-size: 10px;
-          font-weight: 800;
-          color: #334155;
-        }
-        .step-icon {
-          font-size: 18px;
-          display: block;
-          margin-bottom: 2px;
-        }
-        .url-text {
-          font-family: monospace;
-          font-size: 9px;
-          color: #94a3b8;
-          direction: ltr;
-          margin-top: 8px;
-        }
-        .footer-brand {
-          font-size: 10px;
-          font-weight: 800;
-          color: #94a3b8;
-          margin-top: 8px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #475569;
+          display: flex;
+          align-items: center;
+          gap: 4px;
         }
       </style>
     </head>
     <body>
       <div class="stand-card">
-        <div class="accent-bar"></div>
-        
-        <!-- Burger Mascot Character -->
-        <div class="mascot-badge">
-          <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Top Bun -->
-            <path d="M12 28C12 17.5066 20.9543 9 32 9C43.0457 9 52 17.5066 52 28C52 29 51 29 50 29H14C13 29 12 29 12 28Z" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
-            <!-- Sesame seeds -->
-            <ellipse cx="24" cy="18" rx="2" ry="1" fill="#FEF3C7" transform="rotate(-15 24 18)"/>
-            <ellipse cx="32" cy="15" rx="2" ry="1" fill="#FEF3C7"/>
-            <ellipse cx="40" cy="18" rx="2" ry="1" fill="#FEF3C7" transform="rotate(15 40 18)"/>
-            <!-- Cheese with melt -->
-            <path d="M10 32H54L48 38L32 34L20 40L10 32Z" fill="#FBBF24"/>
-            <!-- Patty -->
-            <rect x="11" y="34" width="42" height="8" rx="4" fill="#78350F" stroke="#451A03" stroke-width="1.5"/>
-            <!-- Lettuce ruffle -->
-            <path d="M8 30C10 28 12 31 15 29C18 31 21 28 24 30C27 28 30 31 33 29C36 31 39 28 42 30C45 28 48 31 51 29C54 31 56 28 56 30" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
-            <!-- Bottom Bun -->
-            <path d="M14 43H50C51 43 52 44 52 45C52 50 43.0457 53 32 53C20.9543 53 12 50 12 45C12 44 13 43 14 43Z" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
-            <!-- Cool sunglasses on burger -->
-            <rect x="20" y="22" width="10" height="5" rx="2.5" fill="#0F172A"/>
-            <rect x="34" y="22" width="10" height="5" rx="2.5" fill="#0F172A"/>
-            <line x1="30" y1="24" x2="34" y2="24" stroke="#0F172A" stroke-width="2"/>
-            <path d="M22 23L25 25" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
-            <path d="M36 23L39 25" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
-            <!-- Happy smile -->
-            <path d="M29 30C30 31 34 31 35 30" stroke="#78350F" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-
-        <h1 class="restaurant-title">${stand.restaurantName || 'Burger House نابلس'}</h1>
-        <div class="restaurant-sub">الفرع الرئيسي · رفيديا</div>
+        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً بكم'}</h1>
 
         <div class="table-pill">
-          ★ طاولة رقم ${stand.tableNumber} ★
+          طاولة ${stand.tableNumber}
         </div>
 
-        <!-- QR Code Framed -->
+        <!-- Clean Luxury QR Stand Frame -->
         <div class="qr-frame">
           <img src="${stand.qrDataUrl}" alt="كود طاولة ${stand.tableNumber}" />
         </div>
 
         <div class="instructions">
-          <h3>امسح الكود لفتح المنيو والطلب 🍔</h3>
-          <p>افتح كاميرا الهاتف ووجّهها نحو الكود للتصفح والطلب المباشر</p>
+          <h3>امسح الكود لطلب الطعام</h3>
+          <p>وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
         </div>
 
-        <!-- 3 Quick Steps -->
+        <!-- Minimal Steps -->
         <div class="steps-container">
-          <div class="step-item">
-            <span class="step-icon">📱</span>
-            <span>١. امسح الكود</span>
-          </div>
-          <div class="step-item">
-            <span class="step-icon">🍔</span>
-            <span>٢. اختر وجبتك</span>
-          </div>
-          <div class="step-item">
-            <span class="step-icon">⚡</span>
-            <span>٣. استلم طلبك</span>
-          </div>
-        </div>
-
-        <div class="url-text">${stand.targetUrl}</div>
-
-        <div class="footer-brand">
-          نتمنى لكم وجبة شهية! · Menus.ps
+          <div class="step-item"><span>١. امسح الكود</span></div>
+          <div class="step-item"><span>•</span></div>
+          <div class="step-item"><span>٢. اختر وجبتك</span></div>
+          <div class="step-item"><span>•</span></div>
+          <div class="step-item"><span>٣. أرسل طلبك</span></div>
         </div>
       </div>
     </body>
@@ -474,30 +388,26 @@ export function printAllTableStands(stands: Array<{
   const cardsHtml = stands.map((stand, idx) => `
     <div class="stand-wrapper ${idx < stands.length - 1 ? 'page-break' : ''}">
       <div class="stand-card">
-        <div class="accent-bar"></div>
-        <div class="mascot-badge">🍽️</div>
-        <h1 class="restaurant-title">${stand.restaurantName || 'قائمة الطعام الإلكترونية'}</h1>
-        ${stand.branchName ? `<div class="restaurant-sub">${stand.branchName}</div>` : ''}
+        <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً بكم'}</h1>
 
-        <div class="table-pill">طاولة رقم ${stand.tableNumber}</div>
+        <div class="table-pill">طاولة ${stand.tableNumber}</div>
 
         <div class="qr-frame">
           <img src="${stand.qrDataUrl}" alt="كود طاولة ${stand.tableNumber}" />
         </div>
 
         <div class="instructions">
-          <h3>امسح الكود لفتح المنيو والطلب 📱</h3>
-          <p>افتح كاميرا الهاتف ووجّهها نحو الكود للتصفح والطلب المباشر</p>
+          <h3>امسح الكود لطلب الطعام</h3>
+          <p>وجّه كاميرا هاتفك نحو الكود لتصفح القائمة والطلب مباشرة</p>
         </div>
 
         <div class="steps-container">
-          <div class="step-item"><span class="step-icon">📱</span><span>١. امسح الكود</span></div>
-          <div class="step-item"><span class="step-icon">🍽️</span><span>٢. اختر وجبتك</span></div>
-          <div class="step-item"><span class="step-icon">⚡</span><span>٣. أرسل طلبك</span></div>
+          <div class="step-item"><span>١. امسح الكود</span></div>
+          <div class="step-item"><span>•</span></div>
+          <div class="step-item"><span>٢. اختر وجبتك</span></div>
+          <div class="step-item"><span>•</span></div>
+          <div class="step-item"><span>٣. أرسل طلبك</span></div>
         </div>
-
-        <div class="url-text">${stand.targetUrl}</div>
-        <div class="footer-brand">نتمنى لكم تجربة مميزة! · Menus.ps</div>
       </div>
     </div>
   `).join('');
@@ -519,34 +429,29 @@ export function printAllTableStands(stands: Array<{
             print-color-adjust: exact !important;
           }
           .page-break { page-break-after: always; break-after: page; }
-          .stand-card { box-shadow: none !important; border: 4px solid #1e293b !important; }
-        }
-        body {
-          font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          margin: 0; padding: 0; background: #ffffff; direction: rtl;
+          .stand-card { box-shadow: none !important; border: 1.5px solid #e2e8f0 !important; }
         }
         * { box-sizing: border-box; }
+        body {
+          font-family: 'Segoe UI', system-ui, -apple-system, Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0; padding: 0; background: #ffffff; direction: rtl;
+        }
         .stand-wrapper {
           width: 148mm; height: 210mm; display: flex; align-items: center; justify-content: center; padding: 8mm; box-sizing: border-box;
         }
         .stand-card {
-          width: 132mm; background: #ffffff; border-radius: 28px; border: 4px solid #0f172a;
-          padding: 24px 20px; text-align: center; position: relative; overflow: hidden;
-          display: flex; flex-direction: column; align-items: center;
+          width: 132mm; background: #ffffff; border-radius: 24px; border: 1.5px solid #e2e8f0;
+          padding: 32px 24px 28px 24px; text-align: center; position: relative;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 10px; background: linear-gradient(90deg, #f97316, #ea580c, #f59e0b); }
-        .mascot-badge { width: 56px; height: 56px; border-radius: 18px; background: #fff7ed; border: 2px solid #ea580c; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 6px 0 8px 0; }
-        .restaurant-title { font-size: 22px; font-weight: 900; color: #0f172a; margin: 0; }
-        .restaurant-sub { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 2px; }
-        .table-pill { display: inline-block; background: #0f172a; color: #ffffff; padding: 6px 22px; border-radius: 999px; font-size: 15px; font-weight: 900; margin: 10px 0; border: 2px solid #f97316; }
-        .qr-frame { width: 70mm; height: 70mm; background: #ffffff; border: 3px solid #f97316; border-radius: 24px; padding: 8px; margin: 4px auto; display: flex; align-items: center; justify-content: center; }
-        .qr-frame img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-        .instructions h3 { margin: 8px 0 2px 0; font-size: 14px; font-weight: 800; color: #0f172a; }
-        .instructions p { margin: 0 0 8px 0; font-size: 11px; color: #64748b; font-weight: 500; }
-        .steps-container { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; }
-        .step-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 4px; }
-        .url-text { font-size: 9px; color: #94a3b8; font-family: monospace; direction: ltr; margin-bottom: 4px; }
-        .footer-brand { font-size: 10px; font-weight: 700; color: #ea580c; border-top: 1px solid #f1f5f9; padding-top: 6px; width: 100%; }
+        .restaurant-title { font-size: 26px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px; }
+        .table-pill { display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; color: #0f172a; padding: 6px 20px; border-radius: 999px; font-size: 14px; font-weight: 700; margin: 12px 0 16px 0; border: 1px solid #cbd5e1; }
+        .qr-frame { width: 76mm; height: 76mm; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 12px; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
+        .qr-frame img { width: 100%; height: 100%; object-fit: contain; }
+        .instructions h3 { margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e293b; }
+        .instructions p { margin: 0; font-size: 12px; color: #64748b; font-weight: 500; }
+        .steps-container { display: flex; justify-content: center; gap: 16px; width: 100%; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+        .step-item { font-size: 11px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px; }
       </style>
     </head>
     <body>

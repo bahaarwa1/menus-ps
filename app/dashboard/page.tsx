@@ -119,46 +119,46 @@ export default function ProductionDashboardOverview() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-slate-900" dir="rtl">
       
-      {/* 1. Hero Hub — Luxurious Obsidian Card */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 sm:p-8 border border-slate-800 shadow-2xl overflow-hidden">
-        {/* Ambient Light Effects */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/15 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20"></div>
+      {/* 1. Hero Hub — Eye-Friendly Soft Light Card */}
+      <div className="relative rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-8 shadow-xs overflow-hidden">
+        {/* Ambient Warm Accents */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-orange-100/30 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-100/30 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20"></div>
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-bold text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>النظام الإنتاجي متصل ويعمل لحظياً</span>
               </span>
-              <span className="text-xs text-slate-400 font-medium">الفرع الرئيسي • فلسطين</span>
+              <span className="text-xs text-slate-500 font-medium">الفرع الرئيسي • فلسطين</span>
             </div>
             
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black capitalize tracking-tight text-white flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black capitalize tracking-tight text-slate-900 flex items-center gap-2.5">
               <span>أهلاً بك، {displayName}</span>
-              <ShieldCheck size={26} className="text-orange-400 shrink-0" />
+              <ShieldCheck size={26} className="text-orange-500 shrink-0" />
             </h1>
             
-            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
+            <p className="text-slate-600 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
               منيو مطعمك الحصري جاهز على الإنترنت لاستقبال مسح أكواد QR وتلقي الطلبات فوراً مع جرس تنبيه للمطبخ.
             </p>
           </div>
 
           {/* Live URL Pill & Actions */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 flex items-center justify-between gap-3 shadow-inner">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-2.5 flex items-center justify-between gap-3">
               <div className="min-w-0 pr-2">
                 <span className="text-[10px] font-bold text-slate-400 block">رابط مطعمك الحصري:</span>
-                <a href={directMenuUrl} target="_blank" className="font-mono text-xs font-bold text-white hover:text-orange-300 block truncate max-w-[200px]" dir="ltr">
+                <a href={directMenuUrl} target="_blank" className="font-mono text-xs font-bold text-slate-800 hover:text-orange-600 block truncate max-w-[200px]" dir="ltr">
                   {liveUrl}
                 </a>
               </div>
               <button
                 onClick={copyUrl}
-                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border border-white/10"
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border border-slate-200 shadow-2xs"
               >
-                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                 <span>{copied ? 'تم النسخ!' : 'نسخ'}</span>
               </button>
             </div>
@@ -166,7 +166,7 @@ export default function ProductionDashboardOverview() {
             <a
               href={directMenuUrl}
               target="_blank"
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all text-center hover:scale-[1.02] active:scale-[0.98]"
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 transition-all text-center hover:scale-[1.01] active:scale-[0.99]"
             >
               <span>فتح منيو الزبائن</span>
               <ExternalLink size={14} />
@@ -283,36 +283,34 @@ export default function ProductionDashboardOverview() {
           <Link
             href="/staff"
             target="_blank"
-            className="group p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-md transition-all flex items-center justify-between sm:col-span-2 lg:col-span-1"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-amber-500/40 hover:shadow-md transition-all flex items-center justify-between sm:col-span-2 lg:col-span-1"
           >
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-white/10 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
                 <ChefHat size={20} />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">شاشة المطبخ KDS</p>
-                <p className="text-[11px] text-slate-400">للشاشات الكبيرة والتابلت</p>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">شاشة المطبخ KDS</p>
+                <p className="text-[11px] text-slate-400">للشاشات والتابلت</p>
               </div>
             </div>
-            <ArrowUpRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
           </Link>
         </div>
       </div>
 
-      {/* 4. Staff Access Code Feature Strip */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
+      {/* 4. Staff Access Code Feature Strip — Soft Comfort Theme */}
+      <div className="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs relative overflow-hidden">
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/30">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
             <Key size={22} />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm sm:text-base font-black text-white">نظام رموز دخول الموظفين والشيفات (كود 6 أرقام)</h3>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-bold">بدون بريد</span>
+              <h3 className="text-sm sm:text-base font-black text-slate-900">نظام رموز دخول الموظفين والشيفات (كود 6 أرقام)</h3>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold">بدون بريد</span>
             </div>
-            <p className="text-xs text-slate-300 max-w-xl font-normal leading-relaxed">
+            <p className="text-xs text-slate-500 max-w-xl font-normal leading-relaxed">
               أنشئ كوداً مؤقتاً لكل موظف خدمة أو شيف مطبخ ليدخل مباشرة من شاشة المطبخ KDS بـ 6 أرقام فقط.
             </p>
           </div>
@@ -320,7 +318,7 @@ export default function ProductionDashboardOverview() {
 
         <Link
           href="/dashboard/staff/codes"
-          className="relative z-10 px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95"
+          className="relative z-10 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
         >
           <span>توليد كود موظف</span>
           <ArrowLeftIcon />

@@ -92,34 +92,32 @@ export default function ProductionSidebar({
         </span>
       </div>
 
-      {/* Restaurant Overview Card */}
-      <div className="p-3.5 m-3 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10 flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0">
+      {/* Restaurant Overview Card — Soft Light Theme */}
+      <div className="p-3.5 m-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-800 shadow-2xs relative overflow-hidden">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
             {activeName.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-black text-sm truncate capitalize leading-tight text-white">{activeName}</h3>
-            <p className="text-[11px] text-slate-400 truncate mt-0.5">الفرع الرئيسي — {city}</p>
+            <h3 className="font-black text-sm truncate capitalize leading-tight text-slate-900">{activeName}</h3>
+            <p className="text-[11px] text-slate-500 truncate mt-0.5">الفرع الرئيسي — {city}</p>
           </div>
         </div>
 
         {/* Live URL Snippet */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/10 flex items-center justify-between gap-2">
+        <div className="bg-white rounded-xl p-2 border border-slate-200 flex items-center justify-between gap-2 shadow-2xs">
           <div className="min-w-0 flex-1 pr-1">
-            <span className="text-[10px] text-white/60 block font-semibold">رابط المنيو السريع:</span>
-            <span className="text-[11px] font-mono text-orange-200 truncate block dir-ltr" dir="ltr">
+            <span className="text-[10px] text-slate-400 block font-semibold">رابط المنيو السريع:</span>
+            <span className="text-[11px] font-mono font-bold text-slate-700 truncate block dir-ltr" dir="ltr">
               /r/{activeSlug}
             </span>
           </div>
           <button
             onClick={copyLiveUrl}
-            className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer shrink-0"
             title="نسخ الرابط"
           >
-            {copied ? <Check size={13} className="text-emerald-300" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
           </button>
         </div>
 
@@ -128,7 +126,7 @@ export default function ProductionSidebar({
           <a
             href={directMenuUrl}
             target="_blank"
-            className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm transition-all"
+            className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all"
           >
             <span>منيو الزبائن</span>
             <ExternalLink size={11} />
@@ -136,9 +134,9 @@ export default function ProductionSidebar({
           <Link
             href="/staff"
             target="_blank"
-            className="py-1.5 px-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold flex items-center justify-center gap-1 transition-all border border-white/10"
+            className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 transition-all border border-slate-200 shadow-2xs"
           >
-            <ChefHat size={12} className="text-amber-300" />
+            <ChefHat size={12} className="text-amber-500" />
             <span>المطبخ KDS</span>
           </Link>
         </div>
@@ -160,7 +158,7 @@ export default function ProductionSidebar({
               onClick={() => setMobileOpen(false)}
               className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 ${
                 active
-                  ? 'bg-slate-900 text-white shadow-sm'
+                  ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
