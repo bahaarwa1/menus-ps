@@ -14,9 +14,9 @@ import Logo from '@/components/common/Logo';
 
 // --- Validation helpers ---
 function validateEmail(email: string): string {
-  if (!email) return '';
+  if (!email || !email.trim()) return 'البريد الإلكتروني للإدارة مطلوب (لتسجيل الدخول واستعادة الحساب)';
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  if (!re.test(email)) return 'البريد الإلكتروني غير صحيح (مثال: owner@restaurant.ps)';
+  if (!re.test(email.trim())) return 'البريد الإلكتروني غير صحيح (مثال: owner@restaurant.ps)';
   return '';
 }
 
@@ -210,14 +210,12 @@ export default function RegisterPage() {
       return;
     }
 
-    // Email validation (if provided)
-    if (ownerEmail.trim()) {
-      const emailErr = validateEmail(ownerEmail.trim());
-      if (emailErr) {
-        setFormError(emailErr);
-        setEmailError(emailErr);
-        return;
-      }
+    // Email validation (إلزامي للإدارة)
+    const emailErr = validateEmail(ownerEmail.trim());
+    if (emailErr) {
+      setFormError(emailErr);
+      setEmailError(emailErr);
+      return;
     }
 
     // Password validation
@@ -469,19 +467,23 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Optional Email */}
+                {/* Required Email */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                    <Mail size={14} className="text-slate-400" />
-                    <span>البريد الإلكتروني للإدارة (اختياري)</span>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Mail size={14} className="text-orange-500" />
+                      <span>البريد الإلكتروني للإدارة *</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">لتسجيل الدخول واستعادة الحساب والفواتير</span>
                   </label>
                   <input
                     type="email"
+                    required
                     placeholder="owner@restaurant.ps"
                     value={ownerEmail}
                     onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
-                    onBlur={() => ownerEmail.trim() && setEmailError(validateEmail(ownerEmail.trim()))}
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                    onBlur={() => setEmailError(validateEmail(ownerEmail))}
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 transition-all font-mono ${
                       emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/15'
                     }`}
                   />

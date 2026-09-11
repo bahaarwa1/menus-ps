@@ -25,6 +25,10 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
       return { success: false, error: 'يرجى إدخال رقم هاتف أو جوال صالح للتواصل' };
     }
 
+    if (!input.ownerEmail || !input.ownerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input.ownerEmail.trim())) {
+      return { success: false, error: 'يرجى إدخال بريد إلكتروني صالح للإدارة (مطلوب لتسجيل الدخول واستلام الفواتير)' };
+    }
+
     // 1. Provision restaurant, branch, and tables
     const restaurant = await registerNewRestaurant(input);
 

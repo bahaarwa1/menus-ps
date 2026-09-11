@@ -8,7 +8,7 @@ export interface RegisterRestaurantInput {
   slug: string;
   phone: string;
   city: string;
-  ownerEmail?: string;
+  ownerEmail: string;
   password?: string;
   tablesCount?: number;
 }
