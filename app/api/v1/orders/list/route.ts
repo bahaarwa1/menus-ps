@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
         order_number,
         branch_id,
         table_id,
+        table_number,
         status,
         total_amount,
         customer_note,
@@ -72,11 +73,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, orders: all, source: 'memory' });
     }
 
-    // Enrich with table_number from table_id
+    // Map to normalized shape
     const enriched = (orders || []).map((o: any) => {
-      const tableNum = typeof o.table_id === 'string'
-        ? parseInt(o.table_id.replace(/\D/g, ''), 10) || 0
-        : 0;
+      // Use direct table_number field if available, fallback to parsing table_id
+      const tableNum = typeof o.table_number === 'number'
+        ? o.table_number
+        : typeof o.table_id === 'string' && /^\d+$/.test(o.table_id)
+          ? parseInt(o.table_id, 10)
+          : 0;
       return {
         ...o,
         table_number: tableNum,

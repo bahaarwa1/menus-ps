@@ -35,19 +35,33 @@ export default function ProductionTablesPage() {
     // Direct tables fetch immediately on mount
     fetch(`/api/v1/tables/list${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
       .then((r) => r.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.success && Array.isArray(res.tables)) {
           if (res.restaurantSlug && !slug) {
             slug = res.restaurantSlug;
             setCurrentSlug(slug);
           }
-          const loadedTables: TableItem[] = res.tables.map((t: any) => ({
-            id: t.dbId || `tbl-${t.id}`,
-            tableNumber: t.id,
-            seats: t.seats || 4,
-            status: t.status === 'مشغولة' ? 'busy' : t.status === 'محجوزة' ? 'reserved' : 'empty',
-            qrToken: t.qrToken,
-          }));
+          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+          // Load tables and generate QR codes in parallel
+          const loadedTables: TableItem[] = await Promise.all(
+            res.tables.map(async (t: any) => {
+              const tableNumber = t.id;
+              const qrToken = t.qrToken;
+              const targetUrl = `${origin}/r/${slug}?table=${tableNumber}&token=${qrToken}`;
+              let qrDataUrl = '';
+              try {
+                qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 280, margin: 1 });
+              } catch {}
+              return {
+                id: t.dbId || `tbl-${t.id}`,
+                tableNumber,
+                seats: t.seats || 4,
+                status: t.status === 'مشغولة' ? 'busy' : t.status === 'محجوزة' ? 'reserved' : 'empty',
+                qrToken,
+                qrDataUrl,
+              } as TableItem;
+            })
+          );
           setTables(loadedTables);
         }
       })

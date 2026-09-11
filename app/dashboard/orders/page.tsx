@@ -60,27 +60,50 @@ export default function ProductionOrdersPage() {
     };
   };
 
-  const loadOrders = useCallback(async (bid?: string) => {
-    setIsLoading(true);
+  const loadOrders = useCallback(async (bid?: string, silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const url = `/api/v1/orders/list${bid ? `?branchId=${encodeURIComponent(bid)}` : ''}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
-        setOrders(data.orders.map(mapDbOrderToCard));
+        setOrders(prev => {
+          const next = data.orders.map(mapDbOrderToCard);
+          // Play sound if there are NEW orders that weren't there before
+          if (soundEnabled) {
+            const prevIds = new Set(prev.map(o => o.rawId));
+            const hasNew = next.some((o: Order) => o.status === 'new' && !prevIds.has(o.rawId));
+            if (hasNew) {
+              try {
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+              } catch {}
+            }
+          }
+          return next;
+        });
       }
     } catch (err) {
       console.error('Error fetching dashboard orders:', err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
-  }, []);
+  }, [soundEnabled]);
 
   useEffect(() => {
-    // Load orders immediately on mount
+    // 1. Load orders immediately on mount
     loadOrders();
 
-    // Concurrently cache branchId if available
+    // 2. Concurrently resolve branchId from session
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {
@@ -88,6 +111,29 @@ export default function ProductionOrdersPage() {
         if (bid) setBranchId(bid);
       })
       .catch(() => {});
+
+    // 3. Auto-polling every 8 seconds (silent background refresh)
+    const pollInterval = setInterval(() => {
+      loadOrders(undefined, true);
+    }, 8000);
+
+    // 4. SSE for instant real-time push from server
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/v1/orders/stream');
+      eventSource.addEventListener('order', () => {
+        // On any order event, do an immediate silent refresh
+        loadOrders(undefined, true);
+      });
+      eventSource.onerror = () => {
+        eventSource?.close();
+      };
+    } catch {}
+
+    return () => {
+      clearInterval(pollInterval);
+      eventSource?.close();
+    };
   }, [loadOrders]);
 
   const advanceOrderStatus = async (rawId: string, currentStatus: Order['status']) => {

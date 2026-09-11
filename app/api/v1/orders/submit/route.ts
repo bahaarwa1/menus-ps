@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const orderResult = await createOrder({
       branchId: branch,
       tableId: `table-num-${tableNum}`,
+      tableNumber: tableNum,
       customerNote: sanitizedGeneralNote || undefined,
       items: validation.items.map((item) => ({
         itemId: item.itemId,

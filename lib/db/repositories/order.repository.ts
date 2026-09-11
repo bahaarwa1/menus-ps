@@ -6,6 +6,7 @@ import { broadcastOrderEvent } from '@/lib/realtime/order-events';
 export interface CreateOrderDTO {
   branchId: string;
   tableId: string;
+  tableNumber?: number; // explicit table number to store in DB
   customerNote?: string;
   items: Array<{
     itemId?: string;
@@ -55,8 +56,10 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
     return sum + (item.unitPrice + extrasTotal) * item.quantity;
   }, 0);
 
-  const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
-  const tableNum = parseInt(String(dto.tableId).replace(/\D/g, ''), 10) || 12;
+  // Generate a more unique order number using timestamp
+  const orderNumber = `#${Date.now().toString().slice(-5)}`;
+  // Use explicit tableNumber from DTO, fallback to parsing tableId
+  const tableNum = dto.tableNumber ?? (parseInt(String(dto.tableId).replace(/\D/g, ''), 10) || 0);
 
   let result: OrderResult;
 
@@ -75,6 +78,7 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
         .insert({
           branch_id: dto.branchId,
           table_id: dto.tableId,
+          table_number: tableNum, // Store as integer for direct querying
           order_number: orderNumber,
           status: 'جديد',
           total_amount: calculatedTotal,

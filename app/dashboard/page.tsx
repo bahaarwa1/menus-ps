@@ -30,18 +30,27 @@ export default function ProductionDashboardOverview() {
       if (urlSlug) slug = urlSlug;
     }
 
-    // Direct, immediate stats fetch without waiting for session roundtrip
-    fetch(`/api/v1/dashboard/stats${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          if (data.stats) setStats(data.stats);
-          if (Array.isArray(data.recentOrders)) setRecentOrders(data.recentOrders);
-          if (data.restaurantSlug) setCreatedSlug(data.restaurantSlug);
-        }
-      })
-      .catch((err) => console.error('Dashboard stats fetch error:', err))
-      .finally(() => setIsLoading(false));
+    const fetchStats = (silent = false) => {
+      if (!silent) setIsLoading(true);
+      fetch(`/api/v1/dashboard/stats${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            if (data.stats) setStats(data.stats);
+            if (Array.isArray(data.recentOrders)) setRecentOrders(data.recentOrders);
+            if (data.restaurantSlug) setCreatedSlug(data.restaurantSlug);
+          }
+        })
+        .catch((err) => console.error('Dashboard stats fetch error:', err))
+        .finally(() => { if (!silent) setIsLoading(false); });
+    };
+
+    // Immediate first load
+    fetchStats(false);
+
+    // Auto-refresh every 30s
+    const interval = setInterval(() => fetchStats(true), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const liveUrl = typeof window !== 'undefined' && createdSlug
