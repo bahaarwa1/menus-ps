@@ -30,7 +30,7 @@ export default function ProductionOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [branchId, setBranchId] = useState('');
+  const [branchId, setBranchId] = useState<string | null>(null); // null = not resolved yet
 
   const mapDbOrderToCard = (raw: any): Order => {
     const rawStatus = raw.status || 'جديد';
@@ -99,31 +99,39 @@ export default function ProductionOrdersPage() {
     }
   }, [soundEnabled]);
 
+  // 1. Resolve branchId from session on mount FIRST, then load orders
   useEffect(() => {
-    // 1. Load orders immediately on mount
-    loadOrders();
-
-    // 2. Concurrently resolve branchId from session
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {
-        const bid = data.user?.branchId || '';
-        if (bid) setBranchId(bid);
+        const bid: string = data.user?.branchId || '';
+        setBranchId(bid); // '' means no branchId, null means not resolved
+        // Load orders with the correct branchId right away
+        loadOrders(bid || undefined);
       })
-      .catch(() => {});
+      .catch(() => {
+        setBranchId(''); // Resolved: no session
+        loadOrders();
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // 3. Auto-polling every 8 seconds (silent background refresh)
+  // 2. When branchId is resolved (not null), set up polling & SSE
+  useEffect(() => {
+    if (branchId === null) return; // Not resolved yet — wait
+
+    // Auto-polling every 8 seconds (silent background refresh)
     const pollInterval = setInterval(() => {
-      loadOrders(undefined, true);
+      loadOrders(branchId || undefined, true);
     }, 8000);
 
-    // 4. SSE for instant real-time push from server
+    // SSE for instant real-time push from server
     let eventSource: EventSource | null = null;
     try {
       eventSource = new EventSource('/api/v1/orders/stream');
       eventSource.addEventListener('order', () => {
         // On any order event, do an immediate silent refresh
-        loadOrders(undefined, true);
+        loadOrders(branchId || undefined, true);
       });
       eventSource.onerror = () => {
         eventSource?.close();
@@ -134,7 +142,7 @@ export default function ProductionOrdersPage() {
       clearInterval(pollInterval);
       eventSource?.close();
     };
-  }, [loadOrders]);
+  }, [branchId, loadOrders]);
 
   const advanceOrderStatus = async (rawId: string, currentStatus: Order['status']) => {
     const nextStatusMap: Record<Order['status'], { next: Order['status']; arabic: string }> = {
@@ -201,7 +209,7 @@ export default function ProductionOrdersPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => loadOrders(branchId)}
+            onClick={() => loadOrders(branchId ?? undefined)}
             disabled={isLoading}
             className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
             title="تحديث الطلبات من قاعدة البيانات"

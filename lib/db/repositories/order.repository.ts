@@ -43,31 +43,36 @@ declare global {
   var __menusActiveOrdersStore: Map<string, StoredOrder> | undefined;
 }
 
+// NEVER seed demo data in production — it causes all staff screens to show fake orders
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 if (!global.__menusActiveOrdersStore) {
   global.__menusActiveOrdersStore = new Map<string, StoredOrder>();
 
-  // Seed baseline active orders for burger-house-nablus so dashboard and kitchen are never empty
-  fallbackDemoOrders.forEach((o, index) => {
-    const orderId = `seed-${o.id}`;
-    const createdAt = new Date(Date.now() - (index * 15 * 60 * 1000)).toISOString();
-    global.__menusActiveOrdersStore!.set(orderId, {
-      id: orderId,
-      orderNumber: o.id,
-      status: o.status as OrderStatus,
-      totalAmount: o.total,
-      createdAt,
-      branchId: 'b0000000-0000-0000-0000-000000000001',
-      tableId: `table-num-${o.table}`,
-      tableNumber: o.table,
-      customerNote: undefined,
-      items: o.items.map((it) => ({
-        itemName: it.name,
-        quantity: it.quantity,
-        unitPrice: it.price,
-        selectedExtras: it.extras?.map((name) => ({ name, price: 5 })),
-      })),
+  // Only seed demo orders in development when Supabase is not available
+  if (!IS_PRODUCTION) {
+    fallbackDemoOrders.forEach((o, index) => {
+      const orderId = `seed-${o.id}`;
+      const createdAt = new Date(Date.now() - (index * 15 * 60 * 1000)).toISOString();
+      global.__menusActiveOrdersStore!.set(orderId, {
+        id: orderId,
+        orderNumber: o.id,
+        status: o.status as OrderStatus,
+        totalAmount: o.total,
+        createdAt,
+        branchId: 'b0000000-0000-0000-0000-000000000001',
+        tableId: `table-num-${o.table}`,
+        tableNumber: o.table,
+        customerNote: undefined,
+        items: o.items.map((it) => ({
+          itemName: it.name,
+          quantity: it.quantity,
+          unitPrice: it.price,
+          selectedExtras: it.extras?.map((name) => ({ name, price: 5 })),
+        })),
+      });
     });
-  });
+  }
 }
 
 const activeOrdersStore = global.__menusActiveOrdersStore;
@@ -276,10 +281,20 @@ export async function getOrderById(orderId: string): Promise<StoredOrder | null>
 }
 
 /**
- * Lists all active stored orders.
+ * Lists active stored orders, optionally filtered by branchId.
+ * In production with Supabase configured: always returns empty (Supabase is the source of truth).
  */
-export async function listActiveOrders(): Promise<StoredOrder[]> {
-  return Array.from(activeOrdersStore.values()).sort(
+export async function listActiveOrders(branchId?: string): Promise<StoredOrder[]> {
+  // In production with Supabase available: don't use in-memory store (it has no real data)
+  if (IS_PRODUCTION && isSupabaseConfigured()) {
+    return [];
+  }
+  const all = Array.from(activeOrdersStore.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+  // Filter by branchId if provided
+  if (branchId) {
+    return all.filter(o => o.branchId === branchId);
+  }
+  return all;
 }

@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     }
 
     const orderId = request.nextUrl.searchParams.get('orderId');
-    let branchId = request.nextUrl.searchParams.get('branchId');
+    // NOTE: branchId from query param is only a hint for dev. Session always overrides.
+    let branchId: string | null = request.nextUrl.searchParams.get('branchId');
 
     // Authenticate user session
     let session = null;
@@ -35,9 +36,9 @@ export async function GET(request: NextRequest) {
       }
     } catch {}
 
-    // SECURITY CHECK:
-    // If NOT querying a single order by ID, caller MUST have an authenticated session (staff/manager/kitchen/owner).
-    // In dev mode, allow fallback for local testing.
+    // ── AUTHENTICATION CHECK ──
+    // Customer tracking a specific order by ID is always allowed (no auth needed).
+    // Listing all orders requires a valid staff/admin session.
     const isDev = process.env.NODE_ENV !== 'production';
     const isStaffOrAdmin = session && ['owner', 'admin', 'branch_manager', 'staff', 'kitchen'].includes(session.role);
 
@@ -48,9 +49,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Branch isolation: force session's branchId if authenticated staff/manager
+    // ── STRICT BRANCH ISOLATION ──
+    // This is the core security check — prevents data leakage across restaurants.
     if (session?.branchId) {
+      // Priority 1: Session has branchId → always enforce it, ignore query param
       branchId = session.branchId;
+    } else if (session && ['staff', 'kitchen'].includes(session.role)) {
+      // Priority 2: Staff/kitchen with NO branchId → DENY. This should never happen
+      // in production since the PIN login always sets branchId. But if it does,
+      // returning all orders would be a severe data leak.
+      return NextResponse.json(
+        { success: false, error: 'غير مصرح: لا يوجد معرف فرع مرتبط بحسابك. يرجى التواصل مع مدير المطعم.' },
+        { status: 403 }
+      );
+    } else if (session && ['admin', 'owner', 'branch_manager'].includes(session.role) && !session.branchId && session.restaurantId && isSupabaseConfigured()) {
+      // Priority 3: Admin/owner without explicit branchId → resolve from restaurantId
+      try {
+        const adminSb = createAdminClient();
+        const { data: branchData } = await (adminSb as any)
+          .from('branches')
+          .select('id')
+          .eq('restaurant_id', session.restaurantId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        if (branchData?.id) {
+          branchId = branchData.id;
+        }
+      } catch { /* Silently continue; will deny below if still no branchId */ }
+    }
+
+    // After branch resolution: if listing orders with no branch scope → deny
+    if (!orderId && !branchId && session && !isDev) {
+      return NextResponse.json(
+        { success: false, error: 'غير مصرح: لا يمكن تحديد نطاق الطلبات. يرجى التحقق من إعدادات حسابك.' },
+        { status: 403 }
+      );
     }
 
     // Cost-optimization: In-memory caching for active orders list (heavily polled by kitchen & waiter screens)
@@ -71,8 +105,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured()) {
-      // Fallback: in-memory store
-      const all = await listActiveOrders();
+      // Fallback: in-memory store (dev only) — always branch-scoped
+      const all = await listActiveOrders(branchId ?? undefined);
       const filtered = orderId ? all.filter(o => o.id === orderId) : all;
       return NextResponse.json({ success: true, orders: filtered });
     }
@@ -110,7 +144,7 @@ export async function GET(request: NextRequest) {
       // Single order lookup (e.g. customer tracking their own order)
       query = query.eq('id', orderId.slice(0, 64));
     } else if (branchId) {
-      // Strict branch isolation
+      // Strict branch isolation — ALWAYS filter by branch_id
       query = query.eq('branch_id', branchId.slice(0, 64));
     }
 
@@ -118,7 +152,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('orders/list error:', error.message);
-      const all = await listActiveOrders();
+      const all = await listActiveOrders(branchId ?? undefined);
       return NextResponse.json({ success: true, orders: all, source: 'memory' });
     }
 
@@ -153,7 +187,6 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('orders/list route error:', error);
-    const all = await listActiveOrders();
-    return NextResponse.json({ success: true, orders: all, source: 'memory-fallback' });
+    return NextResponse.json({ success: true, orders: [], source: 'error-fallback' });
   }
 }
