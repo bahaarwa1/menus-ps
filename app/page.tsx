@@ -6,13 +6,16 @@ import Link from 'next/link';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { 
   QrCode, Smartphone, ChefHat, BarChart3, Sparkles, CheckCircle2, 
-  ArrowLeft, ExternalLink, ShieldCheck, Zap, TrendingUp, Clock, 
+  ArrowLeft, ArrowRight, ExternalLink, ShieldCheck, Zap, TrendingUp, Clock, 
   ArrowDown, Check
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
+  const { t, language, direction } = useLanguage();
+  const isRtl = direction === 'rtl';
 
   // Showcase state
   const [activeSlide, setActiveSlide] = useState(0);
@@ -25,12 +28,18 @@ export default function HomePage() {
     setDemoCartTotal(prev => prev + price);
   };
 
-  const slideLabels = [
+  const slideLabels = language === 'ar' ? [
     'الرئيسية والعرض',
     'محاكي المنتج الحي',
     'كيف يعمل النظام',
     'مميزات المنصة',
     'الأسعار والبدء'
+  ] : [
+    'Home & Hero',
+    'Live Simulator',
+    'How It Works',
+    'Features',
+    'Pricing & Start'
   ];
 
   // Scroll to slide function
@@ -88,47 +97,65 @@ export default function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
               
               {/* Text Side (7 cols) */}
-              <div className="lg:col-span-7 text-right">
+              <div className={`lg:col-span-7 ${isRtl ? 'text-right' : 'text-left'}`}>
                 
                 {/* Announcement Badge */}
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/90 border border-orange-200 text-orange-700 text-xs font-black mb-3 shadow-2xs">
                   <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                  <span>المنصة السحابية الأولى لإدارة المنيو والطلبات في فلسطين 🇵🇸</span>
+                  <span>
+                    {language === 'ar'
+                      ? 'المنصة السحابية الأولى لإدارة المنيو والطلبات في فلسطين 🇵🇸'
+                      : 'The #1 Cloud Menu & Ordering Platform in Palestine 🇵🇸'}
+                  </span>
                 </div>
 
                 {/* Main Headline */}
-                <h1 className="text-2xl sm:text-4xl lg:text-[2.85rem] font-black text-slate-900 leading-[1.22] tracking-tight mb-3">
-                  حوّل مطعمك لتجربة رقمية ذكية <br className="hidden sm:inline" />
-                  <span className="text-orange-500 relative inline-block">
-                    تضاعف مبيعاتك
-                    <svg className="absolute -bottom-1.5 inset-x-0 w-full text-orange-400/40" viewBox="0 0 250 12" fill="none">
-                      <path d="M2 9C50 2 150 2 248 9" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                    </svg>
-                  </span> وتلغي طوابير الانتظار
-                </h1>
+                {language === 'ar' ? (
+                  <h1 className="text-2xl sm:text-4xl lg:text-[2.85rem] font-black text-slate-900 leading-[1.22] tracking-tight mb-3">
+                    حوّل مطعمك لتجربة رقمية ذكية <br className="hidden sm:inline" />
+                    <span className="text-orange-500 relative inline-block">
+                      تضاعف مبيعاتك
+                      <svg className="absolute -bottom-1.5 inset-x-0 w-full text-orange-400/40" viewBox="0 0 250 12" fill="none">
+                        <path d="M2 9C50 2 150 2 248 9" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      </svg>
+                    </span> وتلغي طوابير الانتظار
+                  </h1>
+                ) : (
+                  <h1 className="text-2xl sm:text-4xl lg:text-[2.85rem] font-black text-slate-900 leading-[1.22] tracking-tight mb-3">
+                    Transform Your Restaurant With <br className="hidden sm:inline" />
+                    <span className="text-orange-500 relative inline-block">
+                      Smart Digital Menus
+                      <svg className="absolute -bottom-1.5 inset-x-0 w-full text-orange-400/40" viewBox="0 0 250 12" fill="none">
+                        <path d="M2 9C50 2 150 2 248 9" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      </svg>
+                    </span> & Instant QR Orders
+                  </h1>
+                )}
 
                 {/* Plain-Language Subtitle */}
                 <p className="text-xs sm:text-base text-slate-600 font-medium leading-relaxed mb-5 max-w-xl">
-                  منيو رقمي فائق السرعة بكود QR لكل طاولة، مزامنة مباشرة بلحظة مع شاشة المطبخ، ومساعد ذكاء اصطناعي لرفع المبيعات — <strong className="text-slate-900 font-black">بدون شراء أي أجهزة جديدة</strong>.
+                  {language === 'ar'
+                    ? 'منيو رقمي فائق السرعة بكود QR لكل طاولة، مزامنة مباشرة بلحظة مع شاشة المطبخ، ومساعد ذكاء اصطناعي لرفع المبيعات — بدون شراء أي أجهزة جديدة.'
+                    : 'Ultra-fast digital menu with dedicated QR code per table, real-time kitchen screen sync, and AI upselling tools — zero new hardware required.'}
                 </p>
 
                 {/* 4 Core Value Badges */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6 max-w-lg">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 px-2.5 py-2 rounded-xl shadow-2xs">
                     <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                    <span>كود QR لكل طاولة</span>
+                    <span>{language === 'ar' ? 'كود QR لكل طاولة' : 'QR for every table'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 px-2.5 py-2 rounded-xl shadow-2xs">
                     <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                    <span>بدون تنزيل تطبيق</span>
+                    <span>{language === 'ar' ? 'بدون تنزيل تطبيق' : 'No app required'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 px-2.5 py-2 rounded-xl shadow-2xs">
                     <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                    <span>يصل للمطبخ فوراً</span>
+                    <span>{language === 'ar' ? 'يصل للمطبخ فوراً' : 'Instant kitchen sync'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200/90 px-2.5 py-2 rounded-xl shadow-2xs">
                     <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                    <span>0 ₪ تكلفة أجهزة</span>
+                    <span>{language === 'ar' ? '0 ₪ تكلفة أجهزة' : '0 ₪ hardware cost'}</span>
                   </div>
                 </div>
 
@@ -140,8 +167,8 @@ export default function HomePage() {
                     className="w-full sm:w-auto px-6 py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all"
                   >
                     <Smartphone size={16} />
-                    <span>📱 جرّب المنيو كزبون (ديمو حي)</span>
-                    <ArrowLeft size={15} />
+                    <span>{language === 'ar' ? '📱 جرّب المنيو كزبون (ديمو حي)' : '📱 Test Customer Menu (Live)'}</span>
+                    {isRtl ? <ArrowLeft size={15} /> : <ArrowRight size={15} />}
                   </Link>
 
                   <Link
@@ -150,14 +177,14 @@ export default function HomePage() {
                     className="w-full sm:w-auto px-5 py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <ChefHat size={16} className="text-orange-400" />
-                    <span>👨‍🍳 شاشة المطبخ (KDS)</span>
+                    <span>{language === 'ar' ? '👨‍🍳 شاشة المطبخ (KDS)' : '👨‍🍳 Kitchen Display (KDS)'}</span>
                   </Link>
 
                   <Link
                     href="/contact"
                     className="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center border border-slate-300 transition-all"
                   >
-                    طلب تجربة مجانية
+                    {language === 'ar' ? 'طلب تجربة مجانية' : 'Start Free Trial'}
                   </Link>
                 </div>
 

@@ -9,10 +9,13 @@ import {
   Sparkles, ChefHat, ArrowLeft
 } from 'lucide-react';
 import { menuItems, categories, MenuItem, Extra } from '@/data/demo-data';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 
 function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
+  const { t, direction, language } = useLanguage();
 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || 'burgers');
   const [searchQuery, setSearchQuery] = useState('');
@@ -279,7 +282,7 @@ function FastFrictionlessMenuContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex justify-center text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white" dir="rtl">
+    <div className="min-h-screen bg-slate-100 flex justify-center text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white" dir={direction}>
       
       {/* Real Responsive Customer Menu Container */}
       <div className="w-full max-w-lg bg-white min-h-screen shadow-xl flex flex-col relative pb-12">
@@ -289,40 +292,44 @@ function FastFrictionlessMenuContent() {
         ============================================================ */}
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs shrink-0">
           
-          {/* Top Row: Brand + Table + Waiter */}
-          <div className="px-3.5 py-3 flex items-center justify-between gap-2.5">
+          {/* Top Row: Brand + Table + Language + Waiter */}
+          <div className="px-3.5 py-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white font-black flex items-center justify-center text-xs shadow-sm shadow-orange-500/20 shrink-0">
                 BH
               </div>
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-sm font-bold text-slate-900 truncate">Burger House نابلس</h1>
+                  <h1 className="text-sm font-bold text-slate-900 truncate">
+                    {language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus'}
+                  </h1>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>
                 <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                   <span className="text-amber-500 font-bold flex items-center gap-0.5">
                     <Star size={11} fill="currentColor" /> 4.9
                   </span>
-                  <span>· رفيديا، نابلس</span>
+                  <span>· {language === 'ar' ? 'رفيديا، نابلس' : 'Rafidia, Nablus'}</span>
                 </p>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-1.5 shrink-0">
+              <LanguageSwitcher variant="subtle" />
+
               <button
                 onClick={handleCallWaiter}
                 className="bg-slate-100 hover:bg-orange-50 active:scale-95 px-2.5 py-1.5 rounded-full border border-slate-200/80 text-slate-700 hover:text-orange-600 text-xs font-bold flex items-center gap-1 transition-all"
-                title="طلب حضور الويتر للطاولة"
+                title={language === 'ar' ? 'طلب حضور الويتر للطاولة' : 'Call Waiter'}
               >
                 <Bell size={13} className="text-orange-500" />
-                <span>الويتر</span>
+                <span>{language === 'ar' ? 'الويتر' : 'Waiter'}</span>
               </button>
 
-              <div className="bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+              <div className="bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
                 <ShieldCheck size={13} className={isTokenVerified ? 'text-emerald-600' : 'text-orange-600'} />
-                <span>طاولة {tableNumber}</span>
+                <span>{language === 'ar' ? `طاولة ${tableNumber}` : `Table ${tableNumber}`}</span>
               </div>
             </div>
           </div>
@@ -330,10 +337,10 @@ function FastFrictionlessMenuContent() {
           {/* Search Input Bar */}
           <div className="px-3.5 pb-2.5">
             <div className="relative">
-              <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className={`absolute ${direction === 'rtl' ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-slate-400`} />
               <input 
                 type="text"
-                placeholder="ابحث عن وجبة، صوص، أو عصير..."
+                placeholder={language === 'ar' ? "ابحث عن وجبة، صوص، أو عصير..." : "Search burger, sides, drinks..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-10 py-2 bg-slate-100/90 hover:bg-slate-100 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 border border-slate-200/80 rounded-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"

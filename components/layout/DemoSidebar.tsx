@@ -3,28 +3,31 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X, ArrowRight, ExternalLink, LogOut } from 'lucide-react';
+import { Menu, X, ArrowRight, ArrowLeft, ExternalLink, LogOut } from 'lucide-react';
 import Logo from '@/components/common/Logo';
-
-const mainLinks = [
-  { href: '/demo', label: 'نظرة عامة', icon: '🏠' },
-  { href: '/demo/orders', label: 'إدارة الطلبات الحية', icon: '📋', badge: '3 جديدة' },
-  { href: '/demo/menu-editor', label: 'تعديل قائمة الطعام', icon: '🍔' },
-  { href: '/demo/tables', label: 'إدارة الطاولات وQR', icon: '🪑' },
-  { href: '/m', label: 'منيو العميل للجوال', icon: '📱', targetBlank: true },
-];
-
-const managementLinks = [
-  { href: '/demo/dashboard', label: 'التقارير والتحليلات', icon: '📈' },
-  { href: '/demo/offers', label: 'العروض والخصومات', icon: '🎁' },
-  { href: '/demo/branches', label: 'إدارة الفروع', icon: '🏢' },
-  { href: '/demo/settings', label: 'إعدادات المطعم', icon: '⚙️' },
-];
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 
 export default function DemoSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t, language, direction } = useLanguage();
+
+  const mainLinks = [
+    { href: '/demo', label: t('demo.overview', 'نظرة عامة'), icon: '🏠' },
+    { href: '/demo/orders', label: t('demo.orders', 'إدارة الطلبات الحية'), icon: '📋', badge: language === 'ar' ? '3 جديدة' : '3 New' },
+    { href: '/demo/menu-editor', label: t('demo.menuEditor', 'تعديل قائمة الطعام'), icon: '🍔' },
+    { href: '/demo/tables', label: t('demo.tables', 'إدارة الطاولات وQR'), icon: '🪑' },
+    { href: '/m', label: t('demo.customerMenu', 'منيو العميل للجوال'), icon: '📱', targetBlank: true },
+  ];
+
+  const managementLinks = [
+    { href: '/demo/dashboard', label: t('demo.analytics', 'التقارير والتحليلات'), icon: '📈' },
+    { href: '/demo/offers', label: t('demo.offers', 'العروض والخصومات'), icon: '🎁' },
+    { href: '/demo/branches', label: t('demo.branches', 'إدارة الفروع'), icon: '🏢' },
+    { href: '/demo/settings', label: t('demo.settings', 'إعدادات المطعم'), icon: '⚙️' },
+  ];
 
   const isActive = (href: string) => {
     if (href === '/demo') return pathname === '/demo';
@@ -41,23 +44,29 @@ export default function DemoSidebar() {
     }
   };
 
+  const isRtl = direction === 'rtl';
+
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white font-sans text-slate-800">
+    <div className="flex flex-col h-full bg-white font-sans text-slate-800" dir={direction}>
       {/* Logo */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
         <Logo size="sm" href="/demo" />
-        <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">لوحة الإدارة</span>
+        <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+          {language === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}
+        </span>
       </div>
 
       <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
         <div>
           <p className="font-extrabold text-slate-900">Burger House</p>
-          <p className="text-[11px] text-slate-400">فرع نابلس الرئيسي</p>
+          <p className="text-[11px] text-slate-400">
+            {language === 'ar' ? 'فرع نابلس الرئيسي' : 'Nablus Main Branch'}
+          </p>
         </div>
         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
       </div>
 
-      {/* Dedicated Staff Screen Launcher (Decoupled from Finances) */}
+      {/* Dedicated Staff Screen Launcher */}
       <div className="p-3 border-b border-slate-100 bg-orange-50/40">
         <Link
           href="/staff"
@@ -66,9 +75,13 @@ export default function DemoSidebar() {
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">👨‍🍳</span>
-            <div className="text-right">
-              <p className="text-xs font-black group-hover:text-white">شاشة موظفي التجهيز</p>
-              <p className="text-[10px] text-orange-600 group-hover:text-white/80">خالية من التقارير والمالية</p>
+            <div className={isRtl ? "text-right" : "text-left"}>
+              <p className="text-xs font-black group-hover:text-white">
+                {t('demo.staffScreen', 'شاشة موظفي التجهيز')}
+              </p>
+              <p className="text-[10px] text-orange-600 group-hover:text-white/80">
+                {t('demo.staffScreenDesc', 'خالية من التقارير والمالية')}
+              </p>
             </div>
           </div>
           <ExternalLink size={13} className="text-slate-400 group-hover:text-white shrink-0" />
@@ -77,7 +90,9 @@ export default function DemoSidebar() {
 
       {/* Main Nav */}
       <div className="flex-1 py-3 px-3 space-y-1 overflow-y-auto">
-        <p className="text-[11px] text-slate-400 font-bold px-3 mb-1">لوحة الإدارة والعمليات</p>
+        <p className="text-[11px] text-slate-400 font-bold px-3 mb-1">
+          {language === 'ar' ? 'لوحة الإدارة والعمليات' : 'Operations & Live Orders'}
+        </p>
         {mainLinks.map((link) => (
           <Link
             key={link.href}
@@ -106,7 +121,9 @@ export default function DemoSidebar() {
         ))}
 
         <div className="pt-3 mt-3 border-t border-slate-100">
-          <p className="text-[11px] text-slate-400 font-bold px-3 mb-1">التقارير والإعدادات المالية</p>
+          <p className="text-[11px] text-slate-400 font-bold px-3 mb-1">
+            {language === 'ar' ? 'التقارير والإعدادات المالية' : 'Analytics & Settings'}
+          </p>
           {managementLinks.map((link) => (
             <Link
               key={link.href}
@@ -125,21 +142,24 @@ export default function DemoSidebar() {
         </div>
       </div>
 
-      {/* Back to website and Logout */}
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      {/* Language Switcher, Back to website and Logout */}
+      <div className="p-3 border-t border-slate-100 space-y-1.5">
+        {/* Switch Language */}
+        <LanguageSwitcher variant="sidebar" />
+
         <Link
           href="/"
           className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-orange-600 transition-colors p-2 rounded-xl hover:bg-orange-50"
         >
-          <ArrowRight size={15} />
-          <span>العودة للموقع الرئيسي</span>
+          {isRtl ? <ArrowRight size={15} /> : <ArrowLeft size={15} />}
+          <span>{t('nav.backHome', 'العودة للموقع الرئيسي')}</span>
         </Link>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors p-2 rounded-xl hover:bg-rose-50 text-right"
+          className={`w-full flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors p-2 rounded-xl hover:bg-rose-50 ${isRtl ? 'text-right' : 'text-left'}`}
         >
           <LogOut size={15} />
-          <span>تسجيل الخروج</span>
+          <span>{t('nav.logout', 'تسجيل الخروج')}</span>
         </button>
       </div>
     </div>
@@ -150,12 +170,15 @@ export default function DemoSidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 h-14 flex items-center justify-between shadow-xs">
         <Logo size="sm" href="/demo" />
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-xl text-slate-600 hover:bg-slate-100"
-        >
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher variant="subtle" />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -167,12 +190,18 @@ export default function DemoSidebar() {
       )}
 
       {/* Mobile Sidebar */}
-      <div className={`lg:hidden fixed top-0 right-0 bottom-0 w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`lg:hidden fixed top-0 bottom-0 w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${
+        isRtl 
+          ? `right-0 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}` 
+          : `left-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`
+      }`}>
         <SidebarContent />
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:right-0 bg-white border-l border-slate-200/80 shadow-xs">
+      <div className={`hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white shadow-xs z-30 ${
+        isRtl ? 'right-0 border-l border-slate-200/80' : 'left-0 border-r border-slate-200/80'
+      }`}>
         <SidebarContent />
       </div>
     </>
