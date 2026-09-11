@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
 import { generateSecurePin, sanitizeInput } from '@/lib/security/crypto';
 import { rateLimiter } from '@/lib/security/rate-limiter';
-import { saveStaffAccessCode } from '@/lib/db/repositories/staff-code.repository';
+import { saveStaffAccessCode, findStaffAccessCode } from '@/lib/db/repositories/staff-code.repository';
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,22 +56,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createAdminClient();
 
     // 2. Generate cryptographically secure unique code (retry up to 5 times if collision)
     let code = '';
     let attempts = 0;
     while (attempts < 5) {
       const candidate = generateSecurePin(6);
-      // Check uniqueness for this branch
-      const { data: existing } = await (supabase as any)
-        .from('staff_access_codes')
-        .select('id')
-        .eq('branch_id', targetBranchId)
-        .eq('code', candidate)
-        .eq('is_used', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+      // Check uniqueness for this branch via repository
+      const existing = await findStaffAccessCode(candidate, targetBranchId);
 
       if (!existing) {
         code = candidate;
