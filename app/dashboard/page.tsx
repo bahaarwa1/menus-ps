@@ -281,7 +281,7 @@ export default function ProductionDashboardOverview() {
           </Link>
 
           <Link
-            href="/staff"
+            href={createdSlug ? `/staff/${createdSlug}` : '/staff'}
             target="_blank"
             className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-amber-500/40 hover:shadow-md transition-all flex items-center justify-between sm:col-span-2 lg:col-span-1"
           >

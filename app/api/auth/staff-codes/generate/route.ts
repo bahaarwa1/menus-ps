@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { generateSecurePin, sanitizeInput } from '@/lib/security/crypto';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 import { saveStaffAccessCode, findStaffAccessCode } from '@/lib/db/repositories/staff-code.repository';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +49,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const targetBranchId = branchId || session.branchId;
+    let targetBranchId = branchId || session.branchId;
+    if (!targetBranchId && session.restaurantId && isSupabaseConfigured()) {
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSb = createAdminClient();
+        const { data: bData } = await (adminSb as any)
+          .from('branches')
+          .select('id')
+          .eq('restaurant_id', session.restaurantId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        if (bData?.id) targetBranchId = bData.id;
+      } catch {}
+    }
+    if (!targetBranchId && session.restaurantSlug && isSupabaseConfigured()) {
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSb = createAdminClient();
+        const { data: rData } = await (adminSb as any)
+          .from('restaurants')
+          .select('id, branches(id, is_active)')
+          .eq('slug', session.restaurantSlug)
+          .maybeSingle();
+        if (rData) {
+          const branches = Array.isArray(rData.branches) ? rData.branches : (rData.branches ? [rData.branches] : []);
+          const activeB = branches.find((b: any) => b.is_active) || branches[0];
+          if (activeB?.id) targetBranchId = activeB.id;
+        }
+      } catch {}
+    }
+
     if (!targetBranchId) {
       return NextResponse.json(
         { success: false, error: 'لم يتم تحديد الفرع' },

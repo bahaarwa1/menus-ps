@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 import { sanitizeInput } from '@/lib/security/crypto';
 import { findStaffAccessCode, markStaffAccessCodeUsed } from '@/lib/db/repositories/staff-code.repository';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { pin, branchId } = body;
+    const { pin, branchId: providedBranchId, restaurantSlug: providedSlug } = body;
 
     const pinStr = sanitizeInput(String(pin || '')).trim();
 
@@ -47,16 +48,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // === 6-DIGIT ONE-TIME ACCESS CODE PATH ===
+    let branchId = providedBranchId;
+    let resolvedSlug = providedSlug ? String(providedSlug).trim().toLowerCase() : '';
+    let resolvedName = '';
+    let resolvedRestId = '';
+
+    // If restaurantSlug is provided, resolve its branchId
+    if (resolvedSlug && !branchId && isSupabaseConfigured()) {
+      try {
+        const adminSb = createAdminClient();
+        const { data: rData } = await (adminSb as any)
+          .from('restaurants')
+          .select('id, name, slug, branches(id, is_active)')
+          .eq('slug', resolvedSlug)
+          .maybeSingle();
+        if (rData) {
+          resolvedRestId = rData.id;
+          resolvedName = rData.name;
+          const branches = Array.isArray(rData.branches) ? rData.branches : (rData.branches ? [rData.branches] : []);
+          const activeBranch = branches.find((b: any) => b.is_active) || branches[0];
+          if (activeBranch?.id) branchId = activeBranch.id;
+        }
+      } catch {}
+    }
+
+    // Helper to enrich restaurant info from branchId if still missing
+    const enrichRestaurant = async (bId: string) => {
+      if ((!resolvedSlug || !resolvedName) && isSupabaseConfigured() && bId) {
+        try {
+          const adminSb = createAdminClient();
+          const { data: bData } = await (adminSb as any)
+            .from('branches')
+            .select('restaurant_id, restaurants(id, name, slug)')
+            .eq('id', bId)
+            .maybeSingle();
+          if (bData) {
+            resolvedRestId = bData.restaurant_id || resolvedRestId;
+            resolvedSlug = bData.restaurants?.slug || resolvedSlug;
+            resolvedName = bData.restaurants?.name || resolvedName;
+          }
+        } catch {}
+      }
+    };
+
+    // === 1. 6-DIGIT ONE-TIME / STAFF ACCESS CODE PATH ===
     if (pinStr.length === 6 && /^\d{6}$/.test(pinStr)) {
       try {
         const record = await findStaffAccessCode(pinStr, branchId);
 
         if (record) {
-          // Mark code as used immediately (single-use)
           await markStaffAccessCodeUsed(record.id);
-
           rateLimiter.recordSuccess(lockoutKey);
+          await enrichRestaurant(record.branch_id);
 
           const sessionPayload = {
             userId: record.id,
@@ -64,11 +107,13 @@ export async function POST(request: NextRequest) {
             name: record.employee_name,
             role: record.role as 'staff' | 'kitchen' | 'branch_manager',
             branchId: record.branch_id,
-            restaurantId: '',
-            restaurantSlug: '',
+            restaurantId: resolvedRestId,
+            restaurantSlug: resolvedSlug,
+            restaurantName: resolvedName,
           };
 
           const token = await signSession(sessionPayload, 60 * 60 * 24); // 24 hours
+          const targetUrl = resolvedSlug ? `/staff/${resolvedSlug}` : '/staff';
 
           const response = NextResponse.json({
             success: true,
@@ -77,8 +122,10 @@ export async function POST(request: NextRequest) {
               name: record.employee_name,
               role: record.role,
               branchId: record.branch_id,
+              restaurantSlug: resolvedSlug,
+              restaurantName: resolvedName,
             },
-            redirectTo: '/staff',
+            redirectTo: targetUrl,
           });
 
           response.cookies.set({
@@ -93,7 +140,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === NORMAL PIN PATH (staff_users.pin_hash) ===
+    // === 2. NORMAL PIN PATH (staff_users.pin_hash) ===
     const authResult = await authenticateWithStaffPin(pinStr, branchId);
 
     if (!authResult.success || !authResult.session) {
@@ -107,18 +154,31 @@ export async function POST(request: NextRequest) {
 
     // Reset failure count on success
     rateLimiter.recordSuccess(lockoutKey);
+    const targetBranch = authResult.session.branchId || branchId;
+    if (targetBranch) await enrichRestaurant(targetBranch);
 
-    const token = await signSession(authResult.session, 60 * 60 * 24);
+    const sessionPayload = {
+      ...authResult.session,
+      restaurantId: resolvedRestId || authResult.session.restaurantId || '',
+      restaurantSlug: resolvedSlug || authResult.session.restaurantSlug || '',
+      restaurantName: resolvedName || (authResult.session as any).restaurantName || '',
+    };
+
+    const token = await signSession(sessionPayload, 60 * 60 * 24);
+    const finalSlug = sessionPayload.restaurantSlug;
+    const targetUrl = finalSlug ? `/staff/${finalSlug}` : '/staff';
 
     const response = NextResponse.json({
       success: true,
       user: {
-        id: authResult.session.userId,
-        name: authResult.session.name,
-        role: authResult.session.role,
-        branchId: authResult.session.branchId,
+        id: sessionPayload.userId,
+        name: sessionPayload.name,
+        role: sessionPayload.role,
+        branchId: sessionPayload.branchId,
+        restaurantSlug: sessionPayload.restaurantSlug,
+        restaurantName: sessionPayload.restaurantName,
       },
-      redirectTo: '/staff',
+      redirectTo: targetUrl,
     });
 
     response.cookies.set({

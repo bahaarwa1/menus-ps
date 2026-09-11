@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       branchId: session.branchId,
       restaurantId: session.restaurantId,
       restaurantSlug: session.restaurantSlug,
+      restaurantName: (session as any).restaurantName || '',
     },
   });
 }

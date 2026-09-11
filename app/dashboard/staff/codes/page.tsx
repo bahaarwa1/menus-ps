@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Key, Plus, Trash2, Copy, Check, Clock, AlertCircle, ChefHat, Utensils, UserCog, RefreshCw } from 'lucide-react';
+import { Key, Plus, Trash2, Copy, Check, Clock, AlertCircle, ChefHat, Utensils, UserCog, RefreshCw, ExternalLink, QrCode } from 'lucide-react';
 
 interface AccessCode {
   id: string;
@@ -44,6 +44,9 @@ export default function StaffCodesPage() {
   const [employeeName, setEmployeeName] = useState('');
   const [role, setRole] = useState('staff');
   const [expiresInHours, setExpiresInHours] = useState(24);
+  const [restaurantSlug, setRestaurantSlug] = useState('');
+  const [restaurantName, setRestaurantName] = useState('');
+  const [copiedLink, setCopiedLink] = useState<'kitchen' | 'menu' | null>(null);
 
   const loadCodes = async () => {
     setIsLoading(true);
@@ -58,7 +61,18 @@ export default function StaffCodesPage() {
     }
   };
 
-  useEffect(() => { loadCodes(); }, []);
+  useEffect(() => {
+    loadCodes();
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(d => {
+        if (d.user) {
+          if (d.user.restaurantSlug) setRestaurantSlug(d.user.restaurantSlug);
+          if (d.user.restaurantName) setRestaurantName(d.user.restaurantName);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +139,7 @@ export default function StaffCodesPage() {
         <div>
           <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
             <Key size={22} className="text-orange-500" />
-            رموز وصول الموظفين
+            رموز وصول الموظفين {restaurantName ? `— ${restaurantName}` : ''}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             أنشئ رمزاً مكوناً من 6 أرقام لكل موظف — صالح لمدة محددة ويُستخدم مرة واحدة فقط
@@ -138,6 +152,95 @@ export default function StaffCodesPage() {
         >
           <RefreshCw size={15} />
         </button>
+      </div>
+
+      {/* Direct Links for this Restaurant */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Kitchen Screen Link */}
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 shadow-xs">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <ChefHat size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900">رابط شاشة المطبخ والطلبات لمطعمك</h3>
+                <p className="text-[11px] text-slate-500">للشاشات والتابلت — تظهر فقط طلبات مطعمك</p>
+              </div>
+            </div>
+            <a
+              href={restaurantSlug ? `/staff/${restaurantSlug}` : '/staff'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-xl bg-white border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer"
+              title="فتح في علامة تبويب جديدة"
+            >
+              <ExternalLink size={14} />
+            </a>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3 bg-white border border-amber-200 rounded-xl p-2">
+            <code className="text-[11px] font-mono text-slate-700 font-bold truncate flex-1 dir-ltr text-left">
+              {typeof window !== 'undefined'
+                ? `${window.location.origin}/staff/${restaurantSlug || ''}`
+                : `https://menus-ps.vercel.app/staff/${restaurantSlug || ''}`}
+            </code>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/staff/${restaurantSlug || ''}`;
+                navigator.clipboard.writeText(url);
+                setCopiedLink('kitchen');
+                setTimeout(() => setCopiedLink(null), 2000);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-bold flex items-center gap-1 transition-colors shrink-0 cursor-pointer"
+            >
+              {copiedLink === 'kitchen' ? <><Check size={12} /> تم النسخ</> : <><Copy size={12} /> نسخ</>}
+            </button>
+          </div>
+        </div>
+
+        {/* Customer Menu Link */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-4 shadow-xs">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <QrCode size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900">رابط منيو المطعم للزبائن</h3>
+                <p className="text-[11px] text-slate-500">القائمة الرقمية التفاعلية لمطعمك</p>
+              </div>
+            </div>
+            <a
+              href={restaurantSlug ? `/r/${restaurantSlug}` : '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+              title="معاينة المنيو"
+            >
+              <ExternalLink size={14} />
+            </a>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3 bg-white border border-emerald-200 rounded-xl p-2">
+            <code className="text-[11px] font-mono text-slate-700 font-bold truncate flex-1 dir-ltr text-left">
+              {typeof window !== 'undefined'
+                ? `${window.location.origin}/r/${restaurantSlug || ''}`
+                : `https://menus-ps.vercel.app/r/${restaurantSlug || ''}`}
+            </code>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/r/${restaurantSlug || ''}`;
+                navigator.clipboard.writeText(url);
+                setCopiedLink('menu');
+                setTimeout(() => setCopiedLink(null), 2000);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 transition-colors shrink-0 cursor-pointer"
+            >
+              {copiedLink === 'menu' ? <><Check size={12} /> تم النسخ</> : <><Copy size={12} /> نسخ</>}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

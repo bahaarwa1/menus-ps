@@ -1,3 +1,4 @@
+
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -26,7 +27,7 @@ if (!global.__menusStaffCodesStore) {
 const memoryStore = global.__menusStaffCodesStore;
 
 /**
- * Saves a generated staff access code with Supabase primary + memory store resilience.
+ * Saves a generated staff access code directly into Supabase staff_users table.
  */
 export async function saveStaffAccessCode(
   input: Omit<StaffAccessCode, 'id' | 'is_used' | 'created_at'>
@@ -43,21 +44,20 @@ export async function saveStaffAccessCode(
     created_at: new Date().toISOString(),
   };
 
-  // 1. Try Supabase if configured
+  // 1. Persist to Supabase staff_users table
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
       const { data, error } = await (supabase as any)
-        .from('staff_access_codes')
+        .from('staff_users')
         .insert({
           branch_id: input.branch_id,
-          code: input.code,
-          employee_name: input.employee_name,
+          full_name: input.employee_name,
           role: input.role,
-          created_by: input.created_by || null,
-          expires_at: input.expires_at,
+          pin_hash: input.code,
+          is_active: true,
         })
-        .select('id, code, employee_name, role, expires_at, created_at')
+        .select('id, branch_id, full_name, role, pin_hash')
         .single();
 
       if (!error && data) {
@@ -65,35 +65,47 @@ export async function saveStaffAccessCode(
         memoryStore.set(newCode.id, newCode);
         return newCode;
       }
-      console.warn('Supabase staff code insert failed, using memory store fallback:', error?.message);
+      console.warn('Supabase staff_users insert error:', error?.message);
     } catch (err) {
-      console.warn('Supabase staff code insert exception, using memory store fallback:', err);
+      console.warn('Supabase staff_users insert exception:', err);
     }
   }
 
-  // 2. Resilient memory store (guaranteed 100% success in serverless/demo/local)
+  // 2. Resilient memory store fallback
   memoryStore.set(newCode.id, newCode);
   return newCode;
 }
 
 /**
- * Lists active & expired staff access codes for a branch.
+ * Lists active staff access codes for a branch from staff_users.
  */
 export async function listStaffAccessCodes(branchId?: string): Promise<StaffAccessCode[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
       let q = (supabase as any)
-        .from('staff_access_codes')
-        .select('id, code, employee_name, role, expires_at, is_used, used_at, created_at, branch_id')
-        .order('created_at', { ascending: false })
+        .from('staff_users')
+        .select('id, branch_id, full_name, role, pin_hash, is_active')
+        .eq('is_active', true)
+        .neq('role', 'owner')
         .limit(50);
       if (branchId) q = q.eq('branch_id', branchId);
       const { data, error } = await q;
       if (!error && data && data.length > 0) {
-        return data as StaffAccessCode[];
+        return data.map((u: any) => ({
+          id: u.id,
+          branch_id: u.branch_id,
+          code: u.pin_hash || '******',
+          employee_name: u.full_name,
+          role: u.role as 'staff' | 'kitchen' | 'branch_manager',
+          expires_at: new Date(Date.now() + 86400000).toISOString(),
+          is_used: false,
+          created_at: new Date().toISOString(),
+        }));
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Supabase listStaffAccessCodes exception:', err);
+    }
   }
 
   // Fallback to memory store
@@ -103,38 +115,48 @@ export async function listStaffAccessCodes(branchId?: string): Promise<StaffAcce
 }
 
 /**
- * Finds a valid, non-expired, unused access code.
+ * Finds a valid staff user/code by matching pin_hash in staff_users.
  */
 export async function findStaffAccessCode(
   code: string,
   branchId?: string
 ): Promise<StaffAccessCode | null> {
-  const now = new Date().toISOString();
+  const cleanCode = String(code || '').trim();
+  if (!cleanCode) return null;
 
-  // 1. Try Supabase
+  // 1. Try Supabase staff_users
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
       let q = (supabase as any)
-        .from('staff_access_codes')
-        .select('id, branch_id, employee_name, role, expires_at, is_used, code')
-        .eq('code', code)
-        .eq('is_used', false)
-        .gt('expires_at', now);
+        .from('staff_users')
+        .select('id, branch_id, full_name, role, pin_hash, is_active')
+        .eq('is_active', true)
+        .eq('pin_hash', cleanCode);
       if (branchId) q = q.eq('branch_id', branchId);
       const { data, error } = await q.maybeSingle();
       if (!error && data) {
-        return data as StaffAccessCode;
+        return {
+          id: data.id,
+          branch_id: data.branch_id,
+          code: data.pin_hash,
+          employee_name: data.full_name,
+          role: data.role as 'staff' | 'kitchen' | 'branch_manager',
+          expires_at: new Date(Date.now() + 86400000).toISOString(),
+          is_used: false,
+          created_at: new Date().toISOString(),
+        };
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Supabase findStaffAccessCode exception:', err);
+    }
   }
 
   // 2. Try Memory Store
   const found = Array.from(memoryStore.values()).find(
     (c) =>
-      c.code === code &&
+      c.code === cleanCode &&
       !c.is_used &&
-      new Date(c.expires_at) > new Date() &&
       (!branchId || c.branch_id === branchId)
   );
 
@@ -146,16 +168,6 @@ export async function findStaffAccessCode(
  */
 export async function markStaffAccessCodeUsed(codeId: string): Promise<void> {
   const now = new Date().toISOString();
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createAdminClient();
-      await (supabase as any)
-        .from('staff_access_codes')
-        .update({ is_used: true, used_at: now })
-        .eq('id', codeId);
-    } catch {}
-  }
-
   const inMem = memoryStore.get(codeId);
   if (inMem) {
     inMem.is_used = true;
@@ -165,13 +177,13 @@ export async function markStaffAccessCodeUsed(codeId: string): Promise<void> {
 }
 
 /**
- * Deletes a staff access code.
+ * Deletes or deactivates a staff user/code.
  */
 export async function deleteStaffAccessCode(codeId: string, branchId?: string): Promise<boolean> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createAdminClient();
-      let q = (supabase as any).from('staff_access_codes').delete().eq('id', codeId);
+      let q = (supabase as any).from('staff_users').delete().eq('id', codeId);
       if (branchId) q = q.eq('branch_id', branchId);
       await q;
     } catch {}

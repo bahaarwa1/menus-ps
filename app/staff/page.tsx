@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ClipboardList, CheckCircle2, Clock,
   Search, Printer, Check, X, Bell, BellOff,
-  Sun, Moon, LogOut, ChefHat, RefreshCw
+  Sun, Moon, LogOut, ChefHat, RefreshCw,
+  KeyRound, AlertCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { printThermalReceipt } from '@/lib/print-utils';
@@ -63,8 +63,7 @@ function mapDbOrder(raw: any) {
   };
 }
 
-export default function StaffOrdersManagementPage() {
-  const router = useRouter();
+export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug?: string } = {}) {
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -76,6 +75,16 @@ export default function StaffOrdersManagementPage() {
   const [branchId, setBranchId] = useState<string>('');
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [newOrderAlert, setNewOrderAlert] = useState<{ id: string; table: number; count: number; time: string } | null>(null);
+
+  // Restaurant & Authentication States
+  const [restaurantSlug, setRestaurantSlug] = useState<string>(initialSlug || '');
+  const [restaurantName, setRestaurantName] = useState<string>('');
+  const [restaurantLogo, setRestaurantLogo] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [showPinModal, setShowPinModal] = useState<boolean>(false);
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [isSubmittingPin, setIsSubmittingPin] = useState<boolean>(false);
 
   const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
@@ -91,6 +100,9 @@ export default function StaffOrdersManagementPage() {
         if (mapped.length > 0 && !selectedOrderId) {
           setSelectedOrderId(mapped[0].id);
         }
+      } else if (res.status === 401 || res.status === 403) {
+        setIsAuthenticated(false);
+        setShowPinModal(true);
       }
     } catch (e) {
       console.error('loadOrders error:', e);
@@ -100,16 +112,107 @@ export default function StaffOrdersManagementPage() {
   }, [selectedOrderId]);
 
   useEffect(() => {
+    let slug = initialSlug || '';
+    if (!slug && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const querySlug = urlParams.get('restaurant') || urlParams.get('slug');
+      if (querySlug) slug = querySlug;
+    }
+
     fetch('/api/auth/session')
       .then(r => r.json())
-      .then(data => {
-        const bid = data.user?.branchId || '';
-        setBranchId(bid);
-        loadOrders(bid);
+      .then(async (sessionData) => {
+        const user = sessionData.user;
+        const sessionBranchId = user?.branchId || '';
+        const sessionSlug = user?.restaurantSlug || '';
+        const sessionName = user?.restaurantName || '';
+
+        const effectiveSlug = slug || sessionSlug;
+        if (effectiveSlug) setRestaurantSlug(effectiveSlug);
+        if (sessionName) setRestaurantName(sessionName);
+
+        let targetBranch = sessionBranchId;
+        if (effectiveSlug) {
+          try {
+            const restRes = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`);
+            const restData = await restRes.json();
+            if (restData.success && restData.restaurant) {
+              setRestaurantName(restData.restaurant.name || sessionName);
+              if (restData.restaurant.logoUrl) setRestaurantLogo(restData.restaurant.logoUrl);
+              if (restData.restaurant.branchId) targetBranch = restData.restaurant.branchId;
+            }
+          } catch {}
+        }
+
+        if (sessionData.authenticated && user) {
+          if (slug && sessionBranchId && targetBranch && sessionBranchId !== targetBranch) {
+            // User is authenticated under a different restaurant's branch
+            setIsAuthenticated(false);
+            setShowPinModal(true);
+          } else {
+            setIsAuthenticated(true);
+            setShowPinModal(false);
+            const activeBid = targetBranch || sessionBranchId;
+            setBranchId(activeBid);
+            loadOrders(activeBid);
+          }
+        } else {
+          setIsAuthenticated(false);
+          setShowPinModal(true);
+          setIsLoadingOrders(false);
+        }
       })
-      .catch(() => loadOrders());
+      .catch(() => {
+        setIsAuthenticated(false);
+        setShowPinModal(true);
+        setIsLoadingOrders(false);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialSlug]);
+
+  const handlePinSubmit = async (pinOverride?: string) => {
+    const code = (pinOverride || pinInput).trim();
+    if (code.length < 4) {
+      setPinError('أدخل رمز الدخول (4 أرقام على الأقل)');
+      return;
+    }
+    setIsSubmittingPin(true);
+    setPinError('');
+    try {
+      const res = await fetch('/api/auth/staff-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin: code,
+          restaurantSlug,
+          branchId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setShowPinModal(false);
+        setPinInput('');
+        if (data.user?.branchId) {
+          setBranchId(data.user.branchId);
+          loadOrders(data.user.branchId);
+        }
+        if (data.user?.restaurantName) {
+          setRestaurantName(data.user.restaurantName);
+        }
+        if (data.user?.restaurantSlug) {
+          setRestaurantSlug(data.user.restaurantSlug);
+        }
+      } else {
+        setPinError(data.error || 'رمز الدخول غير صحيح');
+        setPinInput('');
+      }
+    } catch {
+      setPinError('تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً');
+    } finally {
+      setIsSubmittingPin(false);
+    }
+  };
 
   // Supabase Realtime subscription for live order updates
   useEffect(() => {
@@ -232,7 +335,9 @@ export default function StaffOrdersManagementPage() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    router.push('/login?role=staff');
+    setIsAuthenticated(false);
+    setShowPinModal(true);
+    setOrdersList([]);
   };
 
   const handlePrintReceipt = (order: any) => {
@@ -244,7 +349,7 @@ export default function StaffOrdersManagementPage() {
       total: order.total,
       items: order.items || [],
       notes: order.notes,
-      restaurantName: 'MENUS.PS'
+      restaurantName: restaurantName || 'MENUS.PS'
     });
   };
 
@@ -539,6 +644,128 @@ export default function StaffOrdersManagementPage() {
         )}
       </AnimatePresence>
 
+      {/* Interactive In-Place Staff PIN Authentication Modal */}
+      <AnimatePresence>
+        {(showPinModal || !isAuthenticated) && (
+          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center text-slate-900 relative"
+            >
+              {/* Header */}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/20 overflow-hidden">
+                {restaurantLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={restaurantLogo} alt={restaurantName} className="w-full h-full object-cover" />
+                ) : (
+                  <ChefHat size={32} />
+                )}
+              </div>
+              
+              <h2 className="text-lg font-black text-slate-900 mb-0.5">
+                {restaurantName || (restaurantSlug ? `مطعم ${restaurantSlug}` : 'شاشة المطبخ والطلبات')}
+              </h2>
+              <p className="text-xs text-slate-500 mb-5">
+                أدخل رمز دخول الموظف (PIN) المكون من 4 إلى 6 أرقام
+              </p>
+
+              {pinError && (
+                <div className="mb-4 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center justify-center gap-1.5 animate-shake">
+                  <AlertCircle size={14} />
+                  <span>{pinError}</span>
+                </div>
+              )}
+
+              {/* PIN Digits Display */}
+              <div className="flex justify-center gap-2 mb-6">
+                {[0, 1, 2, 3, 4, 5].map((idx) => (
+                  <div
+                    key={idx}
+                    className={`w-10 h-12 rounded-xl border-2 flex items-center justify-center text-xl font-bold transition-all ${
+                      pinInput.length > idx
+                        ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-xs scale-105'
+                        : 'border-slate-200 bg-slate-50 text-slate-300'
+                    }`}
+                  >
+                    {pinInput.length > idx ? '●' : ''}
+                  </div>
+                ))}
+              </div>
+
+              {/* Numeric Keypad */}
+              <div className="grid grid-cols-3 gap-2.5 mb-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => {
+                      if (pinInput.length < 6) {
+                        const next = pinInput + String(num);
+                        setPinInput(next);
+                        if (next.length === 6) handlePinSubmit(next);
+                      }
+                    }}
+                    className="h-12 rounded-xl bg-slate-50 hover:bg-orange-50 active:bg-orange-100 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPinInput('')}
+                  className="h-12 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 text-xs font-bold transition-all cursor-pointer"
+                >
+                  مسح
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pinInput.length < 6) {
+                      const next = pinInput + '0';
+                      setPinInput(next);
+                      if (next.length === 6) handlePinSubmit(next);
+                    }
+                  }}
+                  className="h-12 rounded-xl bg-slate-50 hover:bg-orange-50 active:bg-orange-100 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPinInput(prev => prev.slice(0, -1))}
+                  className="h-12 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-sm font-bold transition-all cursor-pointer"
+                >
+                  ⌫
+                </button>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="button"
+                disabled={pinInput.length < 4 || isSubmittingPin}
+                onClick={() => handlePinSubmit()}
+                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md shadow-orange-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmittingPin ? (
+                  <><RefreshCw size={16} className="animate-spin" /> جاري التحقق...</>
+                ) : (
+                  <><KeyRound size={16} /> دخول لشاشة المطبخ</>
+                )}
+              </button>
+
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                <span>كود من 4 إلى 6 أرقام</span>
+                <a href="/login?role=staff" className="text-orange-600 hover:underline font-bold">
+                  تسجيل الدخول الرئيسي
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* 1. Header Bar */}
       <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
         isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/80'
@@ -567,7 +794,9 @@ export default function StaffOrdersManagementPage() {
                 </div>
                 <p className={`text-xs mt-0.5 ${
                   isDarkMode ? 'text-slate-400' : 'text-slate-500'
-                }`}>Burger House نابلس · متابعة وتحديث طلبات الصالة</p>
+                }`}>
+                  {restaurantName ? `${restaurantName} · متابعة وتحديث طلبات الصالة` : 'شاشة المطبخ والطلبات · متابعة وتحديث طلبات الصالة'}
+                </p>
               </div>
             </div>
 
