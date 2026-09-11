@@ -117,6 +117,16 @@ function FastFrictionlessMenuContent() {
     };
   }, [isOrderSubmitted, submittedOrderId]);
 
+  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(restaurantParam || 'burger-house-nablus');
+  const [activeRestaurantName, setActiveRestaurantName] = useState<string>('');
+  const [activeBranchId, setActiveBranchId] = useState<string>('b0000000-0000-0000-0000-000000000001');
+
+  useEffect(() => {
+    if (activeRestaurantSlug && !activeRestaurantName && activeRestaurantSlug !== 'burger-house-nablus') {
+      setActiveRestaurantName(activeRestaurantSlug.replace(/-/g, ' '));
+    }
+  }, [activeRestaurantSlug, activeRestaurantName]);
+
   // Dynamic QR Token Verification on Load
   useEffect(() => {
     if (qrTokenParam) {
@@ -127,6 +137,15 @@ function FastFrictionlessMenuContent() {
             setTableNumber(data.table.tableNumber);
             setIsTokenVerified(true);
             setTokenError('');
+            if (data.table.restaurantSlug) {
+              setActiveRestaurantSlug(data.table.restaurantSlug);
+            }
+            if (data.table.restaurantName) {
+              setActiveRestaurantName(data.table.restaurantName);
+            }
+            if (data.table.branchId) {
+              setActiveBranchId(data.table.branchId);
+            }
           } else {
             setTokenError(data.error || 'رمز QR غير صالح أو منتهي الصلاحية');
           }
@@ -248,7 +267,7 @@ function FastFrictionlessMenuContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          branchId: 'b0000000-0000-0000-0000-000000000001',
+          branchId: activeBranchId || 'b0000000-0000-0000-0000-000000000001',
           tableNumber,
           tableToken: qrTokenParam || undefined,
           items: itemsPayload,
@@ -302,7 +321,7 @@ function FastFrictionlessMenuContent() {
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-sm font-bold text-slate-900 truncate capitalize">
-                    {restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus')}
+                    {activeRestaurantName || (restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus'))}
                   </h1>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>

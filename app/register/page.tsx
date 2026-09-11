@@ -476,15 +476,25 @@ export default function RegisterPage() {
                 </span>
                 <div className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
                   <span className="font-mono text-sm sm:text-base font-bold text-orange-400 select-all truncate" dir="ltr">
-                    {createdRestaurant.subdomainUrl}
+                    {`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`}
                   </span>
-                  <button
-                    onClick={() => copyUrl(createdRestaurant.subdomainUrl)}
-                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    {copiedLink ? <Check size={14} /> : <Copy size={14} />}
-                    <span>{copiedLink ? 'تم النسخ!' : 'نسخ الرابط'}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => copyUrl(`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      {copiedLink ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedLink ? 'تم النسخ!' : 'نسخ الرابط'}</span>
+                    </button>
+                    <a
+                      href={`/r/${createdRestaurant.slug}`}
+                      target="_blank"
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      title="فتح منيو المطعم"
+                    >
+                      <ExternalLink size={15} />
+                    </a>
+                  </div>
                 </div>
               </div>
 

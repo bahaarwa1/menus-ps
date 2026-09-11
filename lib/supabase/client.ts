@@ -1,3 +1,7 @@
+if (typeof globalThis !== 'undefined' && !globalThis.WebSocket) {
+  (globalThis as unknown as { WebSocket: unknown }).WebSocket = class DummyWebSocket {};
+}
+
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
 
@@ -7,3 +11,4 @@ export function createClient() {
 
   return createBrowserClient<Database>(url, anonKey);
 }
+

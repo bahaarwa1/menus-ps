@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Printer, ExternalLink, Copy, Check } from 'lucide-react';
 
 interface TableItem {
@@ -12,21 +12,49 @@ interface TableItem {
 }
 
 export default function ProductionTablesPage() {
-  const [tables, setTables] = useState<TableItem[]>(
-    Array.from({ length: 12 }, (_, i) => ({
-      id: `tbl-${i + 1}`,
-      tableNumber: i + 1,
-      seats: (i % 3 === 0) ? 6 : (i % 2 === 0 ? 2 : 4),
-      status: i === 2 || i === 6 ? 'busy' : i === 9 ? 'reserved' : 'empty',
-      qrToken: `qr_tbl_${i + 1}_secure_${(i + 1) * 987}`,
-    }))
-  );
-
+  const [tables, setTables] = useState<TableItem[]>([]);
+  const [currentSlug, setCurrentSlug] = useState<string>('burger-house-nablus');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedPrintTable, setSelectedPrintTable] = useState<TableItem | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    let slug = 'burger-house-nablus';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlSlug = params.get('created') || params.get('restaurant');
+      if (urlSlug) slug = urlSlug;
+    }
+
+    fetch('/api/auth/session')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.authenticated && data.user?.restaurantSlug) {
+          slug = data.user.restaurantSlug;
+        }
+        setCurrentSlug(slug);
+        return fetch(`/api/v1/tables/list?slug=${encodeURIComponent(slug)}`);
+      })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.tables)) {
+          setTables(
+            res.tables.map((t: any) => ({
+              id: t.dbId || `tbl-${t.id}`,
+              tableNumber: t.id,
+              seats: t.seats || 4,
+              status: t.status === 'مشغولة' ? 'busy' : t.status === 'محجوزة' ? 'reserved' : 'empty',
+              qrToken: t.qrToken,
+            }))
+          );
+        }
+      })
+      .catch((err) => console.error('Error fetching tables:', err));
+  }, []);
 
   const copyTableLink = (table: TableItem) => {
-    const url = `https://menus-ps.vercel.app/m?t=${table.qrToken}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+    const url = `${origin}/m?t=${table.qrToken}&restaurant=${currentSlug}`;
     navigator.clipboard.writeText(url);
     setCopiedId(table.id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -38,21 +66,41 @@ export default function ProductionTablesPage() {
     );
   };
 
-  const handleAddTable = () => {
-    const nextNum = tables.length + 1;
-    const newT: TableItem = {
-      id: `tbl-${nextNum}`,
-      tableNumber: nextNum,
-      seats: 4,
-      status: 'empty',
-      qrToken: `qr_tbl_${nextNum}_secure_${nextNum * 987}`,
-    };
-    setTables((prev) => [...prev, newT]);
+  const handleAddTable = async () => {
+    if (isAdding) return;
+    setIsAdding(true);
+
+    try {
+      const res = await fetch('/api/v1/tables/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: currentSlug, seats: 4 }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.table) {
+        setTables((prev) => [
+          ...prev,
+          {
+            id: data.table.dbId || `tbl-${data.table.id}`,
+            tableNumber: data.table.id,
+            seats: data.table.seats,
+            status: 'empty',
+            qrToken: data.table.qrToken,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error('Error creating table:', err);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const triggerPrintAll = () => {
     window.print();
   };
+
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-900" dir="rtl">
@@ -104,8 +152,9 @@ export default function ProductionTablesPage() {
       {/* Tables Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {tables.map((table) => {
-          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`https://menus-ps.vercel.app/m?t=${table.qrToken}`)}`;
-          const customerMenuUrl = `/m?t=${table.qrToken}`;
+          const directTableUrl = `https://menus-ps.vercel.app/m?t=${table.qrToken}&restaurant=${currentSlug}`;
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(directTableUrl)}`;
+          const customerMenuUrl = `/m?t=${table.qrToken}&restaurant=${currentSlug}`;
 
           return (
             <div
@@ -215,7 +264,7 @@ export default function ProductionTablesPage() {
 
               <div className="w-40 h-40 bg-white p-2 rounded-2xl border-2 border-slate-900 mx-auto shadow-md mb-3 flex items-center justify-center">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`https://menus-ps.vercel.app/m?t=${selectedPrintTable.qrToken}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`https://menus-ps.vercel.app/m?t=${selectedPrintTable.qrToken}&restaurant=${currentSlug}`)}`}
                   alt="QR"
                   className="w-full h-full object-contain"
                 />

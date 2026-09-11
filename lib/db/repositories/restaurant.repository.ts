@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export interface RegisterRestaurantInput {
@@ -50,7 +50,7 @@ if (!global.__menusRestaurantsStore) {
     phone: '+970 59 900 0000',
     city: 'نابلس',
     currency: '₪',
-    subdomainUrl: 'https://burger-house-nablus.menus-ps.vercel.app',
+    subdomainUrl: 'https://menus-ps.vercel.app/r/burger-house-nablus',
     branchId: 'b0000000-0000-0000-0000-000000000001',
     branchName: 'فرع رفيديا — نابلس',
     tablesCount: 15,
@@ -58,14 +58,14 @@ if (!global.__menusRestaurantsStore) {
       id: `tbl-${i + 1}`,
       tableNumber: i + 1,
       qrToken: `qr_token_table_${i + 1}_nablus`,
-      qrUrl: `https://menus-ps.vercel.app/m?t=qr_token_table_${i + 1}_nablus`,
+      qrUrl: `https://menus-ps.vercel.app/m?t=qr_token_table_${i + 1}_nablus&restaurant=burger-house-nablus`,
     })),
     createdAt: new Date().toISOString(),
   });
 }
 
 const RESERVED_SLUGS = new Set([
-  'www', 'api', 'admin', 'staff', 'demo', 'm', 'login', 'register',
+  'www', 'api', 'admin', 'staff', 'demo', 'm', 'r', 'login', 'register',
   'signup', 'app', 'pricing', 'contact', 'how-it-works', 'features',
   'faq', 'terms', 'privacy', 'dashboard', 'settings', 'checkout', 'cart',
   'static', 'assets', 'public', 'auth', 'webhook', 'support'
@@ -97,7 +97,7 @@ export async function isSlugAvailable(rawSlug: string): Promise<{ available: boo
   // Check Supabase if configured
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data } = await supabase
         .from('restaurants')
         .select('id')
@@ -136,7 +136,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
       id: `tbl-${tableNum}-${Date.now()}`,
       tableNumber: tableNum,
       qrToken,
-      qrUrl: `https://menus-ps.vercel.app/m?t=${qrToken}`,
+      qrUrl: `https://menus-ps.vercel.app/m?t=${qrToken}&restaurant=${slug}`,
     };
   });
 
@@ -147,7 +147,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     phone: input.phone.trim(),
     city: input.city.trim() || 'نابلس',
     currency: '₪',
-    subdomainUrl: `https://${slug}.menus-ps.vercel.app`,
+    subdomainUrl: `https://menus-ps.vercel.app/r/${slug}`,
     branchId,
     branchName: 'الفرع الرئيسي',
     tablesCount,
@@ -163,7 +163,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
   // 2. Persist to Supabase if configured
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       
       // Insert restaurant
       const { data: restData, error: restErr } = await supabase
@@ -211,19 +211,43 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
           await supabase.from('tables').insert(tablesToInsert as never);
 
           // Insert default sample categories for quick start
-          const defaultCategories = [
-            { name_ar: 'الوجبات الرئيسية', icon: '🍔', sort_order: 1 },
-            { name_ar: 'المقبلات والبطاطا', icon: '🍟', sort_order: 2 },
-            { name_ar: 'المشروبات الباردة', icon: '🥤', sort_order: 3 },
-          ];
+          const { data: catData } = await supabase
+            .from('menu_categories')
+            .insert([
+              { restaurant_id: dbRestId, name_ar: 'الوجبات الرئيسية', icon: '🍔', sort_order: 1 },
+              { restaurant_id: dbRestId, name_ar: 'المقبلات والبطاطا', icon: '🍟', sort_order: 2 },
+              { restaurant_id: dbRestId, name_ar: 'المشروبات الباردة', icon: '🥤', sort_order: 3 },
+            ] as never)
+            .select('id, name_ar');
 
-          await supabase.from('menu_categories').insert(
-            defaultCategories.map((c) => ({
-              restaurant_id: dbRestId,
-              ...c,
-            })) as never
-          );
+          if (catData && catData.length > 0) {
+            const mainCat = (catData as any[]).find((c) => c.name_ar === 'الوجبات الرئيسية') || catData[0];
+            const sidesCat = (catData as any[]).find((c) => c.name_ar === 'المقبلات والبطاطا') || catData[1];
+
+            await supabase.from('menu_items').insert([
+              {
+                category_id: mainCat.id,
+                name_ar: 'وجبة مميزة خاصة بالمطعم',
+                description_ar: 'وجبة طازجة محضرة بأجود المكونات المحلية والبهارات الخاصة',
+                price: 35.00,
+                is_available: true,
+                is_popular: true,
+                sort_order: 1,
+              },
+              {
+                category_id: sidesCat?.id || mainCat.id,
+                name_ar: 'بطاطا مقلية مقرمشة',
+                description_ar: 'بطاطا ذهبية مقرمشة تقدم مع الصوص الخاص',
+                price: 12.00,
+                is_available: true,
+                is_popular: false,
+                sort_order: 2,
+              }
+            ] as never);
+          }
         }
+      } else if (restErr) {
+        console.error('Supabase restaurant insert error:', restErr);
       }
     } catch (err) {
       console.error('Supabase registration error, persisted to resilient store:', err);
@@ -239,56 +263,87 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
 export async function getRestaurantBySlug(slug: string): Promise<RegisteredRestaurantResult | null> {
   const cleanSlug = slug.trim().toLowerCase();
 
-  // Check memory store first
-  const memoryRecord = global.__menusRestaurantsStore?.get(cleanSlug);
-  if (memoryRecord) {
-    return memoryRecord;
-  }
-
-  // Check Supabase
+  // Check Supabase first if configured
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data: rest, error } = await supabase
         .from('restaurants')
         .select('id, name, slug, phone, city, currency, created_at')
         .eq('slug', cleanSlug)
         .single();
 
-      if (error || !rest) return null;
+      if (!error && rest) {
+        const restData = rest as {
+          id: string;
+          name: string;
+          slug: string;
+          phone: string;
+          city: string;
+          currency: string;
+          created_at: string;
+        };
 
-      const restData = rest as {
-        id: string;
-        name: string;
-        slug: string;
-        phone: string;
-        city: string;
-        currency: string;
-        created_at: string;
-      };
+        // Fetch primary branch
+        const { data: branchData } = await supabase
+          .from('branches')
+          .select('id, name, tables_count')
+          .eq('restaurant_id', restData.id)
+          .limit(1)
+          .maybeSingle();
 
-      return {
-        id: restData.id,
-        name: restData.name,
-        slug: restData.slug,
-        phone: restData.phone || '',
-        city: restData.city || 'نابلس',
-        currency: restData.currency || '₪',
-        subdomainUrl: `https://${restData.slug}.menus-ps.vercel.app`,
-        branchId: 'b0000000-0000-0000-0000-000000000001',
-        branchName: 'الفرع الرئيسي',
-        tablesCount: 10,
-        tables: Array.from({ length: 10 }, (_, i) => ({
-          id: `tbl-${i + 1}`,
-          tableNumber: i + 1,
-          qrToken: `qr_${restData.slug}_t${i + 1}`,
-          qrUrl: `https://menus-ps.vercel.app/m?t=qr_${restData.slug}_t${i + 1}`,
-        })),
-        createdAt: restData.created_at,
-      };
-    } catch {
-      return null;
+        const branchId = (branchData as any)?.id || 'b0000000-0000-0000-0000-000000000001';
+        const branchName = (branchData as any)?.name || 'الفرع الرئيسي';
+
+        // Fetch actual tables for this branch
+        const { data: tablesData } = await supabase
+          .from('tables')
+          .select('id, table_number, qr_token, status')
+          .eq('branch_id', branchId)
+          .order('table_number', { ascending: true });
+
+        const tables = (tablesData && tablesData.length > 0)
+          ? (tablesData as any[]).map((t) => ({
+              id: t.id,
+              tableNumber: t.table_number,
+              qrToken: t.qr_token,
+              qrUrl: `https://menus-ps.vercel.app/m?t=${t.qr_token}&restaurant=${restData.slug}`,
+            }))
+          : Array.from({ length: 10 }, (_, i) => ({
+              id: `tbl-${i + 1}`,
+              tableNumber: i + 1,
+              qrToken: `qr_${restData.slug}_t${i + 1}`,
+              qrUrl: `https://menus-ps.vercel.app/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
+            }));
+
+        const result: RegisteredRestaurantResult = {
+          id: restData.id,
+          name: restData.name,
+          slug: restData.slug,
+          phone: restData.phone || '',
+          city: restData.city || 'نابلس',
+          currency: restData.currency || '₪',
+          subdomainUrl: `https://menus-ps.vercel.app/r/${restData.slug}`,
+          branchId,
+          branchName,
+          tablesCount: tables.length,
+          tables,
+          createdAt: restData.created_at,
+        };
+
+        // Cache in memory store
+        global.__menusRestaurantsStore?.set(cleanSlug, result);
+        return result;
+      }
+    } catch (err) {
+      console.warn('Supabase getRestaurantBySlug error:', err);
     }
+  }
+
+  // Fallback to memory store
+  const memoryRecord = global.__menusRestaurantsStore?.get(cleanSlug);
+  if (memoryRecord) {
+    return memoryRecord;
   }
 
   return null;

@@ -10,19 +10,30 @@ import {
 } from 'lucide-react';
 
 export default function ProductionDashboardOverview() {
-  const [createdSlug, setCreatedSlug] = useState<string>('my-restaurant');
+  const [createdSlug, setCreatedSlug] = useState<string>('burger-house-nablus');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const slug = params.get('created') || 'my-restaurant';
-      setCreatedSlug(slug);
+      const urlSlug = params.get('created');
+      if (urlSlug) {
+        setCreatedSlug(urlSlug);
+      } else {
+        fetch('/api/auth/session')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.authenticated && data.user?.restaurantSlug) {
+              setCreatedSlug(data.user.restaurantSlug);
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, []);
 
-  const liveUrl = `https://${createdSlug}.menus-ps.vercel.app`;
-  const directMenuUrl = `/m?restaurant=${createdSlug}`;
+  const liveUrl = `https://menus-ps.vercel.app/r/${createdSlug}`;
+  const directMenuUrl = `/r/${createdSlug}`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(liveUrl);

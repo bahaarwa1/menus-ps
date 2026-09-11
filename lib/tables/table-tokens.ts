@@ -13,7 +13,9 @@ export interface TableVerificationResult {
     status: string;
     qrToken: string;
     restaurantName: string;
+    restaurantSlug?: string;
     branchName: string;
+    currency?: string;
   };
 }
 
@@ -61,8 +63,10 @@ export async function verifyTableToken(token: string): Promise<TableVerification
       seats: verified.seats,
       status: verified.status,
       qrToken: cleanToken,
-      restaurantName: 'Burger House نابلس',
-      branchName: 'فرع رفيديا الرئيسي',
+      restaurantName: verified.restaurantName || 'Burger House نابلس',
+      restaurantSlug: verified.restaurantSlug || 'burger-house-nablus',
+      branchName: verified.branchName || 'الفرع الرئيسي',
+      currency: verified.currency || '₪',
     },
   };
 }

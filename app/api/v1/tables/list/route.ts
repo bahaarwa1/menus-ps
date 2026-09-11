@@ -1,33 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { createClient } from '@/lib/supabase/client';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { generateSecureTableToken } from '@/lib/tables/table-tokens';
 import { tables as fallbackTables } from '@/data/demo-data';
 
 export async function GET(request: NextRequest) {
-  const branchId = request.nextUrl.searchParams.get('branchId') || 'b0000000-0000-0000-0000-000000000001';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const branchIdParam = request.nextUrl.searchParams.get('branchId');
+  const slug = request.nextUrl.searchParams.get('slug') || request.nextUrl.searchParams.get('restaurant') || 'burger-house-nablus';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
 
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('tables')
-        .select('id, branch_id, table_number, seats, qr_token, status')
-        .eq('branch_id', branchId)
-        .order('table_number', { ascending: true });
+      const supabase = createAdminClient();
+      let targetBranchId = branchIdParam;
+      let targetRestaurantSlug = slug;
 
-      if (!error && data && data.length > 0) {
-        return NextResponse.json({
-          success: true,
-          tables: (data as any[]).map((t) => ({
-            id: t.table_number,
-            dbId: t.id,
-            seats: t.seats,
-            status: t.status,
-            qrToken: t.qr_token,
-            qrUrl: `${appUrl}/m?t=${t.qr_token}`,
-          })),
-        });
+      if (!targetBranchId) {
+        // Resolve branch from restaurant slug
+        const { data: restData } = await supabase
+          .from('restaurants')
+          .select('id, slug, branches(id)')
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (restData) {
+          targetRestaurantSlug = (restData as any).slug;
+          const branches = (restData as any).branches;
+          if (Array.isArray(branches) && branches.length > 0) {
+            targetBranchId = branches[0].id;
+          } else if (branches?.id) {
+            targetBranchId = branches.id;
+          }
+        }
+      }
+
+      // If still no branch ID, find the first available branch
+      if (!targetBranchId) {
+        const { data: firstBranch } = await supabase
+          .from('branches')
+          .select('id, restaurant_id, restaurants(slug)')
+          .limit(1)
+          .maybeSingle();
+
+        if (firstBranch) {
+          targetBranchId = (firstBranch as any).id;
+          targetRestaurantSlug = (firstBranch as any).restaurants?.slug || slug;
+        }
+      }
+
+      if (targetBranchId) {
+        const { data, error } = await supabase
+          .from('tables')
+          .select('id, branch_id, table_number, seats, qr_token, status')
+          .eq('branch_id', targetBranchId)
+          .order('table_number', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          return NextResponse.json({
+            success: true,
+            branchId: targetBranchId,
+            restaurantSlug: targetRestaurantSlug,
+            tables: (data as any[]).map((t) => ({
+              id: t.table_number,
+              dbId: t.id,
+              seats: t.seats,
+              status: t.status,
+              qrToken: t.qr_token,
+              qrUrl: `${appUrl}/m?t=${t.qr_token}&restaurant=${targetRestaurantSlug}`,
+            })),
+          });
+        }
       }
     } catch (err) {
       console.warn('Database tables list warning, using fallback:', err);
@@ -37,15 +79,91 @@ export async function GET(request: NextRequest) {
   // Fallback demo tables with tokens
   return NextResponse.json({
     success: true,
+    restaurantSlug: slug,
     tables: fallbackTables.map((t) => {
-      const token = `qr_token_table_${t.id}_nablus`;
+      const token = `table_token_b1_${t.id}_${slug}`;
       return {
         id: t.id,
         seats: t.seats,
         status: t.status,
         qrToken: token,
-        qrUrl: `${appUrl}/m?t=${token}`,
+        qrUrl: `${appUrl}/m?t=${token}&restaurant=${slug}`,
       };
     }),
   });
+}
+
+export async function POST(request: NextRequest) {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 400 });
+  }
+
+  try {
+    const body = await request.json();
+    const { slug, branchId, seats = 4 } = body;
+    const supabase = createAdminClient();
+
+    let targetBranchId = branchId;
+
+    if (!targetBranchId && slug) {
+      const { data: restData } = await supabase
+        .from('restaurants')
+        .select('id, branches(id)')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (restData) {
+        const branches = (restData as any).branches;
+        targetBranchId = Array.isArray(branches) && branches.length > 0 ? branches[0].id : branches?.id;
+      }
+    }
+
+    if (!targetBranchId) {
+      targetBranchId = 'b0000000-0000-0000-0000-000000000001';
+    }
+
+    // Determine highest table number
+    const { data: existingTables } = await supabase
+      .from('tables')
+      .select('table_number')
+      .eq('branch_id', targetBranchId)
+      .order('table_number', { ascending: false })
+      .limit(1);
+
+    const nextNumber = (existingTables && existingTables.length > 0 ? (existingTables[0] as any).table_number : 0) + 1;
+    const qrToken = generateSecureTableToken(targetBranchId, nextNumber);
+
+    const { data: newTable, error } = await supabase
+      .from('tables')
+      .insert({
+        branch_id: targetBranchId,
+        table_number: nextNumber,
+        seats,
+        qr_token: qrToken,
+        status: 'فارغة',
+      } as never)
+      .select('id, table_number, seats, qr_token, status')
+      .single();
+
+    if (error || !newTable) {
+      return NextResponse.json({ success: false, error: error?.message || 'Failed to create table' }, { status: 500 });
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
+    const created = newTable as any;
+
+    return NextResponse.json({
+      success: true,
+      table: {
+        id: created.table_number,
+        dbId: created.id,
+        seats: created.seats,
+        status: created.status,
+        qrToken: created.qr_token,
+        qrUrl: `${appUrl}/m?t=${created.qr_token}&restaurant=${slug || 'burger-house-nablus'}`,
+      },
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
+  }
 }

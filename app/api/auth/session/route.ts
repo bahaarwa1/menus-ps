@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       role: session.role,
       branchId: session.branchId,
       restaurantId: session.restaurantId,
+      restaurantSlug: session.restaurantSlug,
     },
   });
 }
