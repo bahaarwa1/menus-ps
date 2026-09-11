@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rotateTableToken } from '@/lib/tables/table-tokens';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    appCache.invalidateTag('tables');
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const dynamicQrUrl = `${appUrl}/m?t=${rotationResult.newToken}`;

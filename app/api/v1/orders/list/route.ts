@@ -5,6 +5,7 @@ import { listActiveOrders } from '@/lib/db/repositories/order.repository';
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,23 @@ export async function GET(request: NextRequest) {
     // Branch isolation: force session's branchId if authenticated staff/manager
     if (session?.branchId) {
       branchId = session.branchId;
+    }
+
+    // Cost-optimization: In-memory caching for active orders list (heavily polled by kitchen & waiter screens)
+    const cacheKey = !orderId ? `orders:list:${branchId || 'all'}` : null;
+    if (cacheKey) {
+      const cached = appCache.get<any[]>(cacheKey);
+      if (cached) {
+        return NextResponse.json(
+          { success: true, orders: cached, source: 'cache' },
+          {
+            headers: {
+              'X-Cache': 'HIT',
+              'Cache-Control': 'private, max-age=5',
+            },
+          }
+        );
+      }
     }
 
     if (!isSupabaseConfigured()) {
@@ -120,7 +138,19 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ success: true, orders: enriched, source: 'db' });
+    if (cacheKey) {
+      appCache.set(cacheKey, enriched, 8, ['orders', `orders:${branchId || 'all'}`]);
+    }
+
+    return NextResponse.json(
+      { success: true, orders: enriched, source: 'db' },
+      {
+        headers: {
+          'X-Cache': 'MISS',
+          'Cache-Control': 'private, max-age=5',
+        },
+      }
+    );
   } catch (error) {
     console.error('orders/list route error:', error);
     const all = await listActiveOrders();

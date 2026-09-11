@@ -25,5 +25,9 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await isSlugAvailable(rawSlug);
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'public, max-age=15, s-maxage=60, stale-while-revalidate=120',
+    },
+  });
 }

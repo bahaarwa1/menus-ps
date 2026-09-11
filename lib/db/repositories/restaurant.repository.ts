@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { hashPassword, hashPin, generateSecureToken, sanitizeInput } from '@/lib/security/crypto';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export interface RegisterRestaurantInput {
   name: string;
@@ -86,13 +87,22 @@ export async function isSlugAvailable(rawSlug: string): Promise<{ available: boo
     return { available: false, slug, reason: 'الرابط طويل جداً (الحد الأقصى 30 حرف)' };
   }
 
+  // Cost-optimization: Check LRU cache for slug availability check
+  const cacheKey = `slug:avail:${slug}`;
+  const cached = appCache.get<{ available: boolean; slug: string; reason?: string }>(cacheKey);
+  if (cached) return cached;
+
   if (RESERVED_SLUGS.has(slug)) {
-    return { available: false, slug, reason: 'هذا الرابط محجوز للنظام، يرجى اختيار اسم آخر' };
+    const res = { available: false, slug, reason: 'هذا الرابط محجوز للنظام، يرجى اختيار اسم آخر' };
+    appCache.set(cacheKey, res, 300, ['restaurants']);
+    return res;
   }
 
   // Check in-memory store
   if (global.__menusRestaurantsStore?.has(slug)) {
-    return { available: false, slug, reason: 'هذا الرابط محجوز لمطعم آخر بالفعل' };
+    const res = { available: false, slug, reason: 'هذا الرابط محجوز لمطعم آخر بالفعل' };
+    appCache.set(cacheKey, res, 300, ['restaurants']);
+    return res;
   }
 
   // Check Supabase if configured
@@ -106,14 +116,18 @@ export async function isSlugAvailable(rawSlug: string): Promise<{ available: boo
         .maybeSingle();
 
       if (data) {
-        return { available: false, slug, reason: 'هذا الرابط محجوز لمطعم آخر بالفعل' };
+        const res = { available: false, slug, reason: 'هذا الرابط محجوز لمطعم آخر بالفعل' };
+        appCache.set(cacheKey, res, 300, ['restaurants']);
+        return res;
       }
     } catch (err) {
       console.warn('Supabase slug check fallback:', err);
     }
   }
 
-  return { available: true, slug };
+  const res = { available: true, slug };
+  appCache.set(cacheKey, res, 60, ['restaurants']);
+  return res;
 }
 
 /**
@@ -297,97 +311,127 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     }
   }
 
+  // Cost-optimization: Invalidate restaurant caches
+  appCache.invalidateTag('restaurants');
+  appCache.invalidateTag(`restaurant:${slug}`);
+
   return registeredRecord;
 }
 
+const inFlightRestaurantRequests = new Map<string, Promise<RegisteredRestaurantResult | null>>();
+
 /**
- * Gets restaurant info by slug.
+ * Gets restaurant info by slug with multi-layer caching and request coalescing.
  */
 export async function getRestaurantBySlug(slug: string): Promise<RegisteredRestaurantResult | null> {
   const cleanSlug = slug.trim().toLowerCase();
+  const cacheKey = `restaurant:slug:${cleanSlug}`;
 
-  // Check Supabase first if configured
-  if (isSupabaseConfigured()) {
+  // 1. O(1) Memory Cache Check
+  const cached = appCache.get<RegisteredRestaurantResult>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // 2. Request coalescing: avoid concurrent duplicate fetches
+  const inFlight = inFlightRestaurantRequests.get(cleanSlug);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const fetchPromise = (async () => {
     try {
-      const supabase = createAdminClient();
-      const { data: rest, error } = await supabase
-        .from('restaurants')
-        .select('id, name, slug, phone, city, currency, created_at')
-        .eq('slug', cleanSlug)
-        .single();
+      // Check Supabase first if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = createAdminClient();
+          const { data: rest, error } = await supabase
+            .from('restaurants')
+            .select('id, name, slug, phone, city, currency, created_at')
+            .eq('slug', cleanSlug)
+            .single();
 
-      if (!error && rest) {
-        const restData = rest as {
-          id: string;
-          name: string;
-          slug: string;
-          phone: string;
-          city: string;
-          currency: string;
-          created_at: string;
-        };
+          if (!error && rest) {
+            const restData = rest as {
+              id: string;
+              name: string;
+              slug: string;
+              phone: string;
+              city: string;
+              currency: string;
+              created_at: string;
+            };
 
-        // Fetch primary branch
-        const { data: branchData } = await supabase
-          .from('branches')
-          .select('id, name, tables_count')
-          .eq('restaurant_id', restData.id)
-          .limit(1)
-          .maybeSingle();
+            // Fetch primary branch
+            const { data: branchData } = await supabase
+              .from('branches')
+              .select('id, name, tables_count')
+              .eq('restaurant_id', restData.id)
+              .limit(1)
+              .maybeSingle();
 
-        const branchId = (branchData as any)?.id || 'b0000000-0000-0000-0000-000000000001';
-        const branchName = (branchData as any)?.name || 'الفرع الرئيسي';
+            const branchId = (branchData as any)?.id || 'b0000000-0000-0000-0000-000000000001';
+            const branchName = (branchData as any)?.name || 'الفرع الرئيسي';
 
-        // Fetch actual tables for this branch
-        const { data: tablesData } = await supabase
-          .from('tables')
-          .select('id, table_number, qr_token, status')
-          .eq('branch_id', branchId)
-          .order('table_number', { ascending: true });
+            // Fetch actual tables for this branch
+            const { data: tablesData } = await supabase
+              .from('tables')
+              .select('id, table_number, qr_token, status')
+              .eq('branch_id', branchId)
+              .order('table_number', { ascending: true });
 
-        const tables = (tablesData && tablesData.length > 0)
-          ? (tablesData as any[]).map((t) => ({
-              id: t.id,
-              tableNumber: t.table_number,
-              qrToken: t.qr_token,
-              qrUrl: `https://menus-ps.vercel.app/m?t=${t.qr_token}&restaurant=${restData.slug}`,
-            }))
-          : Array.from({ length: 10 }, (_, i) => ({
-              id: `tbl-${i + 1}`,
-              tableNumber: i + 1,
-              qrToken: `qr_${restData.slug}_t${i + 1}`,
-              qrUrl: `https://menus-ps.vercel.app/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
-            }));
+            const tables = (tablesData && tablesData.length > 0)
+              ? (tablesData as any[]).map((t) => ({
+                  id: t.id,
+                  tableNumber: t.table_number,
+                  qrToken: t.qr_token,
+                  qrUrl: `https://menus-ps.vercel.app/m?t=${t.qr_token}&restaurant=${restData.slug}`,
+                }))
+              : Array.from({ length: 10 }, (_, i) => ({
+                  id: `tbl-${i + 1}`,
+                  tableNumber: i + 1,
+                  qrToken: `qr_${restData.slug}_t${i + 1}`,
+                  qrUrl: `https://menus-ps.vercel.app/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
+                }));
 
-        const result: RegisteredRestaurantResult = {
-          id: restData.id,
-          name: restData.name,
-          slug: restData.slug,
-          phone: restData.phone || '',
-          city: restData.city || 'نابلس',
-          currency: restData.currency || '₪',
-          subdomainUrl: `https://menus-ps.vercel.app/r/${restData.slug}`,
-          branchId,
-          branchName,
-          tablesCount: tables.length,
-          tables,
-          createdAt: restData.created_at,
-        };
+            const result: RegisteredRestaurantResult = {
+              id: restData.id,
+              name: restData.name,
+              slug: restData.slug,
+              phone: restData.phone || '',
+              city: restData.city || 'نابلس',
+              currency: restData.currency || '₪',
+              subdomainUrl: `https://menus-ps.vercel.app/r/${restData.slug}`,
+              branchId,
+              branchName,
+              tablesCount: tables.length,
+              tables,
+              createdAt: restData.created_at,
+            };
 
-        // Cache in memory store
-        global.__menusRestaurantsStore?.set(cleanSlug, result);
-        return result;
+            // Cache for 10 minutes in appCache
+            appCache.set(cacheKey, result, 600, ['restaurants', `restaurant:${cleanSlug}`]);
+            global.__menusRestaurantsStore?.set(cleanSlug, result);
+            return result;
+          }
+        } catch (err) {
+          console.warn('Supabase getRestaurantBySlug error:', err);
+        }
       }
-    } catch (err) {
-      console.warn('Supabase getRestaurantBySlug error:', err);
+
+      // Fallback to memory store
+      const memoryRecord = global.__menusRestaurantsStore?.get(cleanSlug);
+      if (memoryRecord) {
+        appCache.set(cacheKey, memoryRecord, 300, ['restaurants', `restaurant:${cleanSlug}`]);
+        return memoryRecord;
+      }
+
+      return null;
+    } finally {
+      inFlightRestaurantRequests.delete(cleanSlug);
     }
-  }
+  })();
 
-  // Fallback to memory store
-  const memoryRecord = global.__menusRestaurantsStore?.get(cleanSlug);
-  if (memoryRecord) {
-    return memoryRecord;
-  }
-
-  return null;
+  inFlightRestaurantRequests.set(cleanSlug, fetchPromise);
+  return fetchPromise;
 }

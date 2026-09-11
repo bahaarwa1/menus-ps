@@ -1,6 +1,7 @@
 import { menuItems as demoMenuItems } from '@/data/demo-data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/client';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export interface ClientOrderItemInput {
   itemId: string;
@@ -53,19 +54,35 @@ export async function validateAndCalculateOrder(
     };
   }
 
-  // 1. Fetch authoritative catalog
-  let authoritativeItems: Array<{
+  // 1. Fetch authoritative catalog with item-level memory caching
+  type AuthoritativeItem = {
     id: string;
     name: string;
     price: number;
     isAvailable: boolean;
     extras?: Array<{ id: string; name: string; price: number }>;
-  }> = [];
+  };
 
-  if (isSupabaseConfigured()) {
+  const authoritativeItems: AuthoritativeItem[] = [];
+  const missingItemIds: string[] = [];
+
+  // Cost-optimization: Check LRU cache first to avoid repetitive Supabase hits on popular dishes
+  for (const item of rawItems) {
+    const cachedItem = appCache.get<AuthoritativeItem>(`item_price:${item.itemId}`);
+    if (cachedItem) {
+      if (!authoritativeItems.some((ai) => ai.id === cachedItem.id)) {
+        authoritativeItems.push(cachedItem);
+      }
+    } else {
+      if (!missingItemIds.includes(item.itemId)) {
+        missingItemIds.push(item.itemId);
+      }
+    }
+  }
+
+  if (missingItemIds.length > 0 && isSupabaseConfigured()) {
     try {
       const supabase = createClient();
-      const itemIds = rawItems.map((i) => i.itemId);
       const { data, error } = await supabase
         .from('menu_items')
         .select(`
@@ -79,10 +96,10 @@ export async function validateAndCalculateOrder(
             price
           )
         `)
-        .in('id', itemIds);
+        .in('id', missingItemIds);
 
       if (!error && data && data.length > 0) {
-        authoritativeItems = (data as any[]).map((d) => ({
+        const fetchedItems: AuthoritativeItem[] = (data as any[]).map((d) => ({
           id: d.id,
           name: d.name_ar,
           price: Number(d.price),
@@ -93,6 +110,11 @@ export async function validateAndCalculateOrder(
             price: Number(e.price),
           })),
         }));
+
+        for (const fItem of fetchedItems) {
+          appCache.set(`item_price:${fItem.id}`, fItem, 300, ['menu', 'pricing']);
+          authoritativeItems.push(fItem);
+        }
       }
     } catch (err) {
       console.warn('Database price lookup warning, using demo catalog:', err);
@@ -100,18 +122,22 @@ export async function validateAndCalculateOrder(
   }
 
   // Fallback to demoMenuItems if DB returned empty or unconfigured
-  if (authoritativeItems.length === 0) {
-    authoritativeItems = demoMenuItems.map((m) => ({
-      id: m.id,
-      name: m.name,
-      price: m.price,
-      isAvailable: true,
-      extras: m.extras?.map((e) => ({
-        id: e.id,
-        name: e.name,
-        price: e.price,
-      })),
-    }));
+  if (authoritativeItems.length < rawItems.length) {
+    for (const m of demoMenuItems) {
+      if (!authoritativeItems.some((ai) => ai.id === m.id)) {
+        authoritativeItems.push({
+          id: m.id,
+          name: m.name,
+          price: m.price,
+          isAvailable: true,
+          extras: m.extras?.map((e) => ({
+            id: e.id,
+            name: e.name,
+            price: e.price,
+          })),
+        });
+      }
+    }
   }
 
   // 2. Validate each item and calculate prices on server

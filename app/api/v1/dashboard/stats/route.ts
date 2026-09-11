@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { listActiveOrders } from '@/lib/db/repositories/order.repository';
 import { orders as fallbackOrders, tables as fallbackTables } from '@/data/demo-data';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,20 @@ export async function GET(request: NextRequest) {
     const registeredRest = global.__menusRestaurantsStore?.get(targetSlug);
     if (!targetBranchId && registeredRest?.branchId) {
       targetBranchId = registeredRest.branchId;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 1. O(1) MEMORY CACHE CHECK (Eliminates repeated polling queries to Supabase)
+    // ─────────────────────────────────────────────────────────────────────────
+    const cacheKey = `dashboard:stats:${targetSlug}:${targetBranchId || 'default'}`;
+    const cachedStats = appCache.get<any>(cacheKey);
+    if (cachedStats) {
+      return NextResponse.json(cachedStats, {
+        headers: {
+          'X-Cache': 'HIT',
+          'Cache-Control': 'private, max-age=15',
+        },
+      });
     }
 
     if (isSupabaseConfigured()) {
@@ -119,7 +134,7 @@ export async function GET(request: NextRequest) {
             };
           });
 
-          return NextResponse.json({
+          const responseData = {
             success: true,
             restaurantSlug: targetSlug,
             stats: {
@@ -130,6 +145,16 @@ export async function GET(request: NextRequest) {
               avgTicket,
             },
             recentOrders,
+          };
+
+          // Cache for 15s with tags
+          appCache.set(cacheKey, responseData, 15, ['stats', `stats:${targetBranchId}`]);
+
+          return NextResponse.json(responseData, {
+            headers: {
+              'X-Cache': 'MISS',
+              'Cache-Control': 'private, max-age=15',
+            },
           });
         }
       } catch (dbErr) {
@@ -183,7 +208,7 @@ export async function GET(request: NextRequest) {
       })) : []),
     ];
 
-    return NextResponse.json({
+    const fallbackResponse = {
       success: true,
       restaurantSlug: targetSlug,
       stats: {
@@ -194,6 +219,15 @@ export async function GET(request: NextRequest) {
         avgTicket,
       },
       recentOrders,
+    };
+
+    appCache.set(cacheKey, fallbackResponse, 15, ['stats', `stats:${targetBranchId}`]);
+
+    return NextResponse.json(fallbackResponse, {
+      headers: {
+        'X-Cache': 'MISS',
+        'Cache-Control': 'private, max-age=15',
+      },
     });
   } catch (error) {
     console.error('dashboard/stats error:', error);

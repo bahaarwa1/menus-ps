@@ -4,6 +4,7 @@ import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
 import { generateSecureToken } from '@/lib/security/crypto';
 import { rateLimiter } from '@/lib/security/rate-limiter';
+import { appCache } from '@/lib/cache/lru-cache';
 
 function generateQrToken(branchId: string, tableNumber: number): string {
   // Cryptographically secure token (16 random hex chars)
@@ -56,6 +57,8 @@ export async function POST(request: NextRequest) {
     if (updateErr) {
       return NextResponse.json({ success: false, error: 'فشل تحديث رمز QR' }, { status: 500 });
     }
+
+    appCache.invalidateTag('tables');
 
     return NextResponse.json({ success: true, qrToken: newToken, tableId });
   } catch (error) {

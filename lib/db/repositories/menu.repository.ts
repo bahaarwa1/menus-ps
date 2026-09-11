@@ -21,103 +21,141 @@ export interface PublicMenuItem {
   extras?: { id: string; name: string; price: number }[];
 }
 
+// In-flight promise map for request coalescing (prevents dog-piling on DB during cache miss)
+const inFlightMenuRequests = new Map<string, Promise<PublicMenuCategory[]>>();
+
 /**
- * Fetches active menu categories and items for a restaurant.
- * Executes a joined query to avoid N+1 query overhead.
- * Automatically falls back to demo-data if Supabase is unconfigured or unreachable.
+ * Fetches active menu categories and items for a restaurant with multi-tier caching.
+ * 
+ * COST OPTIMIZATION:
+ * 1. O(1) in-memory cache check with 300s (5-minute) TTL.
+ * 2. Request coalescing: 100 simultaneous requests collapse into 1 DB query.
+ * 3. Tag-based instant invalidation when items are updated.
+ * 4. Zero DB hits on cache hits (<1ms latency).
  */
 export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'): Promise<PublicMenuCategory[]> {
-  if (!isSupabaseConfigured()) {
-    // Return structured demo data
-    return buildFallbackMenu();
+  const cacheKey = `menu:${restaurantSlug}`;
+
+  // 1. O(1) Memory Cache Check
+  const cached = appCache.get<PublicMenuCategory[]>(cacheKey);
+  if (cached) {
+    return cached;
   }
 
-  try {
-    const supabase = createClient();
+  // 2. Request Coalescing: if another request is already fetching this slug, share the promise
+  if (inFlightMenuRequests.has(cacheKey)) {
+    return inFlightMenuRequests.get(cacheKey)!;
+  }
 
-    // 1. Single joined query: fetch restaurant, categories, items, and extras in ONE roundtrip
-    const { data: rawRestaurant, error: restError } = await (supabase as any)
-      .from('restaurants')
-      .select(`
-        id,
-        menu_categories (
+  const fetchPromise = (async () => {
+    try {
+      if (!isSupabaseConfigured()) {
+        const fallback = buildFallbackMenu();
+        appCache.set(cacheKey, fallback, 300, ['menu', `menu:${restaurantSlug}`]);
+        return fallback;
+      }
+
+      const supabase = createClient();
+
+      // Single joined query: fetch restaurant, categories, items, and extras in ONE roundtrip
+      const { data: rawRestaurant, error: restError } = await (supabase as any)
+        .from('restaurants')
+        .select(`
           id,
-          name_ar,
-          icon,
-          sort_order,
-          is_active,
-          menu_items (
+          menu_categories (
             id,
             name_ar,
-            description_ar,
-            price,
-            image_url,
-            is_available,
-            is_popular,
-            is_spicy,
+            icon,
             sort_order,
-            item_extras (
+            is_active,
+            menu_items (
               id,
               name_ar,
-              price
+              description_ar,
+              price,
+              image_url,
+              is_available,
+              is_popular,
+              is_spicy,
+              sort_order,
+              item_extras (
+                id,
+                name_ar,
+                price
+              )
             )
           )
-        )
-      `)
-      .eq('slug', restaurantSlug)
-      .maybeSingle();
+        `)
+        .eq('slug', restaurantSlug)
+        .maybeSingle();
 
-    if (restError || !rawRestaurant) {
-      console.warn('Supabase restaurant fetch failed, using fallback:', restError?.message);
-      return buildFallbackMenu();
-    }
+      if (restError || !rawRestaurant) {
+        console.warn('Supabase restaurant fetch failed, using fallback:', restError?.message);
+        const fallback = buildFallbackMenu();
+        appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
+        return fallback;
+      }
 
-    const rawCats = (rawRestaurant.menu_categories || []) as any[];
-    const categoriesData = rawCats
-      .filter((c: any) => c.is_active !== false)
-      .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+      const rawCats = (rawRestaurant.menu_categories || []) as any[];
+      const categoriesData = rawCats
+        .filter((c: any) => c.is_active !== false)
+        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
-    if (categoriesData.length === 0) {
-      return buildFallbackMenu();
-    }
+      if (categoriesData.length === 0) {
+        const fallback = buildFallbackMenu();
+        appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
+        return fallback;
+      }
 
-    return ((categoriesData || []) as any[]).map((cat) => ({
-      id: cat.id,
-      name: cat.name_ar,
-      icon: cat.icon,
-      items: ((cat.menu_items as unknown as Array<{
-        id: string;
-        name_ar: string;
-        description_ar: string | null;
-        price: number;
-        image_url: string | null;
-        is_available: boolean;
-        is_popular: boolean;
-        is_spicy: boolean;
-        sort_order: number;
-        item_extras?: Array<{ id: string; name_ar: string; price: number }>;
-      }>) || [])
-        .filter((item) => item.is_available)
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((item) => ({
-          id: item.id,
-          name: item.name_ar,
-          description: item.description_ar || '',
-          price: Number(item.price),
-          image: item.image_url || undefined,
-          popular: item.is_popular,
-          spicy: item.is_spicy,
-          extras: (item.item_extras || []).map((e) => ({
-            id: e.id,
-            name: e.name_ar,
-            price: Number(e.price),
+      const result: PublicMenuCategory[] = ((categoriesData || []) as any[]).map((cat) => ({
+        id: cat.id,
+        name: cat.name_ar,
+        icon: cat.icon,
+        items: ((cat.menu_items as unknown as Array<{
+          id: string;
+          name_ar: string;
+          description_ar: string | null;
+          price: number;
+          image_url: string | null;
+          is_available: boolean;
+          is_popular: boolean;
+          is_spicy: boolean;
+          sort_order: number;
+          item_extras?: Array<{ id: string; name_ar: string; price: number }>;
+        }>) || [])
+          .filter((item) => item.is_available)
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((item) => ({
+            id: item.id,
+            name: item.name_ar,
+            description: item.description_ar || '',
+            price: Number(item.price),
+            image: item.image_url || undefined,
+            popular: item.is_popular,
+            spicy: item.is_spicy,
+            extras: (item.item_extras || []).map((e) => ({
+              id: e.id,
+              name: e.name_ar,
+              price: Number(e.price),
+            })),
           })),
-        })),
-    }));
-  } catch (error) {
-    console.error('Error fetching menu from Supabase:', error);
-    return buildFallbackMenu();
-  }
+      }));
+
+      // Cache result for 300 seconds (5 minutes)
+      appCache.set(cacheKey, result, 300, ['menu', `menu:${restaurantSlug}`]);
+      return result;
+    } catch (error) {
+      console.error('Error fetching menu from Supabase:', error);
+      const fallback = buildFallbackMenu();
+      appCache.set(cacheKey, fallback, 60, ['menu', `menu:${restaurantSlug}`]);
+      return fallback;
+    } finally {
+      inFlightMenuRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightMenuRequests.set(cacheKey, fetchPromise);
+  return fetchPromise;
 }
 
 function buildFallbackMenu(): PublicMenuCategory[] {
@@ -144,7 +182,7 @@ function buildFallbackMenu(): PublicMenuCategory[] {
 }
 
 /**
- * Updates a menu item and invalidates the menu LRU cache.
+ * Updates a menu item and immediately invalidates the menu LRU cache.
  */
 export async function updateMenuItem(
   itemId: string,
@@ -174,7 +212,7 @@ export async function updateMenuItem(
     if (updates.is_available !== undefined) (found as any).isAvailable = updates.is_available;
   }
 
-  // Invalidate menu cache
+  // Invalidate all menu caches across all slugs
   appCache.invalidateTag('menu');
   return true;
 }

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { OrderStatus, Json } from '@/types/database.types';
 import { broadcastOrderEvent } from '@/lib/realtime/order-events';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export interface CreateOrderDTO {
   branchId: string;
@@ -180,6 +181,10 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
     createdAt: result.createdAt,
   });
 
+  // Invalidate cached stats and order lists for instant UI sync with 0 DB overhead
+  appCache.invalidateTag('stats');
+  appCache.invalidateTag('orders');
+
   return result;
 }
 
@@ -217,6 +222,10 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     items: existing?.items,
     customerNote: existing?.customerNote,
   });
+
+  // Invalidate cached stats and order lists
+  appCache.invalidateTag('stats');
+  appCache.invalidateTag('orders');
 
   return true;
 }

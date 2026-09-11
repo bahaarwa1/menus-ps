@@ -6,6 +6,7 @@ import { tables as fallbackTables } from '@/data/demo-data';
 
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { appCache } from '@/lib/cache/lru-cache';
 
 export async function GET(request: NextRequest) {
   const branchIdParam = request.nextUrl.searchParams.get('branchId');
@@ -20,6 +21,18 @@ export async function GET(request: NextRequest) {
     } catch {}
   }
   if (!slug) slug = 'burger-house-nablus';
+
+  // Cost-optimization: Check memory LRU cache before hitting database
+  const cacheKey = `tables:list:${slug}:${branchIdParam || 'default'}`;
+  const cachedResponse = appCache.get<any>(cacheKey);
+  if (cachedResponse) {
+    return NextResponse.json(cachedResponse, {
+      headers: {
+        'X-Cache': 'HIT',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
 
@@ -70,7 +83,7 @@ export async function GET(request: NextRequest) {
           .order('table_number', { ascending: true });
 
         if (!error && data) {
-          return NextResponse.json({
+          const payload = {
             success: true,
             branchId: targetBranchId,
             restaurantSlug: targetRestaurantSlug,
@@ -82,6 +95,15 @@ export async function GET(request: NextRequest) {
               qrToken: t.qr_token,
               qrUrl: `${appUrl}/r/${targetRestaurantSlug}?table=${t.table_number}&token=${t.qr_token}`,
             })),
+          };
+
+          appCache.set(cacheKey, payload, 300, ['tables', `tables:${targetRestaurantSlug}`]);
+
+          return NextResponse.json(payload, {
+            headers: {
+              'X-Cache': 'MISS',
+              'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+            },
           });
         }
       }
@@ -170,6 +192,9 @@ export async function POST(request: NextRequest) {
     if (error || !newTable) {
       return NextResponse.json({ success: false, error: error?.message || 'Failed to create table' }, { status: 500 });
     }
+
+    // Invalidate cached table lists
+    appCache.invalidateTag('tables');
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
     const created = newTable as any;
