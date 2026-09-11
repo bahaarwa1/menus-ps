@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck, ChefHat, AlertCircle, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft, ShieldCheck, ChefHat, AlertCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
