@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { 
   TrendingUp, ShoppingBag, CreditCard,
   Copy, Check, ExternalLink,
-  QrCode, ChefHat, ArrowUpRight,
-  Plus, Users, Key, Sparkles, Utensils, ShieldCheck,
-  Clock, ArrowRight
+  QrCode, ArrowUpRight,
+  Users, Key, Sparkles, Utensils, ShieldCheck,
 } from 'lucide-react';
 
 export default function ProductionDashboardOverview() {
@@ -280,22 +279,6 @@ export default function ProductionDashboardOverview() {
             <ArrowUpRight size={16} className="text-slate-300 group-hover:text-purple-500 transition-colors" />
           </Link>
 
-          <Link
-            href={createdSlug ? `/staff/${createdSlug}` : '/staff'}
-            target="_blank"
-            className="group p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-amber-500/40 hover:shadow-md transition-all flex items-center justify-between sm:col-span-2 lg:col-span-1"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-                <ChefHat size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">شاشة المطبخ KDS</p>
-                <p className="text-[11px] text-slate-400">للشاشات والتابلت</p>
-              </div>
-            </div>
-            <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
-          </Link>
         </div>
       </div>
 
@@ -394,14 +377,6 @@ export default function ProductionDashboardOverview() {
                 <QrCode size={14} />
                 <span>عرض وطباعة أكواد الطاولات</span>
               </Link>
-              <a
-                href={directMenuUrl}
-                target="_blank"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-xs transition-all cursor-pointer"
-              >
-                <span>تجربة فتح المنيو</span>
-                <ExternalLink size={13} />
-              </a>
             </div>
           </div>
         ) : (

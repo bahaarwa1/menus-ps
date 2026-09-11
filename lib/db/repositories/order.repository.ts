@@ -105,11 +105,30 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
   } else {
     try {
       const supabase = createAdminClient();
+
+      // Resolve table UUID: look up by table_number + branch_id
+      let resolvedTableId = dto.tableId;
+      if (tableNum > 0 && dto.branchId) {
+        const { data: tableRow } = await (supabase.from('tables') as any)
+          .select('id')
+          .eq('table_number', tableNum)
+          .eq('branch_id', dto.branchId)
+          .maybeSingle();
+        if (tableRow?.id) {
+          resolvedTableId = tableRow.id;
+        }
+      }
+
+      // Validate that we have a real UUID for table_id (required NOT NULL)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!resolvedTableId || !uuidRegex.test(resolvedTableId)) {
+        throw new Error(`لم يتم العثور على الطاولة رقم ${tableNum} في هذا الفرع. تأكد من إنشاء الطاولات أولاً من لوحة التحكم.`);
+      }
+
       const { data: rawOrder, error: orderError } = await (supabase.from('orders') as any)
         .insert({
           branch_id: dto.branchId,
-          table_id: dto.tableId,
-          table_number: tableNum, // Store as integer for direct querying
+          table_id: resolvedTableId,
           order_number: orderNumber,
           status: 'جديد',
           total_amount: calculatedTotal,
