@@ -20,14 +20,14 @@ html {
 
 body {
   font-family: 'IBM Plex Sans Arabic', sans-serif;
-  color: #0f172a;
+  color: #334155;
   background-color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #020617;
+  color: #0f172a;
   letter-spacing: -0.01em;
 }
 

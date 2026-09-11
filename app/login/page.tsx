@@ -128,8 +128,8 @@ function LoginForm() {
               <img src="/logo.png" alt="MENUS Logo" className="w-full h-full object-cover" />
             </div>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 mb-1">تسجيل الدخول</h1>
-          <p className="text-xs font-bold text-slate-700">نظام إدارة ومطابخ المطاعم الذكية</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">تسجيل الدخول</h1>
+          <p className="text-xs font-normal text-slate-500">نظام إدارة ومطابخ المطاعم الذكية</p>
         </div>
 
         {/* Role Selector Tabs */}
@@ -137,10 +137,10 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => { setActiveTab('admin'); setErrorMsg(''); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'admin'
-                ? 'bg-white text-slate-950 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <ShieldCheck size={16} className={activeTab === 'admin' ? 'text-orange-500' : ''} />
@@ -149,10 +149,10 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => { setActiveTab('staff'); setErrorMsg(''); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'staff'
-                ? 'bg-white text-slate-950 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <ChefHat size={16} className={activeTab === 'staff' ? 'text-orange-500' : ''} />
@@ -167,7 +167,7 @@ function LoginForm() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-4 bg-rose-50 border border-rose-300 rounded-xl p-3 flex items-center gap-2 text-rose-900 text-xs font-black"
+              className="mb-4 bg-rose-50 border border-rose-300 rounded-xl p-3 flex items-center gap-2 text-rose-900 text-xs font-bold"
             >
               <AlertCircle size={16} className="shrink-0 text-rose-600" />
               <span>{errorMsg}</span>
@@ -179,16 +179,16 @@ function LoginForm() {
         {activeTab === 'admin' && (
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-black text-slate-900 mr-2">البريد الإلكتروني</label>
+              <label className="text-xs font-semibold text-slate-700 mr-2">البريد الإلكتروني</label>
               <div className="relative">
-                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="admin@menus.ps"
-                  className="w-full pr-11 pl-4 py-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-orange-500 transition-all text-slate-950 placeholder-slate-400 text-left shadow-2xs"
+                  className="w-full pr-11 pl-4 py-3 bg-white border border-slate-200/80 rounded-2xl text-xs font-medium focus:outline-none focus:border-orange-500 transition-all text-slate-800 placeholder-slate-400 text-left shadow-2xs"
                   dir="ltr"
                 />
               </div>
@@ -196,18 +196,18 @@ function LoginForm() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between mr-2 ml-2">
-                <label className="text-xs font-black text-slate-900">كلمة المرور</label>
-                <Link href="#" className="text-[11px] font-black text-orange-600 hover:text-orange-700">نسيت الرمز؟</Link>
+                <label className="text-xs font-semibold text-slate-700">كلمة المرور</label>
+                <Link href="#" className="text-[11px] font-bold text-orange-600 hover:text-orange-700">نسيت الرمز؟</Link>
               </div>
               <div className="relative">
-                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full pr-11 pl-11 py-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-orange-500 transition-all text-slate-950 placeholder-slate-400 text-left tracking-widest shadow-2xs"
+                  className="w-full pr-11 pl-11 py-3 bg-white border border-slate-200/80 rounded-2xl text-xs font-medium focus:outline-none focus:border-orange-500 transition-all text-slate-800 placeholder-slate-400 text-left tracking-widest shadow-2xs"
                   dir="ltr"
                 />
                 <button 
@@ -243,17 +243,17 @@ function LoginForm() {
         {activeTab === 'staff' && (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-xs text-slate-700 font-bold mb-3">أدخل رمز الدخول السريع (الافتراضي: 1234)</p>
+              <p className="text-xs text-slate-500 font-medium mb-3">أدخل رمز الدخول السريع (الافتراضي: 1234)</p>
               
               {/* PIN Dots Display */}
               <div className="flex justify-center gap-3 my-2" dir="ltr">
                 {[0, 1, 2, 3].map((index) => (
                   <div
                     key={index}
-                    className={`w-10 h-12 rounded-xl border-2 flex items-center justify-center text-lg font-black transition-all ${
+                    className={`w-10 h-12 rounded-xl border flex items-center justify-center text-lg font-bold transition-all ${
                       pin.length > index
                         ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-xs'
-                        : 'border-slate-300 bg-white text-slate-300'
+                        : 'border-slate-200 bg-white text-slate-300'
                     }`}
                   >
                     {pin.length > index ? '●' : '○'}
@@ -270,7 +270,7 @@ function LoginForm() {
                   type="button"
                   onClick={() => handleKeypadClick(num)}
                   disabled={isLoading}
-                  className="h-12 bg-white hover:bg-orange-50 hover:border-orange-400 border-2 border-slate-200 rounded-xl text-base font-black text-slate-950 transition-all active:scale-95 shadow-2xs"
+                  className="h-12 bg-white hover:bg-orange-50 hover:border-orange-300 border border-slate-200 rounded-xl text-base font-bold text-slate-800 transition-all active:scale-95 shadow-2xs"
                 >
                   {num}
                 </button>
@@ -278,7 +278,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => handleKeypadClick('clear')}
-                className="h-12 bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 rounded-xl text-xs font-black text-slate-700 transition-all"
+                className="h-12 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 transition-all"
               >
                 مسح
               </button>
@@ -286,14 +286,14 @@ function LoginForm() {
                 type="button"
                 onClick={() => handleKeypadClick('0')}
                 disabled={isLoading}
-                className="h-12 bg-white hover:bg-orange-50 hover:border-orange-400 border-2 border-slate-200 rounded-xl text-base font-black text-slate-950 transition-all active:scale-95 shadow-2xs"
+                className="h-12 bg-white hover:bg-orange-50 hover:border-orange-300 border border-slate-200 rounded-xl text-base font-bold text-slate-800 transition-all active:scale-95 shadow-2xs"
               >
                 0
               </button>
               <button
                 type="button"
                 onClick={() => handleKeypadClick('back')}
-                className="h-12 bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 rounded-xl text-xs font-black text-slate-700 transition-all"
+                className="h-12 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 transition-all"
               >
                 ←
               </button>

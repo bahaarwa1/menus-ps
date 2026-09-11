@@ -68,8 +68,8 @@ export default function TablesManagementPage() {
               <Armchair size={22} />
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-950">إدارة الطاولات وأكواد QR</h1>
-              <p className="text-xs sm:text-sm text-slate-700 font-bold">متابعة إشغال الصالة، طباعة كود QR لكل طاولة، وإدارة الجلسات</p>
+              <h1 className="text-xl font-bold text-slate-900">إدارة الطاولات وأكواد QR</h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-normal">متابعة إشغال الصالة، طباعة كود QR لكل طاولة، وإدارة الجلسات</p>
             </div>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function TablesManagementPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedTableForQr(tablesList[0])}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-600/20 transition-all"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-600/20 transition-all"
           >
             <QrCode size={15} />
             <span>طباعة أكواد QR لجميع الطاولات</span>
@@ -87,48 +87,48 @@ export default function TablesManagementPage() {
 
       {/* KPI Stats Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 shadow-xs">
-          <p className="text-xs sm:text-sm text-slate-700 font-black">إجمالي الطاولات</p>
-          <p className="text-xl sm:text-2xl font-black text-slate-950 mt-1">{tablesList.length} طاولة</p>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">إجمالي الطاولات</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">{tablesList.length} طاولة</p>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 shadow-xs">
-          <p className="text-xs sm:text-sm text-orange-700 font-black">مشغولة حالياً</p>
-          <p className="text-xl sm:text-2xl font-black text-orange-600 mt-1">{occupiedCount}</p>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-xs sm:text-sm text-orange-600 font-medium">مشغولة حالياً</p>
+          <p className="text-xl sm:text-2xl font-bold text-orange-600 mt-1">{occupiedCount}</p>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 shadow-xs">
-          <p className="text-xs sm:text-sm text-emerald-800 font-black">شاغرة ومتاحة</p>
-          <p className="text-xl sm:text-2xl font-black text-emerald-600 mt-1">{freeCount}</p>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-xs sm:text-sm text-emerald-700 font-medium">شاغرة ومتاحة</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-600 mt-1">{freeCount}</p>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 shadow-xs">
-          <p className="text-xs sm:text-sm text-slate-700 font-black">نسبة الإشغال</p>
-          <p className="text-xl sm:text-2xl font-black text-slate-950 mt-1">
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">نسبة الإشغال</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
             {Math.round((occupiedCount / tablesList.length) * 100)}%
           </p>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white border-2 border-slate-200 rounded-2xl p-2.5 shadow-xs flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-2 shadow-xs flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs">
         <button
           onClick={() => setFilterStatus('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
-            filterStatus === 'all' ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+          className={`px-3 py-1.5 rounded-xl font-medium transition-all shrink-0 ${
+            filterStatus === 'all' ? 'bg-slate-900 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
           }`}
         >
           جميع الطاولات ({tablesList.length})
         </button>
         <button
           onClick={() => setFilterStatus('مشغولة')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            filterStatus === 'مشغولة' ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+          className={`px-3 py-1.5 rounded-xl font-medium transition-all shrink-0 ${
+            filterStatus === 'مشغولة' ? 'bg-orange-500 text-white font-bold' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
           }`}
         >
           مشغولة ({occupiedCount})
         </button>
         <button
           onClick={() => setFilterStatus('فارغة')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            filterStatus === 'فارغة' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+          className={`px-3 py-1.5 rounded-xl font-medium transition-all shrink-0 ${
+            filterStatus === 'فارغة' ? 'bg-emerald-600 text-white font-bold' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
           }`}
         >
           فارغة ({freeCount})

@@ -130,74 +130,64 @@ export default function OrdersManagementPage() {
   const renderInspectorContent = (order: any, isMobileModal: boolean = false) => {
     if (!order) {
       return (
-        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 text-center text-slate-700 font-bold text-xs">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-500 text-xs">
           اختر طلباً من القائمة لعرض تفاصيله
         </div>
       );
     }
 
     return (
-      <div className={`space-y-3 ${isMobileModal ? '' : 'bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-4 max-h-[calc(100vh-170px)] overflow-y-auto'}`}>
+      <div className={`space-y-3 ${isMobileModal ? '' : 'bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 max-h-[calc(100vh-170px)] overflow-y-auto'}`}>
         {/* Header */}
-        <div className="border-b-2 border-slate-100 pb-3 flex items-center justify-between">
+        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-lg text-slate-950">{order.id}</h3>
+              <h3 className="font-bold text-lg text-slate-900">{order.id}</h3>
               {getStatusBadge(order.status)}
             </div>
-            <p className="text-xs text-slate-700 font-bold mt-1">
-              طلب طاولة <span className="text-orange-600 font-black">{order.table}</span> — {order.time}
+            <p className="text-xs text-slate-500 mt-1">
+              طلب طاولة <span className="text-orange-600 font-bold">{order.table}</span> — {order.time}
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => handlePrintReceipt(order)}
-              className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-xs transition-all"
-              title="طباعة بون الطلب"
-            >
-              <Printer size={15} />
-              <span>طباعة البون</span>
-            </button>
-            {isMobileModal && (
-              <button
-                onClick={() => setIsMobileDetailOpen(false)}
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-                title="إغلاق"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => handlePrintReceipt(order)}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
+            title="طباعة بون المطبخ"
+          >
+            <Printer size={14} />
+            <span>طباعة</span>
+          </button>
         </div>
 
         {/* Items List */}
-        <div className={`space-y-2 ${isMobileModal ? 'max-h-60' : 'max-h-56'} overflow-y-auto pr-0.5`}>
-          <p className="text-xs font-black text-slate-900">محتويات الطلب ({order.items.length} أصناف):</p>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          <p className="text-xs font-bold text-slate-700">محتويات الطلب ({order.items.length} أصناف)</p>
           {order.items.map((item: any, iIdx: number) => {
             const img = mockImages[item.name];
             return (
-              <div key={iIdx} className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between gap-2 border border-slate-200">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+              <div key={iIdx} className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-6 h-6 rounded-lg bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
                     {item.quantity}×
                   </span>
                   {img && (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200/70">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <div>
-                    <p className="font-black text-xs sm:text-sm text-slate-950">{item.name}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs sm:text-sm truncate text-slate-800">{item.name}</p>
                     {item.customization && (
-                      <span className="text-[11px] text-orange-600 font-bold block">• {item.customization}</span>
+                      <span className="text-[11px] text-orange-600 font-medium block">• {item.customization}</span>
                     )}
                     {item.extras && item.extras.length > 0 && (
-                      <span className="text-[11px] text-slate-700 font-bold block">• + {item.extras.join('، ')}</span>
+                      <span className="text-[11px] text-slate-500 font-normal block">• + {item.extras.join('، ')}</span>
                     )}
                   </div>
                 </div>
-                <span className="font-black text-xs sm:text-sm text-slate-950 shrink-0">{item.price * item.quantity} ₪</span>
+                <span className="font-bold text-xs sm:text-sm text-slate-800 shrink-0">{item.price * item.quantity} ₪</span>
               </div>
             );
           })}
@@ -205,25 +195,25 @@ export default function OrdersManagementPage() {
 
         {/* Customer Notes */}
         {order.notes && (
-          <div className="bg-amber-100 border border-amber-300 rounded-xl p-3 text-xs font-black text-amber-950 shadow-2xs">
-            <span className="block mb-1">⚠️ ملاحظات الزبون الخاصة:</span>
-            <p className="font-bold">{order.notes}</p>
+          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 shadow-2xs">
+            <span className="block mb-1 font-bold text-amber-800">⚠️ ملاحظات الزبون الخاصة:</span>
+            <p className="leading-relaxed text-slate-700">{order.notes}</p>
           </div>
         )}
 
         {/* Bill Details */}
-        <div className="bg-slate-100/80 p-3 rounded-xl space-y-1.5 text-xs">
-          <div className="flex justify-between text-slate-700 font-bold">
+        <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl space-y-1.5 text-xs">
+          <div className="flex justify-between text-slate-500">
             <span>المجموع الفرعي:</span>
-            <span className="font-black text-slate-950">{order.total} ₪</span>
+            <span className="font-semibold text-slate-700">{order.total} ₪</span>
           </div>
-          <div className="flex justify-between text-slate-700 font-bold">
+          <div className="flex justify-between text-slate-500">
             <span>الضريبة والخدمة:</span>
-            <span className="font-black text-emerald-700">مشمولة (0 ₪)</span>
+            <span className="font-semibold text-emerald-600">مشمولة (0 ₪)</span>
           </div>
-          <div className="flex justify-between text-sm sm:text-base font-black text-slate-950 pt-2 border-t border-slate-200">
+          <div className="flex justify-between text-sm font-bold text-slate-800 pt-2 border-t border-slate-200/70">
             <span>الإجمالي المطلوب:</span>
-            <span className="text-orange-600 font-black">{order.total} ₪</span>
+            <span className="text-orange-600 font-extrabold text-base">{order.total} ₪</span>
           </div>
         </div>
 
@@ -232,7 +222,7 @@ export default function OrdersManagementPage() {
           {order.status === 'جديد' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
-              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
             >
               <Flame size={16} />
               <span>قبول الطلب وبدء التحضير فوراً 🔥</span>
@@ -242,7 +232,7 @@ export default function OrdersManagementPage() {
           {order.status === 'قيد التحضير' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'جاهز')}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
             >
               <CheckCircle2 size={16} />
               <span>الطلب جاهز للتسليم (طاولة {order.table}) ✅</span>
@@ -252,7 +242,7 @@ export default function OrdersManagementPage() {
           {order.status === 'جاهز' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
             >
               <Check size={16} />
               <span>تم التسليم بنجاح وإغلاق الطلب 🚀</span>
@@ -260,7 +250,7 @@ export default function OrdersManagementPage() {
           )}
 
           {order.status === 'تم التسليم' && (
-            <div className="text-center py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs sm:text-sm font-black">
+            <div className="text-center py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs sm:text-sm font-bold">
               ✓ تم تسليم هذا الطلب بنجاح
             </div>
           )}
@@ -270,24 +260,24 @@ export default function OrdersManagementPage() {
   };
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto font-sans text-slate-900 text-xs sm:text-sm" dir={direction}>
+    <div className="space-y-3 max-w-7xl mx-auto font-sans text-slate-800 text-xs sm:text-sm" dir={direction}>
       
       {/* Header Bar */}
-      <div className="bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/80 rounded-2xl px-4 py-3 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center font-black shadow-xs">
+          <div className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center font-bold shadow-xs">
             <ClipboardList size={20} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-950 leading-tight">إدارة الطلبات الحية</h1>
-            <p className="text-xs text-slate-700 font-bold">متابعة وتحديث طلبات الطاولات لحظة بلحظة</p>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">إدارة الطلبات الحية</h1>
+            <p className="text-xs text-slate-500 font-normal">متابعة وتحديث طلبات الطاولات لحظة بلحظة</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={addNewSimulatedOrder}
-            className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
+            className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
           >
             <PlusCircle size={14} />
             <span>+ محاكاة طلب QR جديد</span>
@@ -295,7 +285,7 @@ export default function OrdersManagementPage() {
 
           <button
             onClick={resetOrders}
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
+            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors"
             title="إعادة تعيين البيانات"
           >
             <RotateCcw size={15} />
@@ -304,15 +294,15 @@ export default function OrdersManagementPage() {
       </div>
 
       {/* Quick Summary Strip & Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-white px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
         {/* Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 hide-scrollbar text-xs font-black">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 hide-scrollbar text-xs font-medium">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               statusFilter === 'all'
-                ? 'bg-slate-950 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-slate-900 text-white shadow-xs font-bold'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
             }`}
           >
             الكل ({ordersList.length})
@@ -322,8 +312,8 @@ export default function OrdersManagementPage() {
             onClick={() => setStatusFilter('جديد')}
             className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'جديد'
-                ? 'bg-rose-500 text-white shadow-xs'
-                : 'bg-rose-100 text-rose-900 border border-rose-200 hover:bg-rose-200'
+                ? 'bg-rose-500 text-white shadow-xs font-bold'
+                : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
             }`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
@@ -334,8 +324,8 @@ export default function OrdersManagementPage() {
             onClick={() => setStatusFilter('قيد التحضير')}
             className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'قيد التحضير'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-amber-100 text-amber-950 border border-amber-200 hover:bg-amber-200'
+                ? 'bg-amber-500 text-white shadow-xs font-bold'
+                : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
             }`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -346,8 +336,8 @@ export default function OrdersManagementPage() {
             onClick={() => setStatusFilter('جاهز')}
             className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
               statusFilter === 'جاهز'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-emerald-100 text-emerald-900 border border-emerald-200 hover:bg-emerald-200'
+                ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
             }`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -358,8 +348,8 @@ export default function OrdersManagementPage() {
             onClick={() => setStatusFilter('تم التسليم')}
             className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
               statusFilter === 'تم التسليم'
-                ? 'bg-slate-800 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-slate-900 text-white shadow-xs font-bold'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
             }`}
           >
             مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
@@ -374,7 +364,7 @@ export default function OrdersManagementPage() {
             placeholder="بحث برقم الطلب أو الطاولة..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pr-8 pl-3 py-1.5 bg-slate-50 border border-slate-300 rounded-full text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-950 placeholder:text-slate-400"
+            className="w-full pr-8 pl-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs font-normal focus:outline-none focus:bg-white focus:border-orange-500 text-slate-800 placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -385,10 +375,10 @@ export default function OrdersManagementPage() {
         {/* Orders Cards Grid (2 COLUMNS PER ROW) */}
         <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
           {filteredOrders.length === 0 ? (
-            <div className="col-span-full bg-white border-2 border-slate-200 rounded-2xl p-10 text-center text-slate-600 font-bold">
+            <div className="col-span-full bg-white border border-slate-200/80 rounded-2xl p-10 text-center text-slate-500">
               <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
-              <p className="text-sm font-black text-slate-900">لا توجد طلبات مطابقة</p>
-              <p className="text-xs text-slate-600 mt-1 font-bold">جرّب تغيير حالة الفلتر أو محاكاة طلب جديد</p>
+              <p className="text-sm font-bold text-slate-800">لا توجد طلبات مطابقة</p>
+              <p className="text-xs text-slate-400 mt-1">جرّب تغيير حالة الفلتر أو محاكاة طلب جديد</p>
             </div>
           ) : (
             filteredOrders.map((order) => {
@@ -401,22 +391,22 @@ export default function OrdersManagementPage() {
                     setSelectedOrderId(order.id);
                     setIsMobileDetailOpen(true);
                   }}
-                  className={`bg-white rounded-2xl p-3 border-2 transition-all cursor-pointer relative shadow-2xs hover:shadow-md flex flex-col justify-between ${
+                  className={`bg-white rounded-2xl p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
                     isSelected
                       ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20'
-                      : 'border-slate-200 hover:border-orange-300'
+                      : 'border-slate-200/80 hover:border-orange-300'
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-slate-950 text-sm">{order.id}</span>
-                        <span className="bg-slate-950 text-amber-300 font-black text-[11px] px-2 py-0.5 rounded-md">
+                        <span className="font-bold text-slate-900 text-sm">{order.id}</span>
+                        <span className="bg-slate-900 text-amber-300 font-semibold text-[11px] px-2 py-0.5 rounded-md">
                           طاولة {order.table}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-600 flex items-center gap-1 font-bold">
-                        <Clock size={12} className="text-slate-500" />
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Clock size={12} className="text-slate-400" />
                         {order.time}
                       </span>
                     </div>
@@ -426,15 +416,15 @@ export default function OrdersManagementPage() {
                     </div>
 
                     {/* Items preview */}
-                    <p className="text-xs text-slate-800 line-clamp-2 mb-2 font-bold leading-relaxed">
+                    <p className="text-xs text-slate-600 line-clamp-2 mb-2 leading-relaxed">
                       {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
                     </p>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <span className="font-black text-orange-600 text-sm sm:text-base">{order.total} ₪</span>
-                    <div className="flex items-center gap-0.5 text-xs text-slate-600 font-black">
-                      <span className="text-orange-600">معاينة</span>
+                    <span className="font-bold text-orange-600 text-sm sm:text-base">{order.total} ₪</span>
+                    <div className="flex items-center gap-0.5 text-xs text-slate-400">
+                      <span className="text-orange-600 font-semibold">معاينة</span>
                       <ChevronRight size={14} className="rtl:rotate-180 text-orange-600" />
                     </div>
                   </div>

@@ -82,20 +82,20 @@ export default function DemoHubPage() {
   ];
 
   return (
-    <div className="space-y-5 max-w-7xl mx-auto pb-10 font-sans text-slate-900" dir={direction}>
+    <div className="space-y-5 max-w-7xl mx-auto pb-10 font-sans text-slate-800" dir={direction}>
       
-      {/* 1. Header Card - Crisp high-contrast text */}
-      <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* 1. Header Card - Balanced typography */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl md:text-2xl font-black text-slate-950">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">
               {isAr ? 'مرحباً بك في Burger House نابلس 👋' : 'Welcome to Burger House Nablus 👋'}
             </h1>
-            <span className="bg-emerald-100 text-emerald-900 text-xs font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
+            <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
               {isAr ? 'المطعم مفتوح الآن' : 'Open Now'}
             </span>
           </div>
-          <p className="text-slate-700 text-xs sm:text-sm font-bold">
+          <p className="text-slate-500 text-xs sm:text-sm font-normal">
             {isAr 
               ? `نظرة عامة حية ومباشرة على نشاط المطعم — ${new Date().toLocaleDateString('ar-EG')}` 
               : `Live real-time operational overview — ${new Date().toLocaleDateString('en-US')}`}
@@ -105,29 +105,29 @@ export default function DemoHubPage() {
         <Link
           href="/m"
           target="_blank"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl font-black text-xs shadow-md shadow-orange-600/20 transition-all shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-600/20 transition-all shrink-0"
         >
           <span>{isAr ? '📱 فتح منيو الزبون المباشر للجوال' : '📱 Open Customer QR Menu'}</span>
           <ExternalLink size={14} />
         </Link>
       </div>
 
-      {/* 2. KDS Kitchen Banner - High contrast with dark readable text */}
-      <div className="bg-orange-50 border-2 border-orange-200 text-slate-900 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+      {/* 2. KDS Kitchen Banner */}
+      <div className="bg-orange-50/70 border border-orange-200/80 text-slate-800 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xl shrink-0 shadow-xs font-black">
+          <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xl shrink-0 shadow-xs font-bold">
             👨‍🍳
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-black text-slate-950">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
                 {isAr ? 'شاشة موظفي المطبخ والتجهيز (KDS)' : 'Kitchen Display Screen (KDS)'}
               </h3>
-              <span className="bg-orange-200 text-orange-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-300">
+              <span className="bg-orange-100 text-orange-900 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-orange-200">
                 {isAr ? 'مستقلة وخالية من الأسعار' : 'Dedicated · No Pricing'}
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1 line-clamp-1 sm:line-clamp-none">
+            <p className="text-xs sm:text-sm text-slate-600 font-normal mt-0.5 line-clamp-1 sm:line-clamp-none">
               {isAr 
                 ? 'فصل العمليات التشغيلية عن الإدارة — يرى طاقم المطبخ فقط تفاصيل الأطباق وأرقام الطاولات.'
                 : 'Decoupled operations: kitchen staff view table numbers and dishes without financial data.'}
@@ -137,14 +137,14 @@ export default function DemoHubPage() {
         <Link
           href="/staff"
           target="_blank"
-          className="w-full md:w-auto text-center justify-center px-4 py-2.5 bg-slate-950 text-white hover:bg-slate-800 active:scale-95 rounded-xl font-black text-xs shadow-sm transition-all shrink-0 flex items-center gap-1.5"
+          className="w-full md:w-auto text-center justify-center px-4 py-2.5 bg-slate-900 text-white hover:bg-slate-800 active:scale-95 rounded-xl font-bold text-xs shadow-xs transition-all shrink-0 flex items-center gap-1.5"
         >
           <span>{isAr ? 'فتح شاشة الموظفين' : 'Open Staff Screen'}</span>
           <ExternalLink size={14} />
         </Link>
       </div>
 
-      {/* 3. 4 KPIs Cards - High-contrast titles and values */}
+      {/* 3. 4 KPIs Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpis.map((kpi, idx) => (
           <motion.div 
@@ -152,31 +152,31 @@ export default function DemoHubPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className="bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between"
+            className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col justify-between"
           >
             <div className="flex items-center justify-between mb-2.5">
-              <div className="p-2 rounded-xl bg-orange-100 text-orange-700">
+              <div className="p-2 rounded-xl bg-orange-50 text-orange-600">
                 <kpi.icon className="w-5 h-5" />
               </div>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'}`}>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${kpi.isUp ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
                 {kpi.change}
               </span>
             </div>
             <div>
-              <h3 className="text-slate-800 text-xs sm:text-sm font-black mb-1 truncate">{kpi.title}</h3>
-              <p className="text-xl sm:text-2xl font-black text-slate-950">{kpi.value}</p>
+              <h3 className="text-slate-500 text-xs sm:text-sm font-medium mb-1 truncate">{kpi.title}</h3>
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{kpi.value}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* 4. Quick Actions Grid - Clear, readable descriptions */}
+      {/* 4. Quick Actions Grid */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base sm:text-lg font-black text-slate-950">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">
             {isAr ? 'أقسام لوحة التحكم الرئيسية' : 'Main Dashboard Sections'}
           </h2>
-          <span className="text-xs sm:text-sm text-slate-700 font-bold">
+          <span className="text-xs sm:text-sm text-slate-500 font-normal">
             {isAr ? 'الوصول السريع لجميع الأدوات' : 'Quick access to all tools'}
           </span>
         </div>
@@ -188,29 +188,29 @@ export default function DemoHubPage() {
               key={idx}
               target={action.targetBlank ? '_blank' : undefined}
             >
-              <div className="bg-white border-2 border-slate-200 hover:border-orange-500 rounded-2xl p-4 transition-all group cursor-pointer h-full shadow-xs hover:shadow-md flex flex-col justify-between">
+              <div className="bg-white border border-slate-200/80 hover:border-orange-400 rounded-2xl p-4 transition-all group cursor-pointer h-full shadow-xs hover:shadow-md flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-2.5">
                     <div className={`p-2.5 rounded-xl ${action.bg} ${action.color} shrink-0`}>
                       <action.icon className="w-5 h-5" />
                     </div>
                     {action.badge && (
-                      <span className="text-xs bg-rose-600 text-white font-black px-2 py-0.5 rounded-md shadow-xs">
+                      <span className="text-xs bg-rose-500 text-white font-bold px-2 py-0.5 rounded-md shadow-xs">
                         {action.badge}
                       </span>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-black text-slate-950 group-hover:text-orange-600 transition-colors mb-1 truncate">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-orange-600 transition-colors mb-1 truncate">
                       {action.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-700 font-bold leading-relaxed line-clamp-2">
+                    <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed line-clamp-2">
                       {action.desc}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-black text-orange-600">
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-orange-600">
                   <span>{isAr ? 'فتح القسم' : 'Open'}</span>
                   <ChevronLeft size={15} className={`transition-transform ${isAr ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1 rotate-180'}`} />
                 </div>
@@ -220,16 +220,16 @@ export default function DemoHubPage() {
         </div>
       </div>
 
-      {/* 5. Recent Orders Live Table - High-contrast headings and rows */}
-      <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
+      {/* 5. Recent Orders Live Table */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-lg font-black text-slate-950">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
               {isAr ? 'أحدث الطلبات النشطة' : 'Latest Live Orders'}
             </h2>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
           </div>
-          <Link href="/demo/orders" className="text-xs sm:text-sm font-black text-orange-600 hover:text-orange-700">
+          <Link href="/demo/orders" className="text-xs sm:text-sm font-bold text-orange-600 hover:text-orange-700">
             {isAr ? 'عرض كل الطلبات في شاشة الطلبات ←' : 'View all orders →'}
           </Link>
         </div>
@@ -237,7 +237,7 @@ export default function DemoHubPage() {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-right text-xs sm:text-sm">
-            <thead className="bg-slate-100 border-b-2 border-slate-200 text-slate-950 font-black">
+            <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold">
               <tr>
                 <th className="p-3.5">{isAr ? 'رقم الطلب' : 'Order ID'}</th>
                 <th className="p-3.5">{isAr ? 'الموقع / الطاولة' : 'Table'}</th>
@@ -247,20 +247,20 @@ export default function DemoHubPage() {
                 <th className="p-3.5">{isAr ? 'الوقت' : 'Time'}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 font-bold">
+            <tbody className="divide-y divide-slate-100">
               {mockRecentOrders.map((order, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-black text-slate-950">{order.id}</td>
-                  <td className="p-3.5 font-black text-slate-900">{order.table}</td>
-                  <td className="p-3.5 text-slate-800 font-bold truncate max-w-xs">{order.items}</td>
-                  <td className="p-3.5 font-black text-orange-600 text-sm sm:text-base">{order.total}</td>
+                <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="p-3.5 font-bold text-slate-900">{order.id}</td>
+                  <td className="p-3.5 text-slate-700 font-medium">{order.table}</td>
+                  <td className="p-3.5 text-slate-600 font-normal truncate max-w-xs">{order.items}</td>
+                  <td className="p-3.5 font-bold text-orange-600 text-sm sm:text-base">{order.total}</td>
                   <td className="p-3.5">
-                    <span className={`px-3 py-1 rounded-full text-xs font-black shadow-2xs ${order.color}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold shadow-2xs ${order.color}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="p-3.5 text-slate-700 font-bold flex items-center gap-1 mt-1">
-                    <Clock size={13} className="text-slate-500" />
+                  <td className="p-3.5 text-slate-400 font-normal flex items-center gap-1 mt-1">
+                    <Clock size={13} className="text-slate-400" />
                     <span>{order.time}</span>
                   </td>
                 </tr>
@@ -272,24 +272,24 @@ export default function DemoHubPage() {
         {/* Mobile Cards View */}
         <div className="md:hidden space-y-2.5">
           {mockRecentOrders.map((order, idx) => (
-            <div key={idx} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-3 flex flex-col gap-2">
+            <div key={idx} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-black text-slate-950 text-sm">{order.id}</span>
-                  <span className="bg-slate-950 text-white font-black text-xs px-2 py-0.5 rounded-md">
+                  <span className="font-bold text-slate-900 text-sm">{order.id}</span>
+                  <span className="bg-slate-900 text-white font-medium text-xs px-2 py-0.5 rounded-md">
                     {order.table}
                   </span>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${order.color}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${order.color}`}>
                   {order.status}
                 </span>
               </div>
-              <p className="text-xs text-slate-800 font-bold">{order.items}</p>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
-                <span className="font-black text-orange-600 text-sm">{order.total}</span>
-                <span className="text-xs text-slate-700 font-bold flex items-center gap-1">
-                  <Clock size={12} className="text-slate-500" />
-                  <span>{order.time}</span>
+              <p className="text-xs text-slate-600 font-normal">{order.items}</p>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
+                <span className="font-bold text-orange-600">{order.total}</span>
+                <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                  <Clock size={11} />
+                  {order.time}
                 </span>
               </div>
             </div>

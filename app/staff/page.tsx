@@ -213,8 +213,8 @@ export default function StaffOrdersManagementPage() {
   const renderInspectorContent = (order: any, isMobileModal: boolean = false) => {
     if (!order) {
       return (
-        <div className={`rounded-2xl border-2 p-8 text-center font-bold text-xs ${
-          isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
+        <div className={`rounded-2xl border p-8 text-center text-xs ${
+          isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200/80 text-slate-500'
         }`}>
           اختر طلباً من القائمة لعرض تفاصيله
         </div>
@@ -225,32 +225,32 @@ export default function StaffOrdersManagementPage() {
       <div className={`space-y-3.5 ${
         isMobileModal 
           ? '' 
-          : `rounded-2xl border-2 shadow-sm p-4 max-h-[calc(100vh-160px)] overflow-y-auto ${
-              isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+          : `rounded-2xl border shadow-xs p-4 max-h-[calc(100vh-160px)] overflow-y-auto ${
+              isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200/80 text-slate-800'
             }`
       }`}>
         {/* Order Details Header */}
         <div className={`pb-3 flex items-center justify-between border-b ${
-          isDarkMode ? 'border-slate-800' : 'border-slate-200'
+          isDarkMode ? 'border-slate-800' : 'border-slate-100'
         }`}>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`font-black text-xl tracking-tight ${
-                isDarkMode ? 'text-white' : 'text-slate-950'
+              <span className={`font-bold text-lg tracking-tight ${
+                isDarkMode ? 'text-white' : 'text-slate-900'
               }`}>{order.id}</span>
               {getStatusBadge(order.status)}
             </div>
-            <p className={`text-xs font-bold mt-1 ${
-              isDarkMode ? 'text-slate-300' : 'text-slate-700'
+            <p className={`text-xs mt-1 ${
+              isDarkMode ? 'text-slate-400' : 'text-slate-500'
             }`}>
-              طلب طاولة <span className="text-orange-600 font-black">{order.table}</span> — الساعة {order.time}
+              طلب طاولة <span className="text-orange-600 font-bold">{order.table}</span> — الساعة {order.time}
             </p>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => handlePrintReceipt(order)}
-              className="px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-white rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-black"
+              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
               title="طباعة بون المطبخ (صفحة واحدة فورية)"
             >
               <Printer size={15} />
@@ -263,7 +263,7 @@ export default function StaffOrdersManagementPage() {
                 className={`p-2 rounded-xl transition-colors ${
                   isDarkMode 
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
-                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                 }`}
                 title="إغلاق"
               >
@@ -275,8 +275,8 @@ export default function StaffOrdersManagementPage() {
 
         {/* Items List */}
         <div className={`space-y-2 ${isMobileModal ? 'max-h-64' : 'max-h-60'} overflow-y-auto pr-0.5`}>
-          <p className={`text-xs font-black ${
-            isDarkMode ? 'text-white' : 'text-slate-950'
+          <p className={`text-xs font-bold ${
+            isDarkMode ? 'text-slate-200' : 'text-slate-700'
           }`}>
             محتويات الطلب ({order.items.length} أصناف)
           </p>
@@ -287,36 +287,36 @@ export default function StaffOrdersManagementPage() {
                 key={iIdx} 
                 className={`p-2.5 rounded-xl flex items-center justify-between gap-2.5 border transition-all ${
                   isDarkMode 
-                    ? 'bg-slate-800/90 border-slate-700 text-slate-100' 
-                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                    ? 'bg-slate-800/80 border-slate-700 text-slate-100' 
+                    : 'bg-slate-50/70 border-slate-200/70 text-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                     {item.quantity}×
                   </span>
                   {img && (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200/70">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className={`font-black text-xs sm:text-sm truncate ${
-                      isDarkMode ? 'text-white' : 'text-slate-950'
+                    <p className={`font-semibold text-xs sm:text-sm truncate ${
+                      isDarkMode ? 'text-white' : 'text-slate-800'
                     }`}>{item.name}</p>
                     {item.customization && (
-                      <span className="text-[11px] text-orange-600 font-bold block">• {item.customization}</span>
+                      <span className="text-[11px] text-orange-600 font-medium block">• {item.customization}</span>
                     )}
                     {item.extras && item.extras.length > 0 && (
-                      <span className={`text-[11px] font-bold block ${
-                        isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                      <span className={`text-[11px] font-normal block ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
                       }`}>• + {item.extras.join('، ')}</span>
                     )}
                   </div>
                 </div>
-                <span className={`font-black text-xs sm:text-sm shrink-0 ${
-                  isDarkMode ? 'text-white' : 'text-slate-950'
+                <span className={`font-bold text-xs sm:text-sm shrink-0 ${
+                  isDarkMode ? 'text-white' : 'text-slate-800'
                 }`}>{item.price * item.quantity} ₪</span>
               </div>
             );
@@ -325,47 +325,47 @@ export default function StaffOrdersManagementPage() {
 
         {/* Customer Notes */}
         {order.notes && (
-          <div className={`rounded-xl p-3 text-xs font-bold shadow-2xs border ${
+          <div className={`rounded-xl p-3 text-xs shadow-2xs border ${
             isDarkMode 
-              ? 'bg-amber-950/50 border-amber-700 text-amber-200' 
-              : 'bg-amber-50 border-amber-300 text-amber-950'
+              ? 'bg-amber-950/40 border-amber-800 text-amber-200' 
+              : 'bg-amber-50/80 border-amber-200 text-amber-900'
           }`}>
-            <span className={`block mb-1 font-black ${
-              isDarkMode ? 'text-amber-400' : 'text-amber-800'
+            <span className={`block mb-1 font-bold ${
+              isDarkMode ? 'text-amber-300' : 'text-amber-800'
             }`}>⚠️ ملاحظات الزبون الخاصة:</span>
-            <p className={`font-bold leading-relaxed ${
-              isDarkMode ? 'text-amber-100' : 'text-slate-800'
+            <p className={`leading-relaxed ${
+              isDarkMode ? 'text-amber-100' : 'text-slate-700'
             }`}>{order.notes}</p>
           </div>
         )}
 
         {/* Bill Breakdown */}
-        <div className={`p-3.5 rounded-xl space-y-1.5 text-xs border ${
+        <div className={`p-3 rounded-xl space-y-1.5 text-xs border ${
           isDarkMode 
-            ? 'bg-slate-800/70 border-slate-700' 
-            : 'bg-slate-100/90 border-slate-200'
+            ? 'bg-slate-800/60 border-slate-700' 
+            : 'bg-slate-50 border-slate-200/70'
         }`}>
-          <div className={`flex justify-between font-bold ${
-            isDarkMode ? 'text-slate-300' : 'text-slate-700'
+          <div className={`flex justify-between ${
+            isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}>
             <span>المجموع الفرعي:</span>
-            <span className={`font-black ${
-              isDarkMode ? 'text-white' : 'text-slate-950'
+            <span className={`font-semibold ${
+              isDarkMode ? 'text-slate-200' : 'text-slate-700'
             }`}>{order.total} ₪</span>
           </div>
-          <div className={`flex justify-between font-bold ${
-            isDarkMode ? 'text-slate-300' : 'text-slate-700'
+          <div className={`flex justify-between ${
+            isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}>
             <span>الضريبة والخدمة:</span>
-            <span className={`font-black ${
-              isDarkMode ? 'text-emerald-400' : 'text-emerald-700'
+            <span className={`font-semibold ${
+              isDarkMode ? 'text-emerald-400' : 'text-emerald-600'
             }`}>مشمولة بالكامل (0 ₪)</span>
           </div>
-          <div className={`flex justify-between text-sm sm:text-base font-black pt-2 border-t ${
-            isDarkMode ? 'border-slate-700' : 'border-slate-300'
+          <div className={`flex justify-between text-sm font-bold pt-2 border-t ${
+            isDarkMode ? 'border-slate-700' : 'border-slate-200/80'
           }`}>
-            <span className={isDarkMode ? 'text-white' : 'text-slate-950'}>الإجمالي المطلوب:</span>
-            <span className="text-orange-600 font-black text-lg">{order.total} ₪</span>
+            <span className={isDarkMode ? 'text-slate-200' : 'text-slate-800'}>الإجمالي المطلوب:</span>
+            <span className="text-orange-600 font-extrabold text-base">{order.total} ₪</span>
           </div>
         </div>
 
@@ -421,23 +421,23 @@ export default function StaffOrdersManagementPage() {
     }`} dir="rtl">
       
       {/* 1. Header Bar */}
-      <header className={`sticky top-0 z-30 border-b-2 shadow-xs transition-colors backdrop-blur-md ${
-        isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+      <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
+        isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/80'
       }`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           
           {/* Logo & Title */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl flex items-center justify-center font-black shadow-md shadow-orange-500/20">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl flex items-center justify-center font-bold shadow-md shadow-orange-500/20">
                 <ChefHat size={22} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className={`text-base sm:text-lg font-black leading-tight ${
-                    isDarkMode ? 'text-white' : 'text-slate-950'
+                  <h1 className={`text-base sm:text-lg font-bold leading-tight ${
+                    isDarkMode ? 'text-white' : 'text-slate-900'
                   }`}>إدارة الطلبات الحية</h1>
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     isRealtimeConnected 
                       ? 'bg-emerald-500 text-white shadow-xs' 
                       : 'bg-amber-500 text-white'
@@ -446,8 +446,8 @@ export default function StaffOrdersManagementPage() {
                     <span>{isRealtimeConnected ? 'سحابي مباشر' : 'إعادة اتصال...'}</span>
                   </span>
                 </div>
-                <p className={`text-xs font-bold ${
-                  isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                <p className={`text-xs mt-0.5 ${
+                  isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}>Burger House نابلس · متابعة وتحديث طلبات الصالة</p>
               </div>
             </div>
@@ -456,15 +456,15 @@ export default function StaffOrdersManagementPage() {
             <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`p-2 rounded-xl border-2 text-xs font-bold ${
-                  soundEnabled ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-600 border-slate-300'
+                className={`p-2 rounded-xl border text-xs font-medium ${
+                  soundEnabled ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-500 border-slate-200'
                 }`}
               >
                 {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
               </button>
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 rounded-xl border-2 border-slate-300 text-xs font-bold"
+                className="p-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-600"
               >
                 {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
               </button>
@@ -475,7 +475,7 @@ export default function StaffOrdersManagementPage() {
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={addNewSimulatedOrder}
-              className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
+              className="px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-orange-500/25 transition-all"
             >
               <PlusCircle size={15} />
               <span>+ محاكاة طلب QR جديد</span>
@@ -483,10 +483,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={resetOrders}
-              className={`p-2 rounded-xl text-xs font-bold transition-colors border-2 shadow-2xs ${
+              className={`p-2 rounded-xl text-xs font-medium transition-colors border shadow-2xs ${
                 isDarkMode 
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' 
-                  : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200'
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' 
+                  : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border-slate-200/80'
               }`}
               title="إعادة ضبط البيانات"
             >
@@ -498,12 +498,12 @@ export default function StaffOrdersManagementPage() {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playOrderChime();
               }}
-              className={`hidden md:flex p-2 rounded-xl border-2 text-xs font-bold transition-all shadow-2xs ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-medium transition-all shadow-2xs ${
                 soundEnabled
                   ? 'bg-orange-500 text-white border-orange-500'
                   : isDarkMode
                   ? 'bg-slate-800 text-slate-400 border-slate-700'
-                  : 'bg-white text-slate-600 border-slate-300'
+                  : 'bg-white text-slate-500 border-slate-200/80'
               }`}
               title={soundEnabled ? 'كتم الصوت' : 'تفعيل صوت التنبيه'}
             >
@@ -512,10 +512,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`hidden md:flex p-2 rounded-xl border-2 text-xs font-bold transition-all shadow-2xs ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-medium transition-all shadow-2xs ${
                 isDarkMode
                   ? 'bg-amber-400 text-slate-950 border-amber-400'
-                  : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-50'
+                  : 'bg-white text-slate-600 border-slate-200/80 hover:bg-slate-50'
               }`}
               title="تبديل المظهر النهاري/الليلي"
             >
@@ -524,10 +524,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={toggleFullscreen}
-              className={`hidden lg:flex p-2 rounded-xl border-2 text-xs font-black shadow-2xs ${
+              className={`hidden lg:flex p-2 rounded-xl border text-xs font-medium shadow-2xs ${
                 isDarkMode 
-                  ? 'border-slate-700 text-slate-200 hover:bg-slate-800' 
-                  : 'border-slate-300 text-slate-800 hover:bg-slate-100'
+                  ? 'border-slate-700 text-slate-300 hover:bg-slate-800' 
+                  : 'border-slate-200/80 text-slate-600 hover:bg-slate-50'
               }`}
               title="ملء الشاشة"
             >
@@ -536,10 +536,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={handleLogout}
-              className={`p-2 rounded-xl border-2 transition-colors shadow-2xs ${
+              className={`p-2 rounded-xl border transition-colors shadow-2xs ${
                 isDarkMode 
                   ? 'border-slate-700 text-slate-300 hover:text-rose-400 hover:bg-rose-950/40' 
-                  : 'border-slate-300 text-slate-700 hover:text-rose-600 hover:bg-rose-50'
+                  : 'border-slate-200/80 text-slate-600 hover:text-rose-600 hover:bg-rose-50'
               }`}
               title="تسجيل خروج"
             >
@@ -551,16 +551,16 @@ export default function StaffOrdersManagementPage() {
 
         {/* 2. Filter Tabs & Search Bar */}
         <div className={`max-w-7xl mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
-          isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50/60'
+          isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'
         }`}>
-          {/* Status Filter Tabs with Bold Vibrant Counters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs font-black">
+          {/* Status Filter Tabs with Balanced Counters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 font-medium ${
                 statusFilter === 'all'
-                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-950 text-white shadow-xs'
-                  : isDarkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100'
+                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-900 text-white shadow-xs font-bold'
+                  : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
               }`}
             >
               الكل ({ordersList.length})
@@ -568,10 +568,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setStatusFilter('جديد')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
                 statusFilter === 'جديد'
-                  ? 'bg-rose-500 text-white shadow-xs'
-                  : isDarkMode ? 'bg-rose-950/60 text-rose-300 hover:bg-rose-900/60 font-black' : 'bg-rose-100 text-rose-900 hover:bg-rose-200 font-black'
+                  ? 'bg-rose-500 text-white shadow-xs font-bold'
+                  : isDarkMode ? 'bg-rose-950/60 text-rose-300 hover:bg-rose-900/60' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
@@ -580,10 +580,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setStatusFilter('قيد التحضير')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
                 statusFilter === 'قيد التحضير'
-                  ? 'bg-amber-500 text-white shadow-xs'
-                  : isDarkMode ? 'bg-amber-950/60 text-amber-300 hover:bg-amber-900/60 font-black' : 'bg-amber-100 text-amber-950 hover:bg-amber-200 font-black'
+                  ? 'bg-amber-500 text-white shadow-xs font-bold'
+                  : isDarkMode ? 'bg-amber-950/60 text-amber-300 hover:bg-amber-900/60' : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -592,10 +592,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setStatusFilter('جاهز')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 font-medium ${
                 statusFilter === 'جاهز'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : isDarkMode ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/60 font-black' : 'bg-emerald-100 text-emerald-950 hover:bg-emerald-200 font-black'
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                  : isDarkMode ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/60' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -604,10 +604,10 @@ export default function StaffOrdersManagementPage() {
 
             <button
               onClick={() => setStatusFilter('تم التسليم')}
-              className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 font-medium ${
                 statusFilter === 'تم التسليم'
-                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-900 text-white shadow-xs'
-                  : isDarkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 font-black' : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100 font-black'
+                  ? isDarkMode ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-900 text-white shadow-xs font-bold'
+                  : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
               }`}
             >
               مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
@@ -617,17 +617,17 @@ export default function StaffOrdersManagementPage() {
           {/* Search Box */}
           <div className="relative w-full md:w-64">
             <Search size={14} className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${
-              isDarkMode ? 'text-slate-400' : 'text-slate-500'
+              isDarkMode ? 'text-slate-400' : 'text-slate-400'
             }`} />
             <input
               type="text"
               placeholder="بحث برقم الطلب أو الطاولة..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pr-9 pl-3.5 py-1.5 border-2 rounded-full text-xs font-bold focus:outline-none focus:border-orange-500 transition-all ${
+              className={`w-full pr-9 pl-3.5 py-1.5 border rounded-full text-xs transition-all ${
                 isDarkMode 
                   ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-400' 
-                  : 'bg-white border-slate-300 text-slate-950 placeholder:text-slate-400 shadow-2xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-orange-500'
               }`}
             />
           </div>
@@ -641,15 +641,15 @@ export default function StaffOrdersManagementPage() {
           {/* Orders Cards Container: 2 COLUMNS ON DESKTOP & TABLET ("كل طاولتين فصف") */}
           <div className="w-full lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5 content-start">
             {filteredOrders.length === 0 ? (
-              <div className={`col-span-full rounded-2xl border-2 p-12 text-center ${
-                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-600'
+              <div className={`col-span-full rounded-2xl border p-12 text-center ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200/80 text-slate-500'
               }`}>
                 <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
-                <p className={`text-sm font-black ${
-                  isDarkMode ? 'text-slate-100' : 'text-slate-950'
+                <p className={`text-sm font-bold ${
+                  isDarkMode ? 'text-slate-200' : 'text-slate-800'
                 }`}>لا توجد طلبات مطابقة</p>
-                <p className={`text-xs font-bold mt-1 ${
-                  isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                <p className={`text-xs mt-1 ${
+                  isDarkMode ? 'text-slate-400' : 'text-slate-400'
                 }`}>جرّب تغيير حالة الفلتر أو محاكاة طلب QR جديد</p>
               </div>
             ) : (
@@ -663,28 +663,28 @@ export default function StaffOrdersManagementPage() {
                       setSelectedOrderId(order.id);
                       setIsMobileDetailOpen(true);
                     }}
-                    className={`rounded-2xl p-3 border-2 transition-all cursor-pointer relative shadow-2xs hover:shadow-md flex flex-col justify-between ${
+                    className={`rounded-2xl p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
                       isSelected
                         ? isDarkMode
                           ? 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-950/20'
                           : 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/20'
                         : isDarkMode
                         ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                        : 'bg-white border-slate-200/90 hover:border-orange-400'
+                        : 'bg-white border-slate-200/80 hover:border-orange-300'
                     }`}
                   >
                     {/* Top Row: Order ID + Table badge */}
                     <div className="flex items-center justify-between gap-1.5 mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className={`font-black text-sm tracking-tight ${
-                          isDarkMode ? 'text-white' : 'text-slate-950'
+                        <span className={`font-bold text-sm tracking-tight ${
+                          isDarkMode ? 'text-white' : 'text-slate-900'
                         }`}>{order.id}</span>
-                        <span className="bg-slate-950 text-amber-300 font-black text-[11px] px-2.5 py-0.5 rounded-md shadow-2xs">
+                        <span className="bg-slate-900 text-amber-300 font-semibold text-[11px] px-2 py-0.5 rounded-md shadow-2xs">
                           طاولة {order.table}
                         </span>
                       </div>
-                      <span className={`text-[11px] font-bold flex items-center gap-1 ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                      <span className={`text-[11px] flex items-center gap-1 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-400'
                       }`}>
                         <Clock size={12} />
                         {order.time}
@@ -697,8 +697,8 @@ export default function StaffOrdersManagementPage() {
                     </div>
 
                     {/* Items preview (compact) */}
-                    <p className={`text-xs font-bold line-clamp-2 mb-2 leading-relaxed ${
-                      isDarkMode ? 'text-slate-200' : 'text-slate-700'
+                    <p className={`text-xs line-clamp-2 mb-2 leading-relaxed ${
+                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
                     }`}>
                       {order.items.map((i: any) => `${i.quantity}× ${i.name}`).join('، ')}
                     </p>
@@ -708,13 +708,13 @@ export default function StaffOrdersManagementPage() {
                       isDarkMode ? 'border-slate-800' : 'border-slate-100'
                     }`}>
                       <div className="flex items-baseline gap-1">
-                        <span className="font-black text-orange-600 text-base">{order.total}</span>
-                        <span className="text-xs text-orange-600 font-black">₪</span>
+                        <span className="font-bold text-orange-600 text-base">{order.total}</span>
+                        <span className="text-xs text-orange-600 font-medium">₪</span>
                       </div>
-                      <div className={`flex items-center gap-0.5 text-xs font-black ${
-                        isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                      <div className={`flex items-center gap-0.5 text-xs ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-400'
                       }`}>
-                        <span className="text-[11px] text-orange-600 font-black">معاينة</span>
+                        <span className="text-[11px] text-orange-600 font-semibold">معاينة</span>
                         <ChevronRight size={13} className="rtl:rotate-180 text-orange-600" />
                       </div>
                     </div>
