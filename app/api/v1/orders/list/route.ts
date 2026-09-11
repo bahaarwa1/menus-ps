@@ -87,22 +87,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Cost-optimization: In-memory caching for active orders list (heavily polled by kitchen & waiter screens)
-    const cacheKey = !orderId ? `orders:list:${branchId || 'all'}` : null;
-    if (cacheKey) {
-      const cached = appCache.get<any[]>(cacheKey);
-      if (cached) {
-        return NextResponse.json(
-          { success: true, orders: cached, source: 'cache' },
-          {
-            headers: {
-              'X-Cache': 'HIT',
-              'Cache-Control': 'private, max-age=5',
-            },
-          }
-        );
-      }
-    }
+
 
     if (!isSupabaseConfigured()) {
       // Fallback: in-memory store (dev only) — always branch-scoped
@@ -183,16 +168,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    if (cacheKey) {
-      appCache.set(cacheKey, enriched, 8, ['orders', `orders:${branchId || 'all'}`]);
-    }
-
     return NextResponse.json(
       { success: true, orders: enriched, source: 'db' },
       {
         headers: {
-          'X-Cache': 'MISS',
-          'Cache-Control': 'private, max-age=5',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     );

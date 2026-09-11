@@ -5,6 +5,7 @@ import {
   Clock, CheckCircle2, AlertCircle, ChefHat, 
   Search, Volume2, VolumeX, Check, RefreshCw, ShoppingBag
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface OrderItem {
   name: string;
@@ -63,12 +64,13 @@ export default function ProductionOrdersPage() {
   const loadOrders = useCallback(async (bid?: string, silent = false) => {
     if (!silent) setIsLoading(true);
     try {
-      const url = `/api/v1/orders/list${bid ? `?branchId=${encodeURIComponent(bid)}` : ''}`;
-      const res = await fetch(url);
+      const url = `/api/v1/orders/list?_t=${Date.now()}${bid ? `&branchId=${encodeURIComponent(bid)}` : ''}`;
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
         setOrders(prev => {
           const next = data.orders.map(mapDbOrderToCard);
+
           // Play sound if there are NEW orders that weren't there before
           if (soundEnabled) {
             const prevIds = new Set(prev.map(o => o.rawId));
@@ -89,7 +91,16 @@ export default function ProductionOrdersPage() {
               } catch {}
             }
           }
-          return next;
+
+          // Safe merge: Never drop recently received orders
+          const nextIds = new Set(next.map((o: Order) => o.rawId));
+          const now = Date.now();
+          const keptFromPrev = prev.filter((p: Order) => {
+            if (nextIds.has(p.rawId)) return false;
+            return (now - (new Date(p.createdAt || 0).getTime() || 0)) < 180000;
+          });
+
+          return [...keptFromPrev, ...next];
         });
       }
     } catch (err) {
@@ -116,21 +127,35 @@ export default function ProductionOrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2. When branchId is resolved (not null), set up polling & SSE
+  // 2. When branchId is resolved (not null), set up fast polling & realtime
   useEffect(() => {
     if (branchId === null) return; // Not resolved yet — wait
 
-    // Auto-polling every 8 seconds (silent background refresh)
+    // Fast Auto-polling every 2.5 seconds (was 8s)
     const pollInterval = setInterval(() => {
       loadOrders(branchId || undefined, true);
-    }, 8000);
+    }, 2500);
+
+    // Supabase Realtime for instant 0ms push
+    const supabase = createClient();
+    const channel = supabase
+      .channel('dashboard-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          const raw = (payload.new || {}) as any;
+          if (branchId && raw.branch_id && raw.branch_id !== branchId) return;
+          loadOrders(branchId || undefined, true);
+        }
+      )
+      .subscribe();
 
     // SSE for instant real-time push from server
     let eventSource: EventSource | null = null;
     try {
       eventSource = new EventSource('/api/v1/orders/stream');
       eventSource.addEventListener('order', () => {
-        // On any order event, do an immediate silent refresh
         loadOrders(branchId || undefined, true);
       });
       eventSource.onerror = () => {
@@ -141,6 +166,7 @@ export default function ProductionOrdersPage() {
     return () => {
       clearInterval(pollInterval);
       eventSource?.close();
+      supabase.removeChannel(channel);
     };
   }, [branchId, loadOrders]);
 

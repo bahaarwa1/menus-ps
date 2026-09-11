@@ -32,7 +32,9 @@ export default function ProductionDashboardOverview() {
 
     const fetchStats = (silent = false) => {
       if (!silent) setIsLoading(true);
-      fetch(`/api/v1/dashboard/stats${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
+      fetch(`/api/v1/dashboard/stats?_t=${Date.now()}${slug ? `&slug=${encodeURIComponent(slug)}` : ''}`, {
+        cache: 'no-store',
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
@@ -46,7 +48,7 @@ export default function ProductionDashboardOverview() {
     };
 
     fetchStats(false);
-    const interval = setInterval(() => fetchStats(true), 15000);
+    const interval = setInterval(() => fetchStats(true), 4000);
     return () => clearInterval(interval);
   }, []);
 

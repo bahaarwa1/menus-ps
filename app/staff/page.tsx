@@ -225,31 +225,34 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
         (payload) => {
           const raw = payload.new as any;
           if (branchId && raw.branch_id !== branchId) return;
-          // Fetch full order with items
-          fetch(`/api/v1/orders/list?orderId=${raw.id}`)
+
+          // 1. Instantly display order in 0ms (no waiting for fetch roundtrip!)
+          const immediateOrder = mapDbOrder(raw);
+          setOrdersList(prev => {
+            const exists = prev.some(o => o.id === immediateOrder.id);
+            if (exists) return prev;
+            return [immediateOrder, ...prev];
+          });
+          setSelectedOrderId(prev => prev || immediateOrder.id);
+          if (soundEnabled) playOrderChime();
+          setNewOrderAlert({
+            id: immediateOrder.id,
+            table: immediateOrder.table,
+            count: immediateOrder.items?.length || 1,
+            time: immediateOrder.time,
+          });
+          setTimeout(() => setNewOrderAlert(null), 8000);
+
+          // 2. In background, fetch full enriched order with items and update in place
+          fetch(`/api/v1/orders/list?orderId=${raw.id}&_t=${Date.now()}`, { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
               if (data.success && data.orders?.length > 0) {
-                const newOrder = mapDbOrder(data.orders[0]);
-                setOrdersList(prev => {
-                  const exists = prev.some(o => o.id === newOrder.id);
-                  if (exists) return prev;
-                  return [newOrder, ...prev];
-                });
-                setSelectedOrderId(newOrder.id);
-                if (soundEnabled) playOrderChime();
+                const enriched = mapDbOrder(data.orders[0]);
+                setOrdersList(prev => prev.map(o => o.id === enriched.id ? enriched : o));
               }
             })
-            .catch(() => {
-              // Fallback: map directly from payload
-              const newOrder = mapDbOrder(raw);
-              setOrdersList(prev => {
-                const exists = prev.some(o => o.id === newOrder.id);
-                if (exists) return prev;
-                return [newOrder, ...prev];
-              });
-              if (soundEnabled) playOrderChime();
-            });
+            .catch(() => {});
         }
       )
       .on(
@@ -269,12 +272,15 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
     return () => { supabase.removeChannel(channel); };
   }, [branchId, soundEnabled]);
 
-  // Fast Background Polling every 2.5s (Guarantees instant sync even if WebSockets are blocked/serverless)
+  // Fast Background Polling every 2s with cache bypass and safe merge (orders never disappear)
   useEffect(() => {
     let isMounted = true;
     const pollTimer = setInterval(async () => {
       try {
-        const res = await fetch(`/api/v1/orders/list${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ''}`);
+        const res = await fetch(`/api/v1/orders/list?_t=${Date.now()}${branchId ? `&branchId=${encodeURIComponent(branchId)}` : ''}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         if (!res.ok) return;
         const data = await res.json();
         if (isMounted && data.success && Array.isArray(data.orders)) {
@@ -282,8 +288,19 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
           setOrdersList((prev) => {
             if (prev.length === 0) return fresh;
 
-            // Detect newly incoming orders
-            const prevIds = new Set(prev.map(o => o.id));
+            // Build map of fresh order IDs
+            const freshIds = new Set(fresh.map((o: any) => o.id));
+
+            // Prevent disappearing: Keep any recent order from prev that isn't in fresh yet
+            const now = Date.now();
+            const keptFromPrev = prev.filter((p: any) => {
+              if (freshIds.has(p.id)) return false;
+              const orderTime = new Date(p.createdAt || 0).getTime();
+              return (now - orderTime) < 180000; // Retain recent orders up to 3 minutes
+            });
+
+            // Detect newly incoming orders to trigger chime & alert
+            const prevIds = new Set(prev.map((o: any) => o.id));
             const newOrders = fresh.filter((o: any) => !prevIds.has(o.id));
             if (newOrders.length > 0) {
               const latest = newOrders[0];
@@ -297,11 +314,13 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               setTimeout(() => setNewOrderAlert(null), 8000);
             }
 
-            return fresh;
+            const combined = [...keptFromPrev, ...fresh];
+            combined.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+            return combined;
           });
         }
       } catch {}
-    }, 2500);
+    }, 2000);
 
     return () => {
       isMounted = false;
@@ -336,8 +355,9 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setIsAuthenticated(false);
-    setShowPinModal(true);
+    setShowPinModal(false);
     setOrdersList([]);
+    window.location.href = '/login';
   };
 
   const handlePrintReceipt = (order: any) => {
