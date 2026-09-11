@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     } catch {}
   }
   if (!slug) {
-    return NextResponse.json({ restaurantSlug: '', categories: [] });
+    return NextResponse.json({ success: false, error: 'رمز المطعم مطلوب' }, { status: 400 });
   }
 
   const cacheKey = `menu:${slug}`;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const cachedMenu = appCache.get(cacheKey);
     if (cachedMenu) {
       return NextResponse.json(
-        { restaurantSlug: slug, categories: cachedMenu, cached: true },
+        { success: true, restaurantSlug: slug, categories: cachedMenu, cached: true },
         {
           status: 200,
           headers: {
@@ -43,11 +43,19 @@ export async function GET(request: NextRequest) {
     // 2. Fetch from repository
     const menu = await getRestaurantMenu(slug);
 
+    if (menu === null) {
+      return NextResponse.json(
+        { success: false, error: 'المطعم غير موجود' },
+        { status: 404 }
+      );
+    }
+
     // 3. Populate memory cache with 180s TTL and 'menu' tag
     appCache.set(cacheKey, menu, 180, ['menu', `menu:${slug}`]);
 
     return NextResponse.json(
       {
+        success: true,
         restaurantSlug: slug,
         categories: menu,
         cached: false,

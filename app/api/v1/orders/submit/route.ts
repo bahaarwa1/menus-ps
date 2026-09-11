@@ -67,12 +67,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Resolve branch from restaurant slug if branch is missing or fallback
-    if ((!resolvedBranch || resolvedBranch === 'b0000000-0000-0000-0000-000000000001') && restaurantSlug) {
-      const cleanSlug = String(restaurantSlug).trim();
+    // Resolve branch from restaurant slug and strictly verify restaurant existence
+    if (restaurantSlug) {
+      const cleanSlug = String(restaurantSlug).trim().toLowerCase();
       if (cleanSlug && cleanSlug !== 'burger-house-nablus' && cleanSlug !== 'demo') {
         const restaurant = await getRestaurantBySlug(cleanSlug);
-        if (restaurant?.branchId) {
+        if (!restaurant) {
+          return NextResponse.json(
+            { success: false, error: 'المطعم غير موجود أو تم إيقافه' },
+            { status: 404 }
+          );
+        }
+        if (restaurant.branchId) {
           resolvedBranch = restaurant.branchId;
         }
       }

@@ -22,18 +22,13 @@ export interface PublicMenuItem {
 }
 
 // In-flight promise map for request coalescing (prevents dog-piling on DB during cache miss)
-const inFlightMenuRequests = new Map<string, Promise<PublicMenuCategory[]>>();
+const inFlightMenuRequests = new Map<string, Promise<PublicMenuCategory[] | null>>();
 
 /**
  * Fetches active menu categories and items for a restaurant with multi-tier caching.
- * 
- * COST OPTIMIZATION:
- * 1. O(1) in-memory cache check with 300s (5-minute) TTL.
- * 2. Request coalescing: 100 simultaneous requests collapse into 1 DB query.
- * 3. Tag-based instant invalidation when items are updated.
- * 4. Zero DB hits on cache hits (<1ms latency).
+ * Returns null if the restaurant does not exist.
  */
-export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'): Promise<PublicMenuCategory[]> {
+export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'): Promise<PublicMenuCategory[] | null> {
   const cacheKey = `menu:${restaurantSlug}`;
 
   // 1. O(1) Memory Cache Check
@@ -49,7 +44,7 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
 
   const isDemoRestaurant = restaurantSlug === 'burger-house-nablus' || restaurantSlug === 'demo';
 
-  const fetchPromise = (async () => {
+  const fetchPromise = (async (): Promise<PublicMenuCategory[] | null> => {
     try {
       if (!isSupabaseConfigured()) {
         if (isDemoRestaurant) {
@@ -57,7 +52,10 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
           appCache.set(cacheKey, fallback, 300, ['menu', `menu:${restaurantSlug}`]);
           return fallback;
         }
-        return [];
+        if (global.__menusRestaurantsStore?.has(restaurantSlug)) {
+          return [];
+        }
+        return null;
       }
 
       const supabase = createClient();
@@ -101,7 +99,10 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
           appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);
           return fallback;
         }
-        return [];
+        if (global.__menusRestaurantsStore?.has(restaurantSlug)) {
+          return [];
+        }
+        return null;
       }
 
       const rawCats = (rawRestaurant.menu_categories || []) as any[];
@@ -163,7 +164,7 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
         appCache.set(cacheKey, fallback, 60, ['menu', `menu:${restaurantSlug}`]);
         return fallback;
       }
-      return [];
+      return null;
     } finally {
       inFlightMenuRequests.delete(cacheKey);
     }

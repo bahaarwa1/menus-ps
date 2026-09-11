@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
-  Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2
+  Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2,
+  Store, Home
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -82,9 +83,12 @@ function FastFrictionlessMenuContent() {
   const tableFromToken = tokenTableMatch ? parseInt(tokenTableMatch[1], 10) : 0;
   const tableFromParam = tableParam ? parseInt(tableParam, 10) : 0;
 
+  const notFoundParam = searchParams.get('notFound') === '1';
   const effectiveSlug = restaurantParam || slugFromToken || (qrTokenParam ? '' : defaultSlug);
   const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
   const { direction, language } = useLanguage();
+
+  const [isRestaurantNotFound, setIsRestaurantNotFound] = useState<boolean>(notFoundParam);
 
   // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean
   const [dbCategories, setDbCategories] = useState<MenuCategory[]>(isDemo ? initialCategories : []);
@@ -225,21 +229,50 @@ function FastFrictionlessMenuContent() {
   const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>('');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
-  // Fetch restaurant details (logo, city, branchId, etc.)
+  // Fetch restaurant details (logo, city, branchId, etc.) and strictly verify validity
   useEffect(() => {
     if (!activeRestaurantSlug) return;
+
+    if (isDemo) {
+      setIsRestaurantNotFound(false);
+      setActiveRestaurantName('Burger House نابلس');
+      setActiveRestaurantCity('نابلس');
+      return;
+    }
+
+    let isSubscribed = true;
+
     fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeRestaurantSlug)}`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!isSubscribed) return null;
+        if (res.status === 404) {
+          setIsRestaurantNotFound(true);
+          setMenuLoading(false);
+          setActiveRestaurantName('');
+          return null;
+        }
+        return res.json().catch(() => null);
+      })
       .then((data) => {
+        if (!isSubscribed || !data) return;
         if (data.success && data.settings) {
+          setIsRestaurantNotFound(false);
           if (data.settings.logoUrl) setActiveRestaurantLogo(data.settings.logoUrl);
           if (data.settings.name) setActiveRestaurantName(data.settings.name);
           if (data.settings.city) setActiveRestaurantCity(data.settings.city);
           if (data.settings.branchId) setActiveBranchId(data.settings.branchId);
+        } else {
+          setIsRestaurantNotFound(true);
+          setMenuLoading(false);
+          setActiveRestaurantName('');
         }
       })
       .catch(() => {});
-  }, [activeRestaurantSlug]);
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeRestaurantSlug, isDemo]);
 
   // Dynamic QR Token & Table Verification on Load
   useEffect(() => {
@@ -273,7 +306,15 @@ function FastFrictionlessMenuContent() {
 
   // Fetch menu with instant client-side SWR (Stale-While-Revalidate) cache
   useEffect(() => {
-    if (!activeRestaurantSlug) return;
+    if (!activeRestaurantSlug || isRestaurantNotFound) return;
+
+    if (isDemo) {
+      setDbCategories(initialCategories);
+      setDbMenuItems(initialMenuItems);
+      setActiveCategory(initialCategories[0]?.id || 'burgers');
+      setMenuLoading(false);
+      return;
+    }
 
     // 1. Instant Cache Hydration from sessionStorage
     const cacheKey = `menus_cache_${activeRestaurantSlug}`;
@@ -295,9 +336,25 @@ function FastFrictionlessMenuContent() {
 
     // 2. Background Revalidation / Initial Fetch
     setMenuError('');
+    let isSubscribed = true;
+
     fetch(`/api/v1/menu?slug=${encodeURIComponent(activeRestaurantSlug)}`)
-      .then(r => r.json())
-      .then(data => {
+      .then(async (r) => {
+        if (!isSubscribed) return null;
+        if (r.status === 404) {
+          setIsRestaurantNotFound(true);
+          setMenuLoading(false);
+          return null;
+        }
+        return r.json().catch(() => null);
+      })
+      .then((data) => {
+        if (!isSubscribed || !data) return;
+        if (data.success === false) {
+          setIsRestaurantNotFound(true);
+          setMenuLoading(false);
+          return;
+        }
         if (data.categories && Array.isArray(data.categories)) {
           const cats: MenuCategory[] = data.categories;
           setDbCategories(cats);
@@ -318,13 +375,21 @@ function FastFrictionlessMenuContent() {
       })
       .catch(() => {
         // If network error and no cached items, show error
-        setDbCategories(prev => {
-          if (prev.length === 0 && isDemo) setMenuError('تعذر تحميل قائمة الطعام');
-          return prev;
-        });
+        if (isSubscribed) {
+          setDbCategories(prev => {
+            if (prev.length === 0 && isDemo) setMenuError('تعذر تحميل قائمة الطعام');
+            return prev;
+          });
+        }
       })
-      .finally(() => setMenuLoading(false));
-  }, [activeRestaurantSlug]);
+      .finally(() => {
+        if (isSubscribed) setMenuLoading(false);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeRestaurantSlug, isDemo, isRestaurantNotFound]);
 
   // Fast quantity modifications
   const addOne = (id: string, e?: React.MouseEvent) => {
@@ -479,6 +544,81 @@ function FastFrictionlessMenuContent() {
     setTimeout(() => setWaiterCalled(false), 5000);
   };
 
+  if (isRestaurantNotFound) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 flex flex-col justify-center items-center px-4 py-12 text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white" dir={direction}>
+        <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-xl p-6 sm:p-8 text-center relative overflow-hidden">
+          {/* Decorative accents */}
+          <div className="absolute -top-16 -right-16 w-36 h-36 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          {/* Icon */}
+          <div className="w-20 h-20 rounded-3xl bg-rose-50 border border-rose-200/80 flex items-center justify-center mx-auto mb-5 text-rose-500 shadow-md shadow-rose-500/10">
+            <Store size={38} className="stroke-[1.8]" />
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100/70 text-rose-700 mb-3">
+            <AlertCircle size={14} />
+            {language === 'ar' ? 'المطعم غير موجود' : 'Restaurant Not Found'}
+          </span>
+
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 leading-tight">
+            {language === 'ar' ? 'عذراً، هذا المطعم غير مسجل' : 'Sorry, restaurant not found'}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
+            {language === 'ar'
+              ? 'لم يتم العثور على أي مطعم مسجل بهذا الرابط. قد يكون الرابط خاطئاً أو تم إدخال اسم غير صحيح.'
+              : 'No registered restaurant was found for this link. It might be misspelled or no longer active.'}
+          </p>
+
+          {activeRestaurantSlug && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-6 flex items-center justify-between gap-2">
+              <span className="text-slate-400 font-medium">
+                {language === 'ar' ? 'الرابط المطلوب:' : 'Requested Slug:'}
+              </span>
+              <code className="font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/60 max-w-[180px] truncate">
+                {activeRestaurantSlug.slice(0, 30)}
+              </code>
+            </div>
+          )}
+
+          <div className="space-y-2.5">
+            <a
+              href="/"
+              className="w-full py-3 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+            >
+              <Home size={16} />
+              <span>{language === 'ar' ? 'العودة للصفحة الرئيسية' : 'Return to Home'}</span>
+            </a>
+
+            <a
+              href="/m?restaurant=burger-house-nablus"
+              className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Utensils size={15} />
+              <span>{language === 'ar' ? 'تجربة قائمة طعام تجريبية (Demo)' : 'View Demo Restaurant Menu'}</span>
+            </a>
+
+            <a
+              href="/register"
+              className="w-full py-2.5 px-4 rounded-xl text-xs text-orange-600 hover:text-orange-700 font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Sparkles size={14} />
+              <span>{language === 'ar' ? 'هل تملك مطعماً؟ سجّل الآن مجاناً' : 'Own a restaurant? Register free'}</span>
+            </a>
+          </div>
+
+          <p className="text-[11px] text-slate-400 mt-6 leading-relaxed">
+            {language === 'ar'
+              ? 'إذا كنت داخل المطعم، يرجى مسح رمز الـ QR الموجود على طاولتك مرة أخرى.'
+              : 'If you are at a table, please scan the QR code on your table again.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex justify-center text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white" dir={direction}>
       
@@ -506,7 +646,7 @@ function FastFrictionlessMenuContent() {
               <div className="truncate min-w-0">
                 <div className="flex items-center gap-1">
                   <h1 className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                    {activeRestaurantName || (restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'مطعمنا' : 'Our Restaurant'))}
+                    {activeRestaurantName || (isDemo ? 'Burger House نابلس' : (language === 'ar' ? 'قائمة الطعام' : 'Menu'))}
                   </h1>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 </div>
@@ -514,7 +654,7 @@ function FastFrictionlessMenuContent() {
                   <span className="text-amber-500 font-bold flex items-center">
                     <Star size={9} fill="currentColor" /> 4.9
                   </span>
-                  <span className="truncate">· {activeRestaurantCity || (restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
+                  <span className="truncate">· {activeRestaurantCity || (isDemo ? 'نابلس' : (language === 'ar' ? 'فلسطين' : 'Palestine'))}</span>
                 </p>
               </div>
             </div>
