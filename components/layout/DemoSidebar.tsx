@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { Menu, X, ArrowRight, ArrowLeft, ExternalLink, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, X, ArrowRight, ArrowLeft, ExternalLink, LogOut, Globe, Copy, Check } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -12,14 +12,37 @@ export default function DemoSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { t, language, direction } = useLanguage();
+
+  // Get active restaurant slug from client query or fallback
+  const [activeSlug, setActiveSlug] = useState('burger-house');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const created = params.get('created');
+      if (created) {
+        setActiveSlug(created);
+      }
+    }
+  }, [pathname]);
+
+  const liveUrl = `https://${activeSlug}.menus-ps.vercel.app`;
+  const directMenuUrl = `/m?restaurant=${activeSlug}`;
+
+  const copyLiveUrl = () => {
+    navigator.clipboard.writeText(liveUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const mainLinks = [
     { href: '/demo', label: t('demo.overview', 'نظرة عامة'), icon: '🏠' },
     { href: '/demo/orders', label: t('demo.orders', 'إدارة الطلبات الحية'), icon: '📋', badge: language === 'ar' ? '3 جديدة' : '3 New' },
     { href: '/demo/menu-editor', label: t('demo.menuEditor', 'تعديل قائمة الطعام'), icon: '🍔' },
     { href: '/demo/tables', label: t('demo.tables', 'إدارة الطاولات وQR'), icon: '🪑' },
-    { href: '/m', label: t('demo.customerMenu', 'منيو العميل للجوال'), icon: '📱', targetBlank: true },
+    { href: directMenuUrl, label: t('demo.customerMenu', 'منيو العميل للجوال'), icon: '📱', targetBlank: true },
   ];
 
   const managementLinks = [
@@ -56,14 +79,43 @@ export default function DemoSidebar() {
         </span>
       </div>
 
-      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
-        <div>
-          <p className="font-extrabold text-slate-900">Burger House</p>
-          <p className="text-[11px] text-slate-400">
-            {language === 'ar' ? 'فرع نابلس الرئيسي' : 'Nablus Main Branch'}
-          </p>
+      {/* Restaurant Info & Live Link Bar */}
+      <div className="p-3 bg-slate-50 border-b border-slate-100">
+        <div className="flex items-center justify-between text-xs mb-2">
+          <div>
+            <p className="font-extrabold text-slate-900 capitalize">{activeSlug.replace(/-/g, ' ')}</p>
+            <p className="text-[11px] text-slate-400">
+              {language === 'ar' ? 'الفرع الرئيسي' : 'Main Branch'}
+            </p>
+          </div>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="متصل"></span>
         </div>
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+
+        {/* Live URL Pill */}
+        <div className="bg-white border border-slate-200/80 rounded-xl p-2 shadow-2xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+              <Globe size={11} className="text-orange-500" />
+              <span>رابط منيو الزبائن:</span>
+            </span>
+            <button
+              onClick={copyLiveUrl}
+              className="text-[10px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5 cursor-pointer"
+            >
+              {copied ? <Check size={11} /> : <Copy size={11} />}
+              <span>{copied ? 'تم النسخ!' : 'نسخ'}</span>
+            </button>
+          </div>
+          <a
+            href={directMenuUrl}
+            target="_blank"
+            className="text-[11px] font-mono font-bold text-slate-700 hover:text-orange-600 truncate block transition-colors"
+            dir="ltr"
+            title="افتح منيو زبائن المطعم"
+          >
+            {liveUrl}
+          </a>
+        </div>
       </div>
 
       {/* Dedicated Staff Screen Launcher */}

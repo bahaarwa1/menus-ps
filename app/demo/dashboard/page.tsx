@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, ShoppingBag, CreditCard, Activity,
-  Utensils, Store
+  Utensils, Store, Globe, Copy, Check, Sparkles, ExternalLink
 } from 'lucide-react';
 import { 
   bestSellers, busyHours, dailySales, tables, branches, summaryStats, addonConversion 
@@ -15,10 +15,25 @@ import {
 
 export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setCreatedSlug(params.get('created'));
+    }
   }, []);
+
+  const liveUrl = createdSlug ? `https://${createdSlug}.menus-ps.vercel.app` : 'https://burger-house.menus-ps.vercel.app';
+  const directMenuUrl = createdSlug ? `/m?restaurant=${createdSlug}` : '/m';
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(liveUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const kpis = [
     { title: 'المبيعات (30 يوم)', value: `${summaryStats.totalSales30Days.toLocaleString()}₪`, change: `+${summaryStats.revenueGrowth}%`, isUp: true, icon: TrendingUp },
@@ -58,6 +73,47 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-10 font-sans text-slate-900" dir="rtl">
+      {/* Live Restaurant URL Notification Banner */}
+      {createdSlug && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-orange-500/15 via-orange-500/10 to-transparent border border-orange-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-orange-500/20">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                  مبروك! مطعمك شغال أونلاين
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">
+                رابط موقع مطعمك ومنيو الزبائن الحصري:
+              </p>
+              <a href={directMenuUrl} target="_blank" className="font-mono text-xs sm:text-sm font-bold text-orange-600 hover:underline block" dir="ltr">
+                {liveUrl}
+              </a>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={copyUrl}
+              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-orange-500" />}
+              <span>{copied ? 'تم النسخ!' : 'نسخ الرابط'}</span>
+            </button>
+            <a
+              href={directMenuUrl}
+              target="_blank"
+              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 transition-all"
+            >
+              <span>فتح المنيو</span>
+              <ExternalLink size={13} />
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-1">التقارير والتحليلات المالية — Burger House نابلس</h1>
