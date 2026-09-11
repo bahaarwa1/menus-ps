@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Determine redirect
     let target = redirectTo;
     if (!target) {
-      target = authResult.session.role === 'staff' || authResult.session.role === 'kitchen' ? '/staff' : '/demo';
+      target = authResult.session.role === 'staff' || authResult.session.role === 'kitchen' ? '/staff' : '/dashboard';
     }
 
     const response = NextResponse.json({
@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
         name: authResult.session.name,
         role: authResult.session.role,
         branchId: authResult.session.branchId,
+        restaurantId: authResult.session.restaurantId,
+        restaurantSlug: authResult.session.restaurantSlug,
       },
       redirectTo: target,
     });

@@ -492,7 +492,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
                 
                 <Link
-                  href={`/demo/dashboard?created=${createdRestaurant.slug}`}
+                  href={`/dashboard?created=${createdRestaurant.slug}`}
                   className="p-4 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex flex-col items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition-all active:scale-98"
                 >
                   <BarChart3 size={20} />

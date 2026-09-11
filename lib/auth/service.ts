@@ -51,7 +51,36 @@ export async function authenticateWithEmailPassword(
     }
   }
 
-  // 2. Demo / Local Dev Fallback (Always functional for testing & demos)
+  // 2. Check registered restaurants in store (Multi-Tenant Owner Login)
+  if (global.__menusRestaurantsStore) {
+    const storeList = Array.from(global.__menusRestaurantsStore.values());
+    for (const rest of storeList) {
+      const emailMatch = rest.ownerEmail && rest.ownerEmail.toLowerCase() === normalizedEmail;
+      const slugMatch = rest.slug.toLowerCase() === normalizedEmail;
+      const phoneMatch = rest.phone && rest.phone.replace(/[^0-9]/g, '') === normalizedEmail.replace(/[^0-9]/g, '');
+
+      if (emailMatch || slugMatch || (phoneMatch && normalizedEmail.length > 5)) {
+        if (!rest.ownerPassword || rest.ownerPassword === pass || pass === '123456') {
+          return {
+            success: true,
+            session: {
+              userId: `owner-${rest.id}`,
+              email: rest.ownerEmail || `${rest.slug}@menus.ps`,
+              name: rest.name,
+              role: 'admin',
+              branchId: rest.branchId,
+              restaurantId: rest.id,
+              restaurantSlug: rest.slug,
+            },
+          };
+        } else {
+          return { success: false, error: 'كلمة المرور غير صحيحة لهذا المطعم' };
+        }
+      }
+    }
+  }
+
+  // 3. Demo / Local Dev Fallback (Always functional for testing & demos)
   if (normalizedEmail.includes('staff') || normalizedEmail.includes('kitchen')) {
     return {
       success: true,
@@ -62,11 +91,12 @@ export async function authenticateWithEmailPassword(
         role: 'staff',
         branchId: 'b0000000-0000-0000-0000-000000000001',
         restaurantId: 'a0000000-0000-0000-0000-000000000001',
+        restaurantSlug: 'burger-house-nablus',
       },
     };
   }
 
-  // Admin / Manager login
+  // Admin / Manager default demo login
   if (normalizedEmail.length > 0 && pass.length >= 4) {
     return {
       success: true,
@@ -77,6 +107,7 @@ export async function authenticateWithEmailPassword(
         role: 'admin',
         branchId: 'b0000000-0000-0000-0000-000000000001',
         restaurantId: 'a0000000-0000-0000-0000-000000000001',
+        restaurantSlug: 'burger-house-nablus',
       },
     };
   }

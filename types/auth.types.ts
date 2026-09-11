@@ -7,6 +7,7 @@ export interface AuthSession {
   role: UserRole;
   branchId?: string;
   restaurantId?: string;
+  restaurantSlug?: string;
   exp: number; // Unix timestamp in seconds
 }
 
@@ -18,6 +19,8 @@ export interface LoginResponse {
     name: string;
     role: UserRole;
     branchId?: string;
+    restaurantId?: string;
+    restaurantSlug?: string;
   };
   redirectTo?: string;
   error?: string;

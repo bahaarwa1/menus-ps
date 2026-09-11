@@ -35,6 +35,7 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
       email: input.ownerEmail || `${restaurant.slug}@menus.ps`,
       role: 'admin',
       restaurantId: restaurant.id,
+      restaurantSlug: restaurant.slug,
       branchId: restaurant.branchId,
     });
 
@@ -51,7 +52,7 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
     return {
       success: true,
       restaurant,
-      redirectTo: `/demo/dashboard?created=${restaurant.slug}`,
+      redirectTo: `/dashboard?created=${restaurant.slug}`,
     };
   } catch (err: unknown) {
     console.error('Restaurant registration error:', err);

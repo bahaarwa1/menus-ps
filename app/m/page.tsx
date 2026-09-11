@@ -15,6 +15,7 @@ import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
+  const restaurantParam = searchParams.get('restaurant') || '';
   const { t, direction, language } = useLanguage();
 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || 'burgers');
@@ -300,8 +301,8 @@ function FastFrictionlessMenuContent() {
               </div>
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-sm font-bold text-slate-900 truncate">
-                    {language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus'}
+                  <h1 className="text-sm font-bold text-slate-900 truncate capitalize">
+                    {restaurantParam ? restaurantParam.replace(/-/g, ' ') : (language === 'ar' ? 'Burger House نابلس' : 'Burger House Nablus')}
                   </h1>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>
@@ -309,7 +310,7 @@ function FastFrictionlessMenuContent() {
                   <span className="text-amber-500 font-bold flex items-center gap-0.5">
                     <Star size={11} fill="currentColor" /> 4.9
                   </span>
-                  <span>· {language === 'ar' ? 'رفيديا، نابلس' : 'Rafidia, Nablus'}</span>
+                  <span>· {restaurantParam ? 'الفرع الرئيسي' : (language === 'ar' ? 'رفيديا، نابلس' : 'Rafidia, Nablus')}</span>
                 </p>
               </div>
             </div>

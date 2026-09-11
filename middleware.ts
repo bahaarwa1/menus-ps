@@ -31,7 +31,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Role check if logged in: Staff/Kitchen cannot access Admin financial analytics
+  // 2. Production Dashboard Protection & Role Enforcement
+  if (pathname.startsWith('/dashboard')) {
+    const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    if (!session) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (session.role === 'staff' || session.role === 'kitchen') {
+      return NextResponse.redirect(new URL('/staff', request.url));
+    }
+  }
+
+  // 3. Demo Role Check
   if (pathname.startsWith('/demo')) {
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     const session = token ? await verifySession(token) : null;

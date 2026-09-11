@@ -28,6 +28,8 @@ export interface RegisteredRestaurantResult {
     qrToken: string;
     qrUrl: string;
   }>;
+  ownerEmail?: string;
+  ownerPassword?: string;
   createdAt: string;
 }
 
@@ -150,6 +152,8 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     branchName: 'الفرع الرئيسي',
     tablesCount,
     tables,
+    ownerEmail: input.ownerEmail?.trim().toLowerCase(),
+    ownerPassword: input.password || '',
     createdAt: new Date().toISOString(),
   };
 
