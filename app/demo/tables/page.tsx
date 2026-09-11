@@ -7,13 +7,13 @@ import {
   RefreshCw, Copy, Check, ShieldCheck
 } from 'lucide-react';
 import { tables as initialTables, TableInfo } from '@/data/demo-data';
+import RealQRCode from '@/components/common/RealQRCode';
 
 export default function TablesManagementPage() {
   const [tablesList, setTablesList] = useState<TableInfo[]>(initialTables);
   const [selectedTableForQr, setSelectedTableForQr] = useState<TableInfo | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isRotatingToken, setIsRotatingToken] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const occupiedCount = tablesList.filter(t => t.status === 'مشغولة').length;
   const freeCount = tablesList.filter(t => t.status === 'فارغة').length;
@@ -40,12 +40,6 @@ export default function TablesManagementPage() {
     } finally {
       setIsRotatingToken(false);
     }
-  };
-
-  const handleCopyLink = (url: string) => {
-    navigator.clipboard?.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const toggleTableStatus = (tableId: number) => {
@@ -254,45 +248,25 @@ export default function TablesManagementPage() {
                 <p className="text-xs text-orange-600 font-extrabold">طاولة رقم {selectedTableForQr.id}</p>
               </div>
 
-              {/* Realistic QR Canvas representation */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-6 mb-3 sm:mb-4 flex flex-col items-center justify-center">
-                <div className="w-36 h-36 sm:w-44 sm:h-44 bg-white p-2.5 sm:p-3 rounded-2xl shadow-sm flex flex-col items-center justify-center border border-slate-200">
-                  <div className="w-full h-full bg-slate-900 rounded-lg p-2 flex items-center justify-center relative">
-                    {/* QR Pattern Simulation */}
-                    <div className="w-full h-full border-2 border-white/40 grid grid-cols-5 gap-1 p-1">
-                      {Array.from({ length: 25 }).map((_, i) => (
-                        <div key={i} className={`rounded-xs ${i % 2 === 0 || i % 3 === 0 ? 'bg-white' : 'bg-transparent'}`}></div>
-                      ))}
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-lg bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-md">
-                        M
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2.5 sm:mt-3 font-medium">امسح الكود لطلب الطعام والدفع مباشرة</p>
+              {/* Real Standard QR Code */}
+              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 flex flex-col items-center justify-center">
+                <RealQRCode
+                  value={
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`
+                      : `https://menus.ps/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`
+                  }
+                  size={190}
+                  tableNumber={selectedTableForQr.id}
+                  restaurantName="Burger House نابلس"
+                  showActions={true}
+                />
                 
-                {/* Dynamic QR link & security badge */}
-                <div className="mt-2 w-full bg-slate-100 rounded-xl p-2 flex items-center justify-between gap-2 border border-slate-200">
-                  <div className="text-right overflow-hidden">
-                    <span className="text-[10px] text-slate-400 font-semibold block">رابط الطاولة الديناميكي:</span>
-                    <span className="text-[11px] font-mono text-slate-700 font-bold truncate block dir-ltr">
-                      menus.ps/m?t={selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCopyLink(`https://menus.ps/m?t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`)}
-                    className="p-1.5 bg-white hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 shrink-0"
-                    title="نسخ الرابط"
-                  >
-                    {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  </button>
-                </div>
+                <p className="text-[11px] text-slate-500 mt-2 font-medium">امسح الكود بكاميرا الجوال لفتح منيو الطاولة والطلب فوراً</p>
 
                 <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-emerald-600 font-bold">
                   <ShieldCheck size={12} />
-                  <span>رمز مشفر ديناميكي ضد التلاعب والطلبات الوهمية</span>
+                  <span>كود QR حقيقي مشفر متوافق مع كافة كاميرات الهواتف</span>
                 </div>
               </div>
 

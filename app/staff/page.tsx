@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Clock, CheckCircle2, UtensilsCrossed, 
-  Bell, BellOff, Check, RotateCcw, LogOut, ChefHat,
-  Undo2, X, Armchair, LayoutGrid,
-  Sun, Moon
+  ClipboardList, CheckCircle2, Clock, PlusCircle, RotateCcw, 
+  Search, Printer, ChevronRight, Check, X, Bell, BellOff,
+  Sun, Moon, LogOut, QrCode
 } from 'lucide-react';
+import { orders as initialOrders } from '@/data/demo-data';
+import RealQRCode from '@/components/common/RealQRCode';
 
 // Audio chime using Web Audio API
 function playOrderChime() {
@@ -29,131 +31,38 @@ function playOrderChime() {
   } catch {}
 }
 
-export interface OrderItem {
-  name: string;
-  qty: number;
-  notes?: string;
-  extras?: string[];
-  done?: boolean;
-}
+// Food images map for visual preview
+const mockImages: Record<string, string> = {
+  'دبل سماش برغر': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+  'تشيز بيكون فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
+  'تشيز فرايز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
+  'كوكا كولا مثلجة': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
+  'كولا': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
+  'كلاسيك برغر فاخر': 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&q=80',
+  'وجبة أطفال': 'https://images.unsplash.com/photo-1625937759403-1c39050d276c?w=500&q=80',
+  'بيتزا مارغريتا': 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=80',
+  'عصير برتقال': 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&q=80',
+  'عصير برتقال طازج': 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&q=80',
+  'تشيكن كريسبي': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80',
+  'بطاطا ودجز': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
+  'بطاطا مقلية': 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500&q=80',
+};
 
-export interface TableItem {
-  id: number;
-  seats: number;
-  status: 'فارغة' | 'جديد' | 'قيد التحضير' | 'جاهز' | 'محجوزة' | 'تم التسليم';
-  orderId?: string;
-  time?: string;
-  elapsedMinutes?: number;
-  items?: OrderItem[];
-  customerNote?: string;
-  completedAt?: string;
-}
-
-// Initial 15 tables - Covering ALL tables in the restaurant
-const initialTablesData: TableItem[] = [
-  {
-    id: 1, seats: 2, status: 'قيد التحضير', orderId: '#1041', time: '14:22', elapsedMinutes: 10,
-    items: [
-      { name: 'كلاسيك برغر فاخر', qty: 2 },
-      { name: 'بطاطا مقلية', qty: 2 },
-      { name: 'كولا', qty: 2 }
-    ]
-  },
-  {
-    id: 2, seats: 4, status: 'جديد', orderId: '#1050', time: '14:38', elapsedMinutes: 1,
-    customerNote: 'أرجو تحميص أطراف البيتزا قليلاً',
-    items: [
-      { name: 'بيتزا مارغريتا', qty: 1, extras: ['ريحان طازج'] },
-      { name: 'عصير برتقال', qty: 2, notes: 'بدون سكر' }
-    ]
-  },
-  { id: 3, seats: 2, status: 'فارغة' },
-  {
-    id: 4, seats: 6, status: 'جديد', orderId: '#1048', time: '14:32', elapsedMinutes: 2,
-    customerNote: 'بدون بصل في أحد البرغرين، صوص خارجي حار',
-    items: [
-      { name: 'دبل سماش برغر', qty: 2, notes: 'لحم مستوي ميديوم', extras: ['جبنة شيدر إضافية'] },
-      { name: 'تشيز فرايز', qty: 1 },
-      { name: 'كولا', qty: 2, notes: 'مع ثلج وليمون' }
-    ]
-  },
-  { id: 5, seats: 4, status: 'فارغة' },
-  {
-    id: 6, seats: 2, status: 'جاهز', orderId: '#1045', time: '14:20', elapsedMinutes: 18,
-    items: [
-      { name: 'دبل سماش برغر', qty: 1 },
-      { name: 'كولا', qty: 1 }
-    ]
-  },
-  {
-    id: 7, seats: 4, status: 'قيد التحضير', orderId: '#1046', time: '14:25', elapsedMinutes: 14,
-    items: [
-      { name: 'تشيكن كريسبي', qty: 2 },
-      { name: 'تشيز فرايز', qty: 1 }
-    ]
-  },
-  {
-    id: 8, seats: 8, status: 'قيد التحضير', orderId: '#1051', time: '14:41', elapsedMinutes: 12,
-    customerNote: 'الصلصات منفصلة في علب خارجية',
-    items: [
-      { name: 'تشيكن كريسبي', qty: 3, notes: 'حار جداً سبايسي' },
-      { name: 'بطاطا ودجز', qty: 2, extras: ['صوص ثوم'] }
-    ]
-  },
-  { id: 9, seats: 2, status: 'فارغة' },
-  { id: 10, seats: 4, status: 'فارغة' },
-  { id: 11, seats: 6, status: 'محجوزة' },
-  {
-    id: 12, seats: 4, status: 'قيد التحضير', orderId: '#1049', time: '14:35', elapsedMinutes: 6,
-    customerNote: 'اللحم مستوي جيداً من أجل طفل صغير',
-    items: [
-      { name: 'كلاسيك برغر فاخر', qty: 1, notes: 'بدون مخلل' },
-      { name: 'وجبة أطفال', qty: 1, notes: 'عصير برتقال طبيعي' }
-    ]
-  },
-  { id: 13, seats: 2, status: 'فارغة' },
-  {
-    id: 14, seats: 4, status: 'جديد', orderId: '#1052', time: '14:44', elapsedMinutes: 3,
-    items: [
-      { name: 'دبل سماش برغر', qty: 1 },
-      { name: 'عصير برتقال', qty: 1 }
-    ]
-  },
-  { id: 15, seats: 6, status: 'فارغة' }
-];
-
-export default function StaffProtectedOrdersPage() {
+export default function StaffOrdersManagementPage() {
   const router = useRouter();
-  const [tables, setTables] = useState<TableItem[]>(initialTablesData);
-  const [viewMode, setViewMode] = useState<'all_tables' | 'kitchen_cards'>('all_tables');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'cooking' | 'ready' | 'empty'>('all');
+  const [ordersList, setOrdersList] = useState<any[]>(initialOrders);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>(initialOrders[0]?.id || '');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
-  const [selectedTableModal, setSelectedTableModal] = useState<TableItem | null>(null);
-  
-  // Undo Toast state
-  const [undoToast, setUndoToast] = useState<{
-    show: boolean;
-    message: string;
-    tableId: number;
-    prevStatus: TableItem['status'];
-  }>({ show: false, message: '', tableId: 0, prevStatus: 'فارغة' });
+  const [selectedTableForQr, setSelectedTableForQr] = useState<number | null>(null);
 
-  // Clock state
-  const [liveTime, setLiveTime] = useState('');
+  const selectedOrder = ordersList.find(o => o.id === selectedOrderId) || ordersList[0];
 
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setLiveTime(now.toLocaleTimeString('ar-PS', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
-    };
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Realtime SSE listener
+  // Realtime SSE listener for customer orders placed via QR
   useEffect(() => {
     let eventSource: EventSource | null = null;
     try {
@@ -162,27 +71,27 @@ export default function StaffProtectedOrdersPage() {
       eventSource.addEventListener('order', (e: MessageEvent) => {
         try {
           const payload = JSON.parse(e.data);
-          if (payload.eventType === 'ORDER_CREATED') {
-            const incoming = payload.order;
-            const tableNum = incoming.tableNumber || 1;
-            setTables(prev => prev.map(t => {
-              if (t.id === tableNum) {
-                return {
-                  ...t,
-                  status: 'جديد',
-                  orderId: incoming.orderNumber || incoming.id,
-                  time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                  elapsedMinutes: 0,
-                  customerNote: incoming.customerNote,
-                  items: (incoming.items || []).map((i: { itemName: string; quantity: number; notes?: string }) => ({
-                    name: i.itemName,
-                    qty: i.quantity,
-                    notes: i.notes,
-                  }))
-                };
-              }
-              return t;
-            }));
+          if (payload.eventType === 'ORDER_CREATED' && payload.order) {
+            const inc = payload.order;
+            const newOrder = {
+              id: inc.orderNumber || `#${inc.id?.slice(0, 6)}`,
+              table: inc.tableNumber || 1,
+              items: (inc.items || []).map((it: any) => ({
+                name: it.itemName || it.name,
+                quantity: it.quantity || 1,
+                price: it.price || 35,
+                extras: it.extras || [],
+                customization: it.customization || it.notes || ''
+              })),
+              total: inc.totalAmount || 75,
+              status: 'جديد',
+              time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+              customerName: `طاولة ${inc.tableNumber || 1}`,
+              notes: inc.customerNote || ''
+            };
+
+            setOrdersList(prev => [newOrder, ...prev]);
+            setSelectedOrderId(newOrder.id);
             if (soundEnabled) playOrderChime();
           }
         } catch {}
@@ -193,6 +102,40 @@ export default function StaffProtectedOrdersPage() {
     }
     return () => eventSource?.close();
   }, [soundEnabled]);
+
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    setOrdersList(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    if (newStatus === 'جاهز' && soundEnabled) {
+      playOrderChime();
+    }
+  };
+
+  const addNewSimulatedOrder = () => {
+    const newId = `ORD-0${Math.floor(Math.random() * 900 + 100)}`;
+    const randomTable = Math.floor(Math.random() * 14 + 1);
+    const newOrder = {
+      id: newId,
+      table: randomTable,
+      items: [
+        { name: 'دبل سماش برغر', quantity: 2, price: 42, extras: ['جبنة شيدر'], customization: 'ميديوم' },
+        { name: 'تشيز بيكون فرايز', quantity: 1, price: 22 },
+        { name: 'كوكا كولا مثلجة', quantity: 2, price: 7 }
+      ],
+      total: 120,
+      status: 'جديد',
+      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+      customerName: `زبون طاولة ${randomTable}`,
+      notes: 'بدون بصل في أحد البرغرين، صوص خارجي'
+    };
+    setOrdersList(prev => [newOrder, ...prev]);
+    setSelectedOrderId(newId);
+    if (soundEnabled) playOrderChime();
+  };
+
+  const resetOrders = () => {
+    setOrdersList(initialOrders);
+    setSelectedOrderId(initialOrders[0]?.id || '');
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -206,176 +149,217 @@ export default function StaffProtectedOrdersPage() {
     router.push('/staff/login');
   };
 
-  // Actions with Undo capability
-  const startCooking = (tableId: number) => {
-    const target = tables.find(t => t.id === tableId);
-    if (!target) return;
-    const prevStatus = target.status;
-
-    setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'قيد التحضير' } : t));
-    setUndoToast({
-      show: true,
-      message: `بدأ تحضير طاولة ${tableId} في المطبخ 🔥`,
-      tableId,
-      prevStatus
-    });
-    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
-    if (selectedTableModal?.id === tableId) {
-      setSelectedTableModal(prev => prev ? { ...prev, status: 'قيد التحضير' } : null);
-    }
-  };
-
-  const markReady = (tableId: number) => {
-    const target = tables.find(t => t.id === tableId);
-    if (!target) return;
-    const prevStatus = target.status;
-
-    setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'جاهز' } : t));
-    if (soundEnabled) playOrderChime();
-
-    setUndoToast({
-      show: true,
-      message: `طاولة ${tableId} جاهزة للتقديم للزبون! 🔔`,
-      tableId,
-      prevStatus
-    });
-    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
-    if (selectedTableModal?.id === tableId) {
-      setSelectedTableModal(prev => prev ? { ...prev, status: 'جاهز' } : null);
-    }
-  };
-
-  const completeAndDeliver = (tableId: number) => {
-    const target = tables.find(t => t.id === tableId);
-    if (!target) return;
-    const prevStatus = target.status;
-
-    setTables(prev => prev.map(t => t.id === tableId ? { 
-      ...t, 
-      status: 'تم التسليم',
-      completedAt: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-    } : t));
-
-    setUndoToast({
-      show: true,
-      message: `تم تسليم طلب طاولة ${tableId} وأرشفته بنجاح ✅`,
-      tableId,
-      prevStatus
-    });
-    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
-    if (selectedTableModal?.id === tableId) {
-      setSelectedTableModal(null);
-    }
-  };
-
-  const clearTable = (tableId: number) => {
-    const target = tables.find(t => t.id === tableId);
-    if (!target) return;
-    const prevStatus = target.status;
-
-    setTables(prev => prev.map(t => t.id === tableId ? {
-      id: tableId,
-      seats: t.seats,
-      status: 'فارغة'
-    } : t));
-
-    setUndoToast({
-      show: true,
-      message: `تم تفريغ طاولة ${tableId} وأصبحت جاهزة للزبائن الجدد 🪑`,
-      tableId,
-      prevStatus
-    });
-    setTimeout(() => setUndoToast(prev => prev.tableId === tableId ? { ...prev, show: false } : prev), 6000);
-    if (selectedTableModal?.id === tableId) {
-      setSelectedTableModal(null);
-    }
-  };
-
-  const handleUndo = () => {
-    if (!undoToast.tableId) return;
-    setTables(prev => prev.map(t => t.id === undoToast.tableId ? { ...t, status: undoToast.prevStatus } : t));
-    setUndoToast({ show: false, message: '', tableId: 0, prevStatus: 'فارغة' });
-  };
-
-  const toggleItemDone = (tableId: number, itemIdx: number) => {
-    setTables(prev => prev.map(t => {
-      if (t.id !== tableId || !t.items) return t;
-      const updated = [...t.items];
-      updated[itemIdx] = { ...updated[itemIdx], done: !updated[itemIdx].done };
-      return { ...t, items: updated };
-    }));
-    if (selectedTableModal?.id === tableId && selectedTableModal.items) {
-      const updated = [...selectedTableModal.items];
-      updated[itemIdx] = { ...updated[itemIdx], done: !updated[itemIdx].done };
-      setSelectedTableModal({ ...selectedTableModal, items: updated });
-    }
-  };
-
-  // Counts
-  const occupiedTables = tables.filter(t => t.status !== 'فارغة');
-  const newCount = tables.filter(t => t.status === 'جديد').length;
-  const cookingCount = tables.filter(t => t.status === 'قيد التحضير').length;
-  const readyCount = tables.filter(t => t.status === 'جاهز').length;
-  const emptyCount = tables.filter(t => t.status === 'فارغة').length;
-
-  const filteredTables = tables.filter(t => {
-    if (statusFilter === 'all') return true;
-    if (statusFilter === 'new') return t.status === 'جديد';
-    if (statusFilter === 'cooking') return t.status === 'قيد التحضير';
-    if (statusFilter === 'ready') return t.status === 'جاهز';
-    if (statusFilter === 'empty') return t.status === 'فارغة';
-    return true;
+  // Filter orders
+  const filteredOrders = ordersList.filter(o => {
+    const matchesFilter = statusFilter === 'all' || o.status === statusFilter;
+    const matchesSearch = searchQuery.trim() === '' || 
+      o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `طاولة ${o.table}`.includes(searchQuery);
+    return matchesFilter && matchesSearch;
   });
 
-  const activeOrdersForKitchen = tables.filter(t => t.status === 'جديد' || t.status === 'قيد التحضير' || t.status === 'جاهز');
-
-  // Status style helper
-  const getStatusBadge = (status: TableItem['status']) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'جديد':
-        return { 
-          bg: 'bg-rose-50 text-rose-700 border border-rose-200/80', 
-          border: 'border-rose-400', 
-          label: 'طلب جديد', 
-          dot: 'bg-rose-500 animate-pulse' 
-        };
+        return (
+          <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>بانتظار التأكيد</span>
+          </span>
+        );
       case 'قيد التحضير':
-        return { 
-          bg: 'bg-amber-50 text-amber-800 border border-amber-200/80', 
-          border: 'border-amber-400', 
-          label: 'قيد التحضير', 
-          dot: 'bg-amber-500 animate-spin' 
-        };
+        return (
+          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-spin" />
+            <span>قيد التحضير</span>
+          </span>
+        );
       case 'جاهز':
-        return { 
-          bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', 
-          border: 'border-emerald-400', 
-          label: 'جاهز للتقديم', 
-          dot: 'bg-emerald-500' 
-        };
-      case 'محجوزة':
-        return { 
-          bg: 'bg-sky-50 text-sky-700 border border-sky-200/80', 
-          border: 'border-sky-400', 
-          label: 'محجوزة', 
-          dot: 'bg-sky-500' 
-        };
+        return (
+          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>جاهز للتسليم</span>
+          </span>
+        );
       case 'تم التسليم':
-        return { 
-          bg: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80', 
-          border: 'border-indigo-400', 
-          label: 'تم التسليم', 
-          dot: 'bg-indigo-500' 
-        };
-      case 'فارغة':
+        return <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">مكتمل</span>;
       default:
-        return { 
-          bg: 'bg-slate-100 text-slate-500 border border-slate-200/80', 
-          border: 'border-slate-200', 
-          label: 'فارغة', 
-          dot: 'bg-slate-400' 
-        };
+        return null;
     }
+  };
+
+  const newOrdersCount = ordersList.filter(o => o.status === 'جديد').length;
+  const preparingCount = ordersList.filter(o => o.status === 'قيد التحضير').length;
+  const readyCount = ordersList.filter(o => o.status === 'جاهز').length;
+
+  const renderInspectorContent = (order: any, isMobileModal: boolean = false) => {
+    if (!order) {
+      return (
+        <div className={`rounded-2xl border p-8 text-center text-slate-400 text-xs ${
+          isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/80'
+        }`}>
+          اختر طلباً من القائمة لعرض تفاصيله
+        </div>
+      );
+    }
+
+    return (
+      <div className={`space-y-3 ${
+        isMobileModal 
+          ? '' 
+          : `rounded-2xl border shadow-xs p-4 max-h-[calc(100vh-160px)] overflow-y-auto ${
+              isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200/80 text-slate-900'
+            }`
+      }`}>
+        {/* Order Details Header */}
+        <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-extrabold text-base">{order.id}</h3>
+              {getStatusBadge(order.status)}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+              طلب طاولة {order.table} — الساعة {order.time}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setSelectedTableForQr(order.table)}
+              className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-700"
+              title="عرض كود QR الخاص بهذه الطاولة"
+            >
+              <QrCode size={16} />
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-700"
+              title="طباعة بون الطلب للمطبخ"
+            >
+              <Printer size={16} />
+            </button>
+
+            {isMobileModal && (
+              <button
+                onClick={() => setIsMobileDetailOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                title="إغلاق"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Items List */}
+        <div className={`space-y-2 ${isMobileModal ? 'max-h-64' : 'max-h-60'} overflow-y-auto pr-0.5`}>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            محتويات الطلب ({order.items.length} أصناف)
+          </p>
+          {order.items.map((item: any, iIdx: number) => {
+            const img = mockImages[item.name];
+            return (
+              <div 
+                key={iIdx} 
+                className={`p-2.5 rounded-xl flex items-center justify-between gap-2.5 border transition-all ${
+                  isDarkMode 
+                    ? 'bg-slate-800/80 border-slate-700 text-slate-100' 
+                    : 'bg-slate-50 border-slate-100 text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    {item.quantity}×
+                  </span>
+                  {img && (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200/80">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-bold text-xs sm:text-sm truncate">{item.name}</p>
+                    {item.customization && (
+                      <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold block">• {item.customization}</span>
+                    )}
+                    {item.extras && item.extras.length > 0 && (
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">• + {item.extras.join('، ')}</span>
+                    )}
+                  </div>
+                </div>
+                <span className="font-extrabold text-xs sm:text-sm shrink-0">{item.price * item.quantity} ₪</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Customer Notes */}
+        {order.notes && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-xs font-bold text-amber-900 dark:text-amber-300">
+            <span className="block mb-1 font-extrabold text-amber-700 dark:text-amber-400">⚠️ ملاحظات الزبون:</span>
+            <p className="font-medium leading-relaxed">{order.notes}</p>
+          </div>
+        )}
+
+        {/* Bill Breakdown */}
+        <div className={`p-3 rounded-xl space-y-1.5 text-xs ${
+          isDarkMode ? 'bg-slate-800/60' : 'bg-slate-50'
+        }`}>
+          <div className="flex justify-between text-slate-500 dark:text-slate-400 font-medium">
+            <span>المجموع الفرعي:</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">{order.total} ₪</span>
+          </div>
+          <div className="flex justify-between text-slate-500 dark:text-slate-400 font-medium">
+            <span>الضريبة والخدمة:</span>
+            <span className="font-bold text-emerald-600">مشمولة (0 ₪)</span>
+          </div>
+          <div className="flex justify-between text-sm sm:text-base font-black pt-2 border-t border-slate-200 dark:border-slate-700">
+            <span>الإجمالي المطلوب:</span>
+            <span className="text-orange-600">{order.total} ₪</span>
+          </div>
+        </div>
+
+        {/* Primary Action Button Based on Order Status */}
+        <div className="pt-1">
+          {order.status === 'جديد' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
+              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-2"
+            >
+              <Check size={16} strokeWidth={3} />
+              <span>قبول الطلب وبدء التحضير 🔥</span>
+            </button>
+          )}
+
+          {order.status === 'قيد التحضير' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'جاهز')}
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+            >
+              <CheckCircle2 size={16} />
+              <span>الطلب جاهز للتقديم (طاولة {order.table}) ✅</span>
+            </button>
+          )}
+
+          {order.status === 'جاهز' && (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'تم التسليم')}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <Check size={16} />
+              <span>تم التسليم بنجاح وإغلاق الطلب 🚀</span>
+            </button>
+          )}
+
+          {order.status === 'تم التسليم' && (
+            <div className="text-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+              تم تسليم هذا الطلب بنجاح ✓
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -383,93 +367,98 @@ export default function StaffProtectedOrdersPage() {
       isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F8FAFC] text-slate-900'
     }`} dir="rtl">
       
-      {/* 1. Professional Modern Restaurant POS Top Bar */}
+      {/* 1. Header Bar - Matching Live Orders System */}
       <header className={`sticky top-0 z-30 border-b shadow-xs transition-colors backdrop-blur-md ${
         isDarkMode ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200/90'
       }`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           
-          {/* Brand & Live Connection Beacon */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-sm shadow-orange-500/20 shrink-0">
-              <ChefHat size={18} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
-                  Menus.ps POS
-                </h1>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  isRealtimeConnected 
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' 
-                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-                  <span className="hidden xs:inline">{isRealtimeConnected ? 'مباشر سحابياً' : 'إعادة اتصال...'}</span>
-                </span>
+          {/* Logo & Title */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-bold shadow-xs">
+                <ClipboardList size={20} />
               </div>
-              <p className="text-xs text-slate-400 font-medium truncate">
-                {tables.length} طاولة · {occupiedTables.length} مشغولة · نابلس
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base sm:text-lg font-black leading-tight">إدارة الطلبات الحية</h1>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    isRealtimeConnected 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400' 
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    <span className="hidden xs:inline">{isRealtimeConnected ? 'سحابي مباشر' : 'إعادة اتصال...'}</span>
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 font-medium">متابعة وتحديث طلبات الطاولات لحظة بلحظة · فرع نابلس</p>
+              </div>
+            </div>
+
+            {/* Mobile Actions Hamburger */}
+            <div className="flex md:hidden items-center gap-1">
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`p-2 rounded-xl border text-xs font-bold ${
+                  soundEnabled ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-slate-400 border-slate-200'
+                }`}
+              >
+                {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+              </button>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-2 rounded-xl border border-slate-200 text-xs font-bold"
+              >
+                {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
             </div>
           </div>
 
-          {/* Center Mode Switch */}
-          <div className={`p-1 rounded-xl border flex items-center ${
-            isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200/80'
-          }`}>
+          {/* Action Toolbar */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
             <button
-              onClick={() => setViewMode('all_tables')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                viewMode === 'all_tables'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              onClick={addNewSimulatedOrder}
+              className="px-3 py-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-orange-500/20 transition-all"
             >
-              <LayoutGrid size={14} />
-              <span>الطاولات ({tables.length})</span>
+              <PlusCircle size={14} />
+              <span>+ محاكاة طلب QR</span>
             </button>
 
             <button
-              onClick={() => setViewMode('kitchen_cards')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                viewMode === 'kitchen_cards'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              onClick={() => setSelectedTableForQr(1)}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-200/80 dark:border-slate-700"
+              title="توليد كود QR حقيقي للطاولات"
             >
-              <ChefHat size={14} />
-              <span>المطبخ ({activeOrdersForKitchen.length})</span>
+              <QrCode size={14} className="text-orange-500" />
+              <span className="hidden sm:inline">أكواد QR</span>
             </button>
-          </div>
 
-          {/* Right Action Tools & Clock */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Live Clock on Desktop */}
-            <div className="hidden md:flex items-center font-mono text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-              {liveTime || '12:00:00 م'}
-            </div>
+            <button
+              onClick={resetOrders}
+              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors border border-slate-200/80 dark:border-slate-700"
+              title="إعادة ضبط البيانات"
+            >
+              <RotateCcw size={15} />
+            </button>
 
-            {/* Sound alert */}
             <button
               onClick={() => {
                 setSoundEnabled(!soundEnabled);
                 if (!soundEnabled) playOrderChime();
               }}
-              className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all ${
                 soundEnabled
                   ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
                   : 'bg-white text-slate-400 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
               }`}
-              title={soundEnabled ? 'كتم التنبيه الصوتي' : 'تفعيل التنبيه الصوتي'}
+              title={soundEnabled ? 'كتم الصوت' : 'تفعيل صوت التنبيه'}
             >
               {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
             </button>
 
-            {/* Light / Dark Mode Toggle */}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`hidden md:flex p-2 rounded-xl border text-xs font-bold transition-all ${
                 isDarkMode
                   ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -479,19 +468,17 @@ export default function StaffProtectedOrdersPage() {
               {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
-            {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="hidden sm:flex p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-bold"
+              className="hidden lg:flex p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold"
               title="ملء الشاشة"
             >
               ⛶
             </button>
 
-            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
               title="تسجيل خروج"
             >
               <LogOut size={15} />
@@ -500,583 +487,296 @@ export default function StaffProtectedOrdersPage() {
 
         </div>
 
-        {/* 2. Quick Status Filters Strip */}
-        <div className={`px-3 sm:px-5 py-2 border-t flex items-center justify-between gap-1 overflow-x-auto hide-scrollbar text-xs font-bold ${
-          isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-100'
+        {/* 2. Filter Tabs & Search Bar */}
+        <div className={`max-w-7xl mx-auto px-3 sm:px-5 py-2 border-t flex flex-col md:flex-row md:items-center justify-between gap-2.5 ${
+          isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'
         }`}>
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs font-bold">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-full transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200'
               }`}
             >
-              الكل ({tables.length})
+              الكل ({ordersList.length})
             </button>
 
             <button
-              onClick={() => setStatusFilter('new')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-                statusFilter === 'new'
+              onClick={() => setStatusFilter('جديد')}
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+                statusFilter === 'جديد'
                   ? 'bg-rose-500 text-white shadow-xs'
-                  : 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 border border-rose-200/80'
+                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/80 hover:bg-rose-100'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              <span>جديد ({newCount})</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+              <span>بانتظار التأكيد ({newOrdersCount})</span>
             </button>
 
             <button
-              onClick={() => setStatusFilter('cooking')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-                statusFilter === 'cooking'
+              onClick={() => setStatusFilter('قيد التحضير')}
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+                statusFilter === 'قيد التحضير'
                   ? 'bg-amber-500 text-white shadow-xs'
-                  : 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 border border-amber-200/80'
+                  : 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 hover:bg-amber-100'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span>بالطهي ({cookingCount})</span>
+              <span>قيد التحضير ({preparingCount})</span>
             </button>
 
             <button
-              onClick={() => setStatusFilter('ready')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-                statusFilter === 'ready'
+              onClick={() => setStatusFilter('جاهز')}
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+                statusFilter === 'جاهز'
                   ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200/80'
+                  : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/80 hover:bg-emerald-100'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>جاهز ({readyCount})</span>
+              <span>جاهز للتسليم ({readyCount})</span>
             </button>
 
             <button
-              onClick={() => setStatusFilter('empty')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-                statusFilter === 'empty'
-                  ? 'bg-slate-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200/80'
+              onClick={() => setStatusFilter('تم التسليم')}
+              className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+                statusFilter === 'تم التسليم'
+                  ? 'bg-slate-700 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200'
               }`}
             >
-              <span>فارغة ({emptyCount})</span>
+              مكتمل ({ordersList.filter(o => o.status === 'تم التسليم').length})
             </button>
           </div>
 
-          <button
-            onClick={() => setTables(initialTablesData)}
-            className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-            title="إعادة ضبط الطاولات"
-          >
-            <RotateCcw size={13} />
-            <span className="hidden sm:inline">إعادة ضبط</span>
-          </button>
+          {/* Search Box */}
+          <div className="relative w-full md:w-64">
+            <Search size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="بحث برقم الطلب أو الطاولة..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full pr-9 pl-3.5 py-1.5 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${
+                isDarkMode 
+                  ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' 
+                  : 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400'
+              }`}
+            />
+          </div>
         </div>
       </header>
 
-      {/* 3. MAIN CONTENT: ALL TABLES MATRIX (15 TABLES) OR KITCHEN TICKETS */}
+      {/* 3. Main Split Master-Detail Interface (Identical to Live Orders Management) */}
       <main className="max-w-7xl mx-auto p-3 sm:p-5 w-full flex-1 pb-16">
-        
-        {/* =========================================================================
-            MODE 1: ALL 15 TABLES FLOOR MATRIX
-        ========================================================================= */}
-        {viewMode === 'all_tables' && (
-          <div>
-            {/* Quick Header */}
-            <div className="flex items-center justify-between mb-3 px-1">
-              <span className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                طاولات الصالة (اضغط على الطاولة للتفاصيل الكاملة):
-              </span>
-              <span className="text-xs text-slate-400">
-                {filteredTables.length} طاولة
-              </span>
-            </div>
-
-            {/* Responsive Multi-Column Matrix: 3 cols on mobile, 4 on tablet, 5 on desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
-              {filteredTables.map((table) => {
-                const badge = getStatusBadge(table.status);
-                const isOccupied = table.status !== 'فارغة';
-                const itemsCount = table.items?.reduce((sum, i) => sum + i.qty, 0) || 0;
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+          
+          {/* Orders Cards List (7 Cols on Desktop) */}
+          <div className="w-full lg:col-span-7 space-y-2.5 max-h-[calc(100vh-170px)] overflow-y-auto pr-0.5">
+            {filteredOrders.length === 0 ? (
+              <div className={`rounded-2xl border p-12 text-center ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200/80 text-slate-500'
+              }`}>
+                <ClipboardList size={36} className="mx-auto mb-2 text-orange-500 opacity-40" />
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">لا توجد طلبات مطابقة</p>
+                <p className="text-xs text-slate-400 mt-1">جرّب تغيير حالة الفلتر أو محاكاة طلب QR جديد</p>
+              </div>
+            ) : (
+              filteredOrders.map((order) => {
+                const isSelected = selectedOrder?.id === order.id;
 
                 return (
                   <div
-                    key={table.id}
-                    onClick={() => setSelectedTableModal(table)}
-                    className={`rounded-2xl p-3 border transition-all cursor-pointer flex flex-col justify-between relative shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] ${
-                      isDarkMode ? 'bg-slate-900 hover:border-orange-500/70' : 'bg-white hover:border-orange-300'
-                    } ${
-                      table.status === 'جديد'
-                        ? 'border-rose-300 ring-2 ring-rose-400/15'
-                        : table.status === 'قيد التحضير'
-                        ? 'border-amber-300 ring-2 ring-amber-400/15'
-                        : table.status === 'جاهز'
-                        ? 'border-emerald-300 ring-2 ring-emerald-400/15'
-                        : isDarkMode ? 'border-slate-800' : 'border-slate-200/80'
+                    key={order.id}
+                    onClick={() => {
+                      setSelectedOrderId(order.id);
+                      setIsMobileDetailOpen(true);
+                    }}
+                    className={`rounded-2xl p-3 sm:p-3.5 border transition-all cursor-pointer relative shadow-xs hover:shadow-md ${
+                      isSelected
+                        ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/10'
+                        : isDarkMode
+                        ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                        : 'bg-white border-slate-200/80 hover:border-orange-200'
                     }`}
                   >
-                    <div>
-                      {/* Card Header: Table Number & Seats */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs flex items-center justify-center">
-                            {table.id}
-                          </span>
-                          <span className="font-bold text-xs sm:text-sm leading-none text-slate-900 dark:text-white">
-                            طاولة {table.id}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
-                          <Armchair size={12} />
-                          <span>{table.seats}</span>
-                        </div>
-                      </div>
-
-                      {/* Status Pill */}
-                      <div className="mb-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold w-full justify-center ${badge.bg}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                          <span className="truncate">{badge.label}</span>
+                    {/* Top Row: Order ID + Table badge + Status + Time */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm sm:text-base">{order.id}</span>
+                        <span className="bg-slate-900 text-white font-bold text-xs px-2.5 py-0.5 rounded-lg shadow-2xs">
+                          طاولة {order.table}
                         </span>
                       </div>
-
-                      {/* Summary Info */}
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                        {isOccupied ? (
-                          <div className="space-y-1">
-                            <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
-                              <span className="truncate font-mono">{table.orderId}</span>
-                              <span className="text-orange-600 font-extrabold">{itemsCount} أصناف</span>
-                            </div>
-                            {table.time && (
-                              <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-                                <Clock size={11} />
-                                <span>{table.time} ({table.elapsedMinutes || 1} دقيقة)</span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-center text-slate-400 py-1 font-medium text-xs">
-                            جاهزة للاستقبال
-                          </div>
-                        )}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(order.status)}
+                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                          <Clock size={12} />
+                          {order.time}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Quick 1-Click Action Button on Card (Fitts's Law) */}
-                    {isOccupied && (
-                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        {table.status === 'جديد' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startCooking(table.id);
-                            }}
-                            className="w-full py-1.5 px-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                          >
-                            <UtensilsCrossed size={12} />
-                            <span>بدء الطهي 🔥</span>
-                          </button>
-                        )}
-                        {table.status === 'قيد التحضير' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markReady(table.id);
-                            }}
-                            className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                          >
-                            <CheckCircle2 size={12} />
-                            <span>جاهز للتقديم ✅</span>
-                          </button>
-                        )}
-                        {table.status === 'جاهز' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              completeAndDeliver(table.id);
-                            }}
-                            className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                          >
-                            <Check size={12} />
-                            <span>تسليم للويتر 🚀</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    {/* Items preview */}
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium line-clamp-1 mb-2">
+                      {order.items.map((i: any) => `${i.name} (${i.quantity})`).join('، ')}
+                    </p>
 
+                    {/* Bottom Row: Total & Action Chevron */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-black text-orange-600 text-base">{order.total}</span>
+                        <span className="text-xs text-orange-600 font-bold">₪</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
+                        <span className="lg:hidden text-orange-600">عرض التفاصيل والإجراءات</span>
+                        <span className="hidden lg:inline">معاينة الطلب</span>
+                        <ChevronRight size={14} className="rtl:rotate-180" />
+                      </div>
+                    </div>
                   </div>
                 );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* =========================================================================
-            MODE 2: KITCHEN ORDER TICKETS
-        ========================================================================= */}
-        {viewMode === 'kitchen_cards' && (
-          <div>
-            {/* Quick Strip for All 15 Tables at Top of Kitchen View */}
-            <div className={`p-2.5 rounded-2xl mb-4 border flex items-center justify-between gap-1.5 overflow-x-auto hide-scrollbar ${
-              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/80'
-            }`}>
-              <span className="text-xs font-bold text-slate-500 shrink-0 ml-1">كل الطاولات:</span>
-              <div className="flex items-center gap-1 shrink-0">
-                {tables.map(t => {
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedTableModal(t)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
-                        t.status === 'جديد'
-                          ? 'bg-rose-500 text-white shadow-xs animate-pulse'
-                          : t.status === 'قيد التحضير'
-                          ? 'bg-amber-500 text-white font-bold'
-                          : t.status === 'جاهز'
-                          ? 'bg-emerald-500 text-white'
-                          : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
-                      }`}
-                      title={`طاولة ${t.id}: ${t.status}`}
-                    >
-                      {t.id}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Kitchen Orders Grid */}
-            {activeOrdersForKitchen.length === 0 ? (
-              <div className={`border rounded-2xl p-10 text-center max-w-sm mx-auto my-8 ${
-                isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
-              }`}>
-                <ChefHat size={44} className="mx-auto mb-2 text-orange-500 opacity-60" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-                  لا توجد طلبات معلقة في المطبخ الآن 🎉
-                </h3>
-                <p className="text-xs text-slate-400">
-                  جميع الوجبات تم تجهيزها وتسليمها بالكامل
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
-                {activeOrdersForKitchen.map((order) => {
-                  const isNew = order.status === 'جديد';
-                  const isCooking = order.status === 'قيد التحضير';
-
-                  return (
-                    <div
-                      key={order.id}
-                      className={`rounded-2xl border transition-all shadow-xs flex flex-col justify-between overflow-hidden relative ${
-                        isDarkMode ? 'bg-slate-900' : 'bg-white'
-                      } ${
-                        isNew
-                          ? 'border-rose-300'
-                          : isCooking
-                          ? 'border-amber-300'
-                          : 'border-emerald-300'
-                      }`}
-                    >
-                      {/* Ticket Header: Table Number & Status */}
-                      <div className={`px-3 py-2 border-b flex items-center justify-between ${
-                        isNew
-                          ? 'bg-rose-50 border-rose-200 text-rose-800'
-                          : isCooking
-                          ? 'bg-amber-50 border-amber-200 text-amber-900'
-                          : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      }`}>
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-bold text-sm">
-                            طاولة {order.id}
-                          </span>
-                          <span className="text-xs font-mono opacity-80">
-                            {order.orderId}
-                          </span>
-                        </div>
-                        
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/80">
-                          {isNew ? 'طلب جديد' : isCooking ? 'قيد الطهي' : 'جاهز'}
-                        </span>
-                      </div>
-
-                      {/* Ticket Time & Note */}
-                      <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} />
-                          <span>{order.time} ({order.elapsedMinutes || 1} دقيقة)</span>
-                        </span>
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                          {order.items?.length || 0} أطباق
-                        </span>
-                      </div>
-
-                      {/* Items List */}
-                      <div className="p-3 space-y-1.5 flex-1">
-                        {order.items?.map((item, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => toggleItemDone(order.id, idx)}
-                            className={`p-2 rounded-xl border text-xs transition-all flex items-center justify-between gap-1.5 cursor-pointer ${
-                              item.done
-                                ? 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-40 line-through'
-                                : 'bg-slate-50/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 hover:border-orange-400'
-                            }`}
-                            title="اضغط لتأكيد تجهيز الصنف"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-5 h-5 rounded-md bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                                {item.qty}
-                              </span>
-                              <span className="font-bold truncate text-slate-800 dark:text-slate-200">
-                                {item.name}
-                              </span>
-                            </div>
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                              item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'
-                            }`}>
-                              {item.done && <Check size={11} strokeWidth={3} />}
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Customer note if any */}
-                        {order.customerNote && (
-                          <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300 leading-tight">
-                            <span className="text-amber-600 dark:text-amber-400 font-bold">ملاحظة: </span>
-                            {order.customerNote}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 1-Tap Action Button */}
-                      <div className="p-2 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800">
-                        {isNew && (
-                          <button
-                            onClick={() => startCooking(order.id)}
-                            className="w-full py-2 px-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
-                          >
-                            <UtensilsCrossed size={14} />
-                            <span>بدء الطهي 🔥</span>
-                          </button>
-                        )}
-
-                        {isCooking && (
-                          <button
-                            onClick={() => markReady(order.id)}
-                            className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
-                          >
-                            <CheckCircle2 size={14} />
-                            <span>جاهز للتقديم ✅</span>
-                          </button>
-                        )}
-
-                        {order.status === 'جاهز' && (
-                          <button
-                            onClick={() => completeAndDeliver(order.id)}
-                            className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1"
-                          >
-                            <Check size={14} />
-                            <span>تسليم للويتر 🚀</span>
-                          </button>
-                        )}
-                      </div>
-
-                    </div>
-                  );
-                })}
-              </div>
+              })
             )}
           </div>
-        )}
 
+          {/* Desktop Sticky Inspector Pane (5 Cols on Desktop) */}
+          <div className="hidden lg:block lg:col-span-5 sticky top-20">
+            {renderInspectorContent(selectedOrder, false)}
+          </div>
+
+        </div>
       </main>
 
-      {/* =========================================================================
-          4. TABLE DETAILS MODAL / BOTTOM SHEET
-      ========================================================================= */}
-      {selectedTableModal && (
-        <div 
-          onClick={() => setSelectedTableModal(null)}
-          className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className={`w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border transition-all animate-in slide-in-from-bottom-5 duration-200 ${
-              isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-xl bg-orange-500 text-white font-bold text-sm flex items-center justify-center">
-                  {selectedTableModal.id}
-                </span>
-                <div>
-                  <h3 className="font-bold text-base leading-none">
-                    تفاصيل طاولة {selectedTableModal.id}
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    السعة: {selectedTableModal.seats} مقاعد • {selectedTableModal.status}
-                  </p>
+      {/* 4. Mobile Slide-Up Bottom Sheet Drawer */}
+      <AnimatePresence>
+        {isMobileDetailOpen && selectedOrder && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDetailOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className={`relative w-full max-h-[88vh] rounded-t-3xl shadow-2xl z-10 overflow-hidden flex flex-col border-t ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'
+              }`}
+            >
+              {/* Drawer Pull Handle */}
+              <div 
+                className="pt-3 pb-1 flex justify-center cursor-pointer"
+                onClick={() => setIsMobileDetailOpen(false)}
+              >
+                <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full" />
+              </div>
+              
+              <div className="p-4 overflow-y-auto">
+                {renderInspectorContent(selectedOrder, true)}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. Real QR Code Modal for Tables */}
+      <AnimatePresence>
+        {selectedTableForQr !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTableForQr(null)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-3xl p-5 sm:p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl z-10 border border-slate-100 text-center"
+            >
+              <button
+                onClick={() => setSelectedTableForQr(null)}
+                className="absolute top-4 left-4 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="mb-3">
+                <div className="w-10 h-10 bg-orange-500 text-white rounded-2xl mx-auto flex items-center justify-center font-black text-lg mb-2 shadow-md shadow-orange-500/25">
+                  BH
+                </div>
+                <h3 className="text-base font-black text-slate-900">Burger House نابلس</h3>
+                <p className="text-xs text-orange-600 font-bold">كود QR الحقيقي لطاولة {selectedTableForQr}</p>
+              </div>
+
+              {/* Real QR Component */}
+              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 mb-3 flex flex-col items-center justify-center">
+                <RealQRCode
+                  value={
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/m?table=${selectedTableForQr}&t=qr_token_table_${selectedTableForQr}_nablus`
+                      : `https://menus-ps.vercel.app/m?table=${selectedTableForQr}&t=qr_token_table_${selectedTableForQr}_nablus`
+                  }
+                  size={190}
+                  tableNumber={selectedTableForQr}
+                  restaurantName="Burger House نابلس"
+                  showActions={true}
+                />
+
+                <p className="text-[11px] text-slate-500 mt-2 font-medium">
+                  امسح الكود بكاميرا أي هاتف لفتح منيو الطاولة فوراً
+                </p>
+              </div>
+
+              {/* Table Switcher */}
+              <div className="mb-4">
+                <p className="text-[11px] text-slate-400 font-bold mb-1.5">اختر طاولة أخرى لعرض كودها:</p>
+                <div className="flex gap-1 overflow-x-auto hide-scrollbar py-1">
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setSelectedTableForQr(num)}
+                      className={`w-7 h-7 rounded-lg text-xs font-bold shrink-0 transition-all ${
+                        selectedTableForQr === num
+                          ? 'bg-orange-500 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedTableModal(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="py-4 space-y-3.5 max-h-[60vh] overflow-y-auto">
-              {selectedTableModal.status === 'فارغة' ? (
-                <div className="text-center py-6 text-slate-400">
-                  <Armchair size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                  <p className="font-bold text-sm text-slate-700 dark:text-slate-300">هذه الطاولة فارغة حالياً</p>
-                  <p className="text-xs text-slate-400 mt-1">يمكن للزبون مسح كود QR والطلب مباشرة</p>
-                  <button
-                    onClick={() => {
-                      setTables(prev => prev.map(t => t.id === selectedTableModal.id ? { 
-                        ...t, 
-                        status: 'جديد', 
-                        orderId: '#ORD-NEW', 
-                        time: 'الآن', 
-                        items: [{ name: 'دبل سماش برغر', qty: 1 }, { name: 'كولا', qty: 1 }] 
-                      } : t));
-                      setSelectedTableModal(null);
-                    }}
-                    className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold shadow-xs"
-                  >
-                    + فتح طلب جديد للطاولة
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800 p-3 rounded-xl">
-                    <div>
-                      <span className="text-slate-400">رقم الطلب: </span>
-                      <span className="font-mono font-bold text-orange-600">{selectedTableModal.orderId}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400">وقت الطلب: </span>
-                      <span className="font-bold">{selectedTableModal.time}</span>
-                    </div>
-                  </div>
-
-                  {/* Customer note if any */}
-                  {selectedTableModal.customerNote && (
-                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">
-                      <span className="font-bold text-amber-600 dark:text-amber-400">ملاحظة الزبون: </span>
-                      {selectedTableModal.customerNote}
-                    </div>
-                  )}
-
-                  {/* Items List */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-400 mb-2">الأصناف المطلوبة:</h4>
-                    <div className="space-y-2">
-                      {selectedTableModal.items?.map((item, idx) => (
-                        <div
-                          key={idx}
-                          onClick={() => toggleItemDone(selectedTableModal.id, idx)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between text-xs cursor-pointer ${
-                            item.done
-                              ? 'bg-slate-100 dark:bg-slate-800 opacity-40 line-through'
-                              : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded bg-orange-500 text-white font-bold text-xs flex items-center justify-center">
-                              {item.qty}
-                            </span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">{item.name}</span>
-                          </div>
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                            item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'
-                          }`}>
-                            {item.done && <Check size={11} />}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions in Modal */}
-                  <div className="pt-2 flex flex-col gap-2">
-                    {selectedTableModal.status === 'جديد' && (
-                      <button
-                        onClick={() => startCooking(selectedTableModal.id)}
-                        className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
-                      >
-                        <UtensilsCrossed size={14} />
-                        <span>بدء تحضير الطلب في المطبخ 🔥</span>
-                      </button>
-                    )}
-
-                    {selectedTableModal.status === 'قيد التحضير' && (
-                      <button
-                        onClick={() => markReady(selectedTableModal.id)}
-                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
-                      >
-                        <CheckCircle2 size={14} />
-                        <span>جاهز للتقديم (نداء الويتر) ✅</span>
-                      </button>
-                    )}
-
-                    {selectedTableModal.status === 'جاهز' && (
-                      <button
-                        onClick={() => completeAndDeliver(selectedTableModal.id)}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
-                      >
-                        <Check size={14} />
-                        <span>تسليم للويتر وأرشفة 🚀</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => clearTable(selectedTableModal.id)}
-                      className="w-full py-2.5 border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold text-xs"
-                    >
-                      تفريغ الطاولة وإنهاء الجلسة
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Printer size={15} />
+                  <span>طباعة الستاند</span>
+                </button>
+                <button
+                  onClick={() => setSelectedTableForQr(null)}
+                  className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* 5. Undo Floating Toast */}
-      {undoToast.show && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in duration-200 max-w-md w-[92%] sm:w-auto">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-xs font-bold truncate">{undoToast.message}</span>
-          </div>
-
-          <button
-            onClick={handleUndo}
-            className="px-3 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center gap-1 shrink-0"
-          >
-            <Undo2 size={13} />
-            <span>تراجع</span>
-          </button>
-
-          <button 
-            onClick={() => setUndoToast(prev => ({ ...prev, show: false }))}
-            className="text-slate-400 hover:text-white p-1"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
     </div>
   );
