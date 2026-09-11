@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft, ShieldCheck, ChefHat, AlertCircle, KeyRound, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck, ChefHat, AlertCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -97,19 +97,6 @@ function LoginForm() {
     }
   };
 
-  // 1-Click Demo Login Triggers
-  const triggerDemoAdmin = () => {
-    setActiveTab('admin');
-    setEmail('admin@menus.ps');
-    setPassword('password123');
-    handleAdminLogin(undefined, 'admin@menus.ps', 'password123');
-  };
-
-  const triggerDemoKitchen = () => {
-    setActiveTab('staff');
-    setPin('1234');
-    handleStaffPinLogin('1234');
-  };
 
   // Keypad button click
   const handleKeypadClick = (val: string) => {
@@ -162,38 +149,6 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* 1-CLICK QUICK DEMO BUTTONS */}
-        <div className="mb-5 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/80 rounded-2xl p-3 shadow-2xs">
-          <div className="flex items-center gap-1.5 mb-2 text-[11px] font-black text-orange-800">
-            <Sparkles size={14} className="text-orange-600 animate-spin" />
-            <span>{isEn ? '⚡ Instant 1-Click Demo Login' : '⚡ دخول فوري تجريبي بنقرة واحدة'}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={triggerDemoAdmin}
-              disabled={isLoading}
-              className="py-2.5 px-2 bg-white hover:bg-orange-500 hover:text-white text-slate-800 border border-orange-200/90 rounded-xl text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer group"
-            >
-              <ShieldCheck size={14} className="text-orange-500 group-hover:text-white" />
-              <span>{isEn ? 'Admin Demo' : 'تجربة المدير'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={triggerDemoKitchen}
-              disabled={isLoading}
-              className="py-2.5 px-2 bg-white hover:bg-orange-500 hover:text-white text-slate-800 border border-orange-200/90 rounded-xl text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer group"
-            >
-              <ChefHat size={14} className="text-amber-500 group-hover:text-white" />
-              <span>{isEn ? 'Kitchen PIN 1234' : 'المطبخ (PIN 1234)'}</span>
-            </button>
-          </div>
-          <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">
-            {isEn 
-              ? 'Demo: admin@menus.ps | pass: password123 | PIN: 1234'
-              : 'بيانات التجربة: البريد admin@menus.ps | كلمة المرور: password123 | كود المطبخ: 1234'}
-          </p>
-        </div>
 
         {/* Role Selector Tabs */}
         <div className="flex bg-slate-100 p-1 rounded-2xl mb-4 border border-slate-200/80">
