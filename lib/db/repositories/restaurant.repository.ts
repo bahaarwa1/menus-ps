@@ -261,23 +261,42 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
             is_active: true,
           } as never);
 
-          // Provision Supabase Auth account if email & password are provided
-          if (cleanEmail && input.password && input.password.length >= 6) {
+          // Provision or update Supabase Auth account
+          if (cleanEmail) {
             try {
-              await supabase.auth.admin.createUser({
-                email: cleanEmail,
-                password: input.password,
-                email_confirm: true,
-                user_metadata: {
-                  full_name: registeredRecord.name,
-                  role: 'admin',
-                  restaurant_id: dbRestId,
-                  restaurant_slug: slug,
-                  branch_id: dbBranchId,
-                },
-              });
+              const { data: userListData } = await supabase.auth.admin.listUsers();
+              const existingUser = userListData?.users?.find(
+                u => u.email?.toLowerCase() === cleanEmail.toLowerCase()
+              );
+
+              if (existingUser) {
+                // User already registered (e.g. via Google OAuth) -> Link restaurant to their user_metadata
+                await supabase.auth.admin.updateUserById(existingUser.id, {
+                  user_metadata: {
+                    ...(existingUser.user_metadata || {}),
+                    full_name: registeredRecord.name,
+                    role: 'admin',
+                    restaurant_id: dbRestId,
+                    restaurant_slug: slug,
+                    branch_id: dbBranchId,
+                  },
+                });
+              } else if (input.password && input.password.length >= 6) {
+                await supabase.auth.admin.createUser({
+                  email: cleanEmail,
+                  password: input.password,
+                  email_confirm: true,
+                  user_metadata: {
+                    full_name: registeredRecord.name,
+                    role: 'admin',
+                    restaurant_id: dbRestId,
+                    restaurant_slug: slug,
+                    branch_id: dbBranchId,
+                  },
+                });
+              }
             } catch (authCreateErr) {
-              console.warn('Could not provision Supabase Auth user:', authCreateErr);
+              console.warn('Could not provision or update Supabase Auth user:', authCreateErr);
             }
           }
         }

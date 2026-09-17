@@ -37,28 +37,55 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // Look up restaurant by owner email
+    // Look up restaurant for this user
+    let restaurantId = '';
+    let restaurantSlug = '';
+    let branchId = '';
+    let restaurantName = name;
+
+    // 1. Check Supabase Auth user metadata
     if (isSupabaseConfigured()) {
       try {
         const adminClient = createAdminClient();
-
-        // Try to find restaurant linked to this user
         const { data: usersData } = await adminClient.auth.admin.listUsers();
-        const matchedUser = usersData?.users?.find(u => u.id === userId || u.email?.toLowerCase() === normalizedEmail);
+        const matchedUser = usersData?.users?.find(
+          u => u.id === userId || u.email?.toLowerCase() === normalizedEmail
+        );
         const meta = matchedUser?.user_metadata || {};
 
-        let restaurantId = meta.restaurant_id || '';
-        let restaurantSlug = meta.restaurant_slug || '';
-        let branchId = meta.branch_id || '';
-        let restaurantName = name;
+        if (meta.restaurant_id) {
+          restaurantId = meta.restaurant_id;
+          restaurantSlug = meta.restaurant_slug || '';
+          branchId = meta.branch_id || '';
+          restaurantName = meta.full_name || name;
+        }
+      } catch (e) {
+        console.warn('Supabase listUsers lookup error:', e);
+      }
+    }
 
-        // If not in metadata, look up by email prefix or existing restaurant
-        if (!restaurantId) {
-          const emailSlug = normalizedEmail.split('@')[0];
+    // 2. Check global memory store by owner email
+    if (!restaurantId && global.__menusRestaurantsStore) {
+      global.__menusRestaurantsStore.forEach((rest) => {
+        if (!restaurantId && rest.ownerEmail && rest.ownerEmail.toLowerCase() === normalizedEmail) {
+          restaurantId = rest.id;
+          restaurantSlug = rest.slug;
+          branchId = rest.branchId;
+          restaurantName = rest.name || name;
+        }
+      });
+    }
+
+    // 3. Fallback: check restaurants table in Supabase by slug prefix
+    if (!restaurantId && isSupabaseConfigured()) {
+      try {
+        const adminClient = createAdminClient();
+        const emailSlug = normalizedEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (emailSlug) {
           const { data: rest } = await (adminClient as any)
             .from('restaurants')
             .select('id, name, slug, branches(id)')
-            .or(`owner_email.eq.${normalizedEmail},slug.eq.${emailSlug}`)
+            .eq('slug', emailSlug)
             .maybeSingle();
 
           if (rest) {
@@ -68,22 +95,25 @@ export async function POST(request: NextRequest) {
             branchId = (Array.isArray(rest.branches) ? rest.branches[0]?.id : rest.branches?.id) || '';
           }
         }
+      } catch (e) {
+        console.warn('Supabase slug lookup error:', e);
+      }
+    }
 
-        if (restaurantId) {
-          const token = await signSession({
-            userId,
-            email: normalizedEmail,
-            name: restaurantName,
-            role: 'admin',
-            restaurantId,
-            restaurantSlug,
-            branchId,
-          });
-          const response = NextResponse.json({ success: true, redirectTo: '/dashboard' });
-          response.cookies.set({ ...getSessionCookieOptions(), name: SESSION_COOKIE_NAME, value: token });
-          return response;
-        }
-      } catch { /* fall through to register */ }
+    // If restaurant is found, log the user in
+    if (restaurantId) {
+      const token = await signSession({
+        userId,
+        email: normalizedEmail,
+        name: restaurantName,
+        role: 'admin',
+        restaurantId,
+        restaurantSlug,
+        branchId,
+      });
+      const response = NextResponse.json({ success: true, redirectTo: '/dashboard' });
+      response.cookies.set({ ...getSessionCookieOptions(), name: SESSION_COOKIE_NAME, value: token });
+      return response;
     }
 
     // No restaurant found → send to register with email prefilled

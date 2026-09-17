@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Store, Globe, CheckCircle2, XCircle, Loader2, Phone, 
@@ -186,6 +187,11 @@ function convertNameToSlug(name: string): string {
 
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
+  const searchParams = useSearchParams();
+
+  // Detect if user came from Google OAuth (email prefilled from URL)
+  const initialGoogleEmail = searchParams.get('email') || '';
+  const initialGoogleName = searchParams.get('name') || '';
 
   // Form State
   const [restaurantName, setRestaurantName] = useState('');
@@ -193,10 +199,23 @@ export default function RegisterPage() {
   const [slugManualEdit, setSlugManualEdit] = useState(false);
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('نابلس');
-  const [ownerEmail, setOwnerEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState(initialGoogleEmail);
+  const [isGoogleSignup, setIsGoogleSignup] = useState(Boolean(initialGoogleEmail));
+  const [password, setPassword] = useState(
+    initialGoogleEmail ? `Gg_${Math.random().toString(36).slice(2, 8)}X9!` : ''
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [tablesCount, setTablesCount] = useState(10);
+
+  // Sync Google params when hydrated / updated
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setOwnerEmail(emailParam);
+      setIsGoogleSignup(true);
+      setPassword(prev => (prev && prev.length >= 8 && /[A-Z]/.test(prev) ? prev : `Gg_${Math.random().toString(36).slice(2, 8)}X9!`));
+    }
+  }, [searchParams]);
 
   // Suggestions
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -311,21 +330,57 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!password || password.length < 8) {
-      setFormError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
-      return;
+    // Google signup: ensure compliant password exists for DB record
+    let finalPassword = password;
+    if (isGoogleSignup && (!finalPassword || finalPassword.length < 8)) {
+      finalPassword = `Gg_${Math.random().toString(36).slice(2, 8)}X9!`;
+      setPassword(finalPassword);
     }
-    if (!/[A-Z]/.test(password)) {
-      setFormError('كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل (A-Z)');
-      return;
+
+    // Standard signup: validate password rules
+    if (!isGoogleSignup) {
+      if (!finalPassword || finalPassword.length < 8) {
+        setFormError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+        return;
+      }
+      if (!/[A-Z]/.test(finalPassword)) {
+        setFormError('كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل (A-Z)');
+        return;
+      }
+      if (!/[0-9]/.test(finalPassword)) {
+        setFormError('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل (0-9)');
+        return;
+      }
     }
-    if (!/[0-9]/.test(password)) {
-      setFormError('كلمة المرور يجب أن تحتوي على رقم واحد على الأقل (0-9)');
+
+    const formPayload = {
+      name: restaurantName.trim(),
+      slug: slug.trim(),
+      phone: phone.trim(),
+      city,
+      ownerEmail: ownerEmail.trim().toLowerCase(),
+      password: finalPassword,
+      tablesCount,
+    };
+
+    // ── GOOGLE SIGNUP: DIRECT ACTIVATION (NO OTP NEEDED) ──
+    if (isGoogleSignup) {
+      startTransition(async () => {
+        try {
+          const res = await registerRestaurantAction(formPayload);
+          if (!res.success || !res.restaurant) {
+            setFormError(res.error || 'حدث خطأ أثناء إنشاء المطعم، يرجى المحاولة ثانية');
+            return;
+          }
+          setCreatedRestaurant(res.restaurant);
+        } catch {
+          setFormError('حدث خطأ غير متوقع أثناء إنشاء المطعم');
+        }
+      });
       return;
     }
 
-    // All validations passed: send OTP and show verification step
-    const formPayload = { name: restaurantName, slug, phone, city, ownerEmail, password, tablesCount };
+    // ── STANDARD SIGNUP: OTP EMAIL VERIFICATION ──
     setPendingFormData(formPayload);
     setOtpError('');
     setOtpCode('');
@@ -499,6 +554,23 @@ export default function RegisterPage() {
                 </p>
               </div>
 
+              {/* Google Verified Notice Banner */}
+              {isGoogleSignup && (
+                <div className="mb-5 p-3.5 rounded-2xl bg-orange-50 border border-orange-200/90 text-orange-950 text-xs font-bold flex items-center gap-3 shadow-2xs">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center shrink-0 text-orange-600">
+                    <Sparkles size={18} />
+                  </div>
+                  <div className="flex-1 text-right">
+                    <span className="block font-black text-slate-900 text-xs mb-0.5">
+                      تم تسجيل الدخول بواسطة Google بنجاح ✅
+                    </span>
+                    <span className="font-medium text-slate-600 text-[11px] block">
+                      يرجى إكمال البيانات الأساسية التالية لتجهيز موقعك ومنيو مطعمك فوراً.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {formError && (
                 <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2 animate-shake">
                   <XCircle size={16} className="shrink-0 text-rose-500" />
@@ -643,8 +715,8 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* 3. Phone & Password */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* 3. Phone & (Password only if non-Google) */}
+                {isGoogleSignup ? (
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                       <Phone size={14} className="text-orange-500" />
@@ -667,74 +739,122 @@ export default function RegisterPage() {
                       </p>
                     )}
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                      <Lock size={14} className="text-orange-500" />
-                      <span>كلمة المرور للوحة التحكم *</span>
-                    </label>
-                    <div className="relative">
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <Phone size={14} className="text-orange-500" />
+                        <span>رقم الهاتف للتواصل *</span>
+                      </label>
                       <input
-                        type={showPassword ? 'text' : 'password'}
+                        type="tel"
                         required
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-mono shadow-2xs"
+                        placeholder="0599000000"
+                        value={phone}
+                        onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                        onBlur={() => setPhoneError(validatePhone(phone))}
+                        className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                          phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
+                        }`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(v => !v)}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
+                      {phoneError && (
+                        <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
+                          <AlertTriangle size={10} /> {phoneError}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Compact Password Strength Indicator */}
-                    {password.length > 0 && (
-                      <div className="mt-1.5">
-                        <div className="flex gap-1 mb-1">
-                          {[0, 1, 2, 3].map(i => (
-                            <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                              i < pwdStrength.score ? pwdStrength.color : 'bg-slate-200'
-                            }`} />
-                          ))}
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          قوة كلمة المرور: <span className="text-slate-800">{pwdStrength.label}</span>
-                        </span>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <Lock size={14} className="text-orange-500" />
+                        <span>كلمة المرور للوحة التحكم *</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-mono shadow-2xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(v => !v)}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
                       </div>
-                    )}
+
+                      {/* Compact Password Strength Indicator */}
+                      {password.length > 0 && (
+                        <div className="mt-1.5">
+                          <div className="flex gap-1 mb-1">
+                            {[0, 1, 2, 3].map(i => (
+                              <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                                i < pwdStrength.score ? pwdStrength.color : 'bg-slate-200'
+                              }`} />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500">
+                            قوة كلمة المرور: <span className="text-slate-800">{pwdStrength.label}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 4. Required Admin Email */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Mail size={14} className="text-orange-500" />
-                      <span>البريد الإلكتروني للإدارة *</span>
+                {isGoogleSignup ? (
+                  <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold block">البريد الإلكتروني المعتمد للإدارة</span>
+                        <span className="text-xs font-mono font-black text-slate-900" dir="ltr">{ownerEmail}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/80 border border-emerald-200/80 px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-emerald-600" />
+                      موثق عبر Google
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">لتسجيل الدخول واستعادة الحساب</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="owner@restaurant.ps"
-                    value={ownerEmail}
-                    onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
-                    onBlur={() => setEmailError(validateEmail(ownerEmail))}
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
-                      emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
-                    }`}
-                  />
-                  {emailError && (
-                    <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
-                      <AlertTriangle size={10} /> {emailError}
-                    </p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Mail size={14} className="text-orange-500" />
+                        <span>البريد الإلكتروني للإدارة *</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">لتسجيل الدخول واستعادة الحساب</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="owner@restaurant.ps"
+                      value={ownerEmail}
+                      onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
+                      onBlur={() => setEmailError(validateEmail(ownerEmail))}
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                        emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
+                      }`}
+                    />
+                    {emailError && (
+                      <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
+                        <AlertTriangle size={10} /> {emailError}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* 5. Tables Count Selector */}
                 <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
