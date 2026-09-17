@@ -85,7 +85,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
   const tableNumber = tableParam || tableFromToken || 0;
 
   const cleanSlug = rawSlug.trim().toLowerCase();
-  const isDemo = !cleanSlug || cleanSlug === 'burger-house-nablus' || cleanSlug === 'demo';
+  const isDemo = !cleanSlug || cleanSlug === 'demo';
 
   // 3. Instant Demo Render (Zero-latency fallback)
   if (isDemo) {

@@ -146,7 +146,7 @@ export default function CustomerMenuClient({
 
   const windowSubdomain = typeof window !== 'undefined' ? extractSubdomainFromWindow() : '';
   const resolvedSlug = initialSlug || restaurantParam || windowSubdomain || slugFromToken || defaultSlug;
-  const isExplicitDemo = propIsExplicitDemo || resolvedSlug === 'burger-house-nablus' || resolvedSlug === 'demo';
+  const isExplicitDemo = propIsExplicitDemo || resolvedSlug === 'demo';
   const { direction, language } = useLanguage();
 
   const notFoundParam = searchParams.get('notFound') === '1';
@@ -333,13 +333,13 @@ export default function CustomerMenuClient({
     }
 
     // Demo mode: only when explicitly visiting demo or main site with no restaurant
-    if (!resolvedSlug || resolvedSlug === 'demo' || resolvedSlug === 'burger-house-nablus') {
-      setActiveRestaurantSlug('burger-house-nablus');
-      setActiveRestaurantName('Burger House نابلس');
-      setActiveRestaurantCity('نابلس');
+    if (!resolvedSlug || resolvedSlug === 'demo') {
+      setActiveRestaurantSlug('demo');
+      setActiveRestaurantName('Demo Restaurant');
+      setActiveRestaurantCity('');
       setDbCategories(initialCategories);
       setDbMenuItems(initialMenuItems);
-      setActiveCategory(initialCategories[0]?.id || 'burgers');
+      setActiveCategory(initialCategories[0]?.id || 'all');
       setMenuLoading(false);
       setIsRestaurantNotFound(false);
       return;

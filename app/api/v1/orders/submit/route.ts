@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Resolve branch from restaurant slug and strictly verify restaurant existence
     if (restaurantSlug) {
       const cleanSlug = String(restaurantSlug).trim().toLowerCase();
-      if (cleanSlug && cleanSlug !== 'burger-house-nablus' && cleanSlug !== 'demo') {
+      if (cleanSlug && cleanSlug !== 'demo') {
         const restaurant = await getRestaurantBySlug(cleanSlug);
         if (!restaurant) {
           return NextResponse.json(

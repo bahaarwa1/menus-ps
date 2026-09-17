@@ -107,8 +107,7 @@ export async function GET(request: NextRequest) {
         const recentOrdersData = (recentOrdersRes.data || []) as any[];
         const tablesData = (tablesRes.data || []) as any[];
 
-        // If DB has records, return calculated stats
-        if (todayOrders.length > 0 || tablesData.length > 0 || targetSlug !== 'burger-house-nablus') {
+        // If DB has records, return calculated stats (always return real data for real restaurants)
           const todaySales = todayOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
           const todayOrdersCount = todayOrders.length;
           const avgTicket = todayOrdersCount > 0 ? Number((todaySales / todayOrdersCount).toFixed(1)) : 0;
@@ -156,7 +155,7 @@ export async function GET(request: NextRequest) {
               'Cache-Control': 'private, max-age=15',
             },
           });
-        }
+
       } catch (dbErr) {
         console.warn('Database dashboard stats fetch fallback:', dbErr);
       }
@@ -170,19 +169,17 @@ export async function GET(request: NextRequest) {
       ? activeStored.filter((o) => o.branchId === targetBranchId)
       : activeStored;
 
-    // Combine any newly submitted live orders with baseline demo orders for rich display
-    const baselineOrders = targetSlug === 'burger-house-nablus' ? fallbackOrders : [];
-    const baselineSales = baselineOrders.reduce((s, o) => s + o.total, 0);
+    // Use only live orders — no fake baseline for real restaurants
+    const baselineOrders: typeof fallbackOrders = [];
+    const baselineSales = 0;
     const liveSales = branchStoredOrders.reduce((s, o) => s + o.totalAmount, 0);
 
-    const totalSales = liveSales + (branchStoredOrders.length === 0 ? baselineSales : 0);
-    const totalOrdersCount = branchStoredOrders.length || baselineOrders.length;
+    const totalSales = liveSales;
+    const totalOrdersCount = branchStoredOrders.length;
     const avgTicket = totalOrdersCount > 0 ? Number((totalSales / totalOrdersCount).toFixed(1)) : 0;
 
     const totalTablesCount = registeredRest?.tablesCount || 15;
-    const activeTablesCount = targetSlug === 'burger-house-nablus' 
-      ? fallbackTables.filter((t) => t.status === 'مشغولة').length 
-      : Math.min(branchStoredOrders.length, totalTablesCount);
+    const activeTablesCount = Math.min(branchStoredOrders.length, totalTablesCount);
 
     const recentOrders = [
       ...branchStoredOrders.map((o) => ({

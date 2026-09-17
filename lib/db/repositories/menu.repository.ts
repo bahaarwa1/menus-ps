@@ -42,7 +42,7 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
     return inFlightMenuRequests.get(cacheKey)!;
   }
 
-  const isDemoRestaurant = restaurantSlug === 'burger-house-nablus' || restaurantSlug === 'demo';
+  const isDemoRestaurant = restaurantSlug === 'demo';
 
   const fetchPromise = (async (): Promise<PublicMenuCategory[] | null> => {
     try {
