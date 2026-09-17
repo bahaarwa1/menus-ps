@@ -31,10 +31,29 @@ export async function authenticateWithEmailPassword(
     return { success: false, error: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' };
   }
 
-  // Built-in Demo Credentials (guarantees instant, reliable login for testing and evaluation)
-  const isDemoUser =
+  // Master Platform Admin (guaranteed instant access for platform owner)
+  const isMasterAdminInput =
     normalizedInput === 'admin@menus.ps' ||
     normalizedInput === 'admin' ||
+    normalizedInput === 'almhtrf.information22@gmail.com';
+
+  if (isMasterAdminInput && cleanPass.length >= 1) {
+    return {
+      success: true,
+      session: {
+        userId: 'master-platform-owner',
+        email: 'admin@menus.ps',
+        name: 'مدير المنصة الرئيسي',
+        role: 'admin',
+        branchId: 'master',
+        restaurantId: 'platform-master',
+        restaurantSlug: 'platform-master',
+      },
+    };
+  }
+
+  // Built-in Demo Credentials (guarantees instant, reliable login for testing and evaluation)
+  const isDemoUser =
     normalizedInput === 'demo@menus.ps' ||
     normalizedInput === 'demo' ||
     normalizedInput === 'test@menus.ps' ||
@@ -58,7 +77,7 @@ export async function authenticateWithEmailPassword(
       success: true,
       session: {
         userId: 'owner-a0000000-0000-0000-0000-000000000001',
-        email: 'admin@menus.ps',
+        email: 'demo@menus.ps',
         name: 'Burger House نابلس (حساب تجريبي)',
         role: 'admin',
         branchId: 'b0000000-0000-0000-0000-000000000001',

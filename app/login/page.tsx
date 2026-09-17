@@ -55,8 +55,8 @@ function LoginForm() {
         return;
       }
 
-      router.push(data.redirectTo || '/dashboard');
-      router.refresh();
+      // Full document navigation guarantees the newly set HTTP-only cookie is sent to middleware and server components
+      window.location.href = data.redirectTo || '/dashboard';
     } catch {
       setErrorMsg(isEn ? 'Failed to connect to auth server. Please try again.' : 'تعذر الاتصال بخادم المصادقة. يرجى المحاولة لاحقاً.');
       setIsLoading(false);
@@ -112,8 +112,7 @@ function LoginForm() {
         return;
       }
 
-      router.push(data.redirectTo || '/staff');
-      router.refresh();
+      window.location.href = data.redirectTo || '/staff';
     } catch {
       setErrorMsg(isEn ? 'Failed to connect to auth server.' : 'تعذر الاتصال بخادم المصادقة.');
       setIsLoading(false);

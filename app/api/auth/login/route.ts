@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { email, password, redirectTo } = body;
 
     // Input sanitization
-    const cleanEmail = sanitizeInput(String(email || ''), 200).toLowerCase();
+    const cleanEmail = sanitizeInput(String(email || ''), 200).toLowerCase().trim();
     const cleanPassword = String(password || '').slice(0, 200);
 
     if (!cleanEmail || !cleanPassword) {
@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     // Master admin emails always go to /admin panel — no restaurant dashboard
     const isMasterAdmin =
       authResult.session.email === 'almhtrf.information22@gmail.com' ||
-      authResult.session.email === 'admin@menus.ps';
+      authResult.session.email === 'admin@menus.ps' ||
+      authResult.session.restaurantSlug === 'platform-master';
     if (isMasterAdmin) {
       target = '/admin';
     } else if (!target || !target.startsWith('/') || target.startsWith('//')) {

@@ -71,7 +71,7 @@ export default function AuthCallbackPage() {
         const loginData = await loginRes.json();
 
         if (loginData.success) {
-          router.replace(loginData.redirectTo || '/dashboard');
+          window.location.href = loginData.redirectTo || '/dashboard';
         } else {
           setErrorMsg(loginData.error || 'حدث خطأ أثناء إنشاء الجلسة');
           setStatus('error');
