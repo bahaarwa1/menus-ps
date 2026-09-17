@@ -58,7 +58,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: restErr.message }, { status: 500 });
     }
 
-    // 2. Fetch all orders for aggregate metrics
+    // 2. Fetch all auth users to map owner emails
+    let authUsers: any[] = [];
+    try {
+      const { data: usersData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      authUsers = usersData?.users || [];
+    } catch (authErr) {
+      console.warn('Failed to list auth users in overview:', authErr);
+    }
+
+    // 3. Fetch all orders for aggregate metrics
     const { data: orders, error: ordersErr } = await (supabase as any)
       .from('orders')
       .select('id, branch_id, total_amount, status, created_at')
@@ -86,12 +95,25 @@ export async function GET(request: NextRequest) {
         r.created_at
       );
 
+      // Match owner email from auth users or in-memory fallback
+      const matchedUser = authUsers.find((u: any) => {
+        const meta = u.user_metadata || {};
+        return (
+          meta.restaurant_id === r.id ||
+          meta.restaurant_slug === r.slug ||
+          (u.email && r.slug && u.email.toLowerCase().startsWith(r.slug.toLowerCase()))
+        );
+      });
+      const memoryRecord = global.__menusRestaurantsStore?.get(r.slug);
+      const ownerEmail = matchedUser?.email || memoryRecord?.ownerEmail || '';
+
       return {
         id: r.id,
         name: r.name,
         slug: r.slug,
         phone: r.phone || '',
         city: r.city || '',
+        ownerEmail,
         address: cleanAddress,
         currency: r.currency || '₪',
         createdAt: r.created_at,

@@ -2,6 +2,7 @@ import React from 'react';
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import ProductionSidebar from '@/components/layout/ProductionSidebar';
+import ImpersonationBanner from '@/components/layout/ImpersonationBanner';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = cookies();
@@ -11,11 +12,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const restaurantName = session?.name || 'مطعمي';
   const restaurantSlug = session?.restaurantSlug || 'my-restaurant';
 
+  const isMasterOwner =
+    session?.email === 'almhtrf.information22@gmail.com' ||
+    session?.email === 'admin@menus.ps' ||
+    (session?.userId && session.userId.startsWith('superadmin-impersonate-'));
+
+  const isImpersonating = Boolean(isMasterOwner && restaurantSlug !== 'platform-master');
+
   return (
     <div 
       className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-orange-500 selection:text-white" 
       dir="rtl"
     >
+      {/* Super Admin Impersonation Indicator */}
+      <ImpersonationBanner
+        restaurantName={restaurantName}
+        isImpersonating={isImpersonating}
+      />
+
       {/* Production Sidebar */}
       <ProductionSidebar 
         restaurantName={restaurantName}
