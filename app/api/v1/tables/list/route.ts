@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus.cool';
 
   if (isSupabaseConfigured()) {
     try {
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
     // Invalidate cached table lists
     appCache.invalidateTag('tables');
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus-ps.vercel.app';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menus.cool';
     const created = newTable as any;
 
     return NextResponse.json({

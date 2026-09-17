@@ -44,7 +44,7 @@ export default function ProductionTablesPage() {
           if (res.restaurantName) {
             setRestaurantName(res.restaurantName);
           }
-          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
           // Load tables and generate QR codes in parallel
           const loadedTables: TableItem[] = await Promise.all(
             res.tables.map(async (t: any) => {
@@ -96,7 +96,7 @@ export default function ProductionTablesPage() {
   }, []);
 
   const getTableUrl = (table: TableItem) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
     return `${origin}/r/${currentSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
   };
 
@@ -126,7 +126,7 @@ export default function ProductionTablesPage() {
 
       const data = await res.json();
       if (data.success && data.table) {
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
         const targetUrl = `${origin}/r/${currentSlug}?table=${data.table.id}&token=${data.table.qrToken}`;
         let qrDataUrl = '';
         try {
@@ -167,7 +167,7 @@ export default function ProductionTablesPage() {
       } catch {}
     }
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
     const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
     const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
 
@@ -197,7 +197,7 @@ export default function ProductionTablesPage() {
         } catch {}
       }
 
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
       const stands = await Promise.all(
         tables.map(async (table) => {
           const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;

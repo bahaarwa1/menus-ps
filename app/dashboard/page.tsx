@@ -54,7 +54,7 @@ export default function ProductionDashboardOverview() {
 
   const liveUrl = typeof window !== 'undefined' && createdSlug
     ? `${window.location.origin}/r/${createdSlug}`
-    : `https://menus-ps.vercel.app/r/${createdSlug || ''}`;
+    : `https://menus.cool/r/${createdSlug || ''}`;
   const directMenuUrl = createdSlug ? `/r/${createdSlug}` : '#';
 
   const copyUrl = () => {

@@ -44,6 +44,11 @@ export async function middleware(request: NextRequest) {
     if (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'menus-ps') {
       currentSubdomain = parts[0];
     }
+  } else if (hostWithoutPort.endsWith('.menus.cool')) {
+    const parts = hostWithoutPort.replace('.menus.cool', '').split('.');
+    if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus') {
+      currentSubdomain = parts[0];
+    }
   } else if (hostWithoutPort.endsWith('.menus.ps')) {
     const parts = hostWithoutPort.replace('.menus.ps', '').split('.');
     if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus') {

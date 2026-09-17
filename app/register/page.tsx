@@ -369,7 +369,7 @@ export default function RegisterPage() {
                       className="flex-1 px-2.5 py-2 bg-transparent text-orange-600 font-mono font-bold text-xs focus:outline-none placeholder-slate-400"
                     />
                     <span className="px-2.5 py-2 bg-slate-100/80 text-slate-500 text-[11px] font-bold border-r border-slate-200 select-none">
-                      .menus-ps.vercel.app
+                      .menus.cool
                     </span>
                   </div>
 
@@ -584,11 +584,16 @@ export default function RegisterPage() {
                 </span>
                 <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg p-2 shadow-xs">
                   <span className="font-mono text-xs font-bold text-orange-600 select-all truncate" dir="ltr">
-                    {`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`}
+                    {typeof window !== 'undefined'
+                      ? `${window.location.origin}/r/${createdRestaurant.slug}`
+                      : `https://menus.cool/r/${createdRestaurant.slug}`}
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={() => copyUrl(`https://menus-ps.vercel.app/r/${createdRestaurant.slug}`)}
+                      onClick={() => {
+                        const base = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
+                        copyUrl(`${base}/r/${createdRestaurant.slug}`);
+                      }}
                       className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold transition-colors cursor-pointer"
                     >
                       {copiedLink ? <Check size={12} /> : <Copy size={12} />}

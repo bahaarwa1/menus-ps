@@ -26,7 +26,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const liveUrl = createdSlug ? `https://${createdSlug}.menus-ps.vercel.app` : 'https://burger-house.menus-ps.vercel.app';
+  const liveUrl = createdSlug ? `https://${createdSlug}.menus.cool` : 'https://burger-house.menus.cool';
   const directMenuUrl = createdSlug ? `/m?restaurant=${createdSlug}` : '/m';
 
   const copyUrl = () => {

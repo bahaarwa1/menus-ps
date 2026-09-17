@@ -33,7 +33,7 @@ export default function ProductionSidebar({
   const [activeName, setActiveName] = useState(restaurantName);
   const [logoUrl, setLogoUrl] = useState('');
 
-  const [appOrigin, setAppOrigin] = useState('https://menus-ps.vercel.app');
+  const [appOrigin, setAppOrigin] = useState('https://menus.cool');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

@@ -35,10 +35,11 @@ export default function RealQRCode({
     let url = value.trim();
 
     // If local, relative, or placeholder domain, route to the live production deployment
-    if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('/') || url.includes('menus.ps')) {
+    if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('/') || url.includes('menus.ps') || url.includes('menus-ps.vercel.app')) {
       const match = url.match(/([?&].*)$/);
       const query = match ? match[1] : `?table=${tableNumber || 1}`;
-      url = `https://menus-ps.vercel.app/m${query.startsWith('?') ? query : `?${query}`}`;
+      const base = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
+      url = `${base}/m${query.startsWith('?') ? query : `?${query}`}`;
     } else if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = `https://${url}`;
     }

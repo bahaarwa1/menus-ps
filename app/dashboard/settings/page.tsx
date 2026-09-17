@@ -156,7 +156,7 @@ export default function ProductionSettingsPage() {
     }
   };
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus-ps.vercel.app';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
   const menuPublicUrl = `${origin}/r/${slug || 'burger-house-nablus'}`;
 
   if (isLoading) {

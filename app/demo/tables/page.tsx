@@ -249,7 +249,7 @@ export default function TablesManagementPage() {
               {/* Real Standard QR Code with Mascot Character & 1-Page Print */}
               <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-5 mb-3 flex flex-col items-center justify-center">
                 <RealQRCode
-                  value={`https://menus-ps.vercel.app/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`}
+                  value={`https://menus.cool/m?table=${selectedTableForQr.id}&t=${selectedTableForQr.qrToken || `qr_token_table_${selectedTableForQr.id}_nablus`}`}
                   size={200}
                   tableNumber={selectedTableForQr.id}
                   restaurantName="Burger House نابلس"

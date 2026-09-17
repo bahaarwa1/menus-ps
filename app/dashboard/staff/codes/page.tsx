@@ -183,7 +183,7 @@ export default function StaffCodesPage() {
             <code className="text-[11px] font-mono text-slate-700 font-bold truncate flex-1 dir-ltr text-left">
               {typeof window !== 'undefined'
                 ? `${window.location.origin}/staff/${restaurantSlug || ''}`
-                : `https://menus-ps.vercel.app/staff/${restaurantSlug || ''}`}
+                : `https://menus.cool/staff/${restaurantSlug || ''}`}
             </code>
             <button
               onClick={() => {
@@ -226,7 +226,7 @@ export default function StaffCodesPage() {
             <code className="text-[11px] font-mono text-slate-700 font-bold truncate flex-1 dir-ltr text-left">
               {typeof window !== 'undefined'
                 ? `${window.location.origin}/r/${restaurantSlug || ''}`
-                : `https://menus-ps.vercel.app/r/${restaurantSlug || ''}`}
+                : `https://menus.cool/r/${restaurantSlug || ''}`}
             </code>
             <button
               onClick={() => {

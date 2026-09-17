@@ -28,7 +28,7 @@ export default function DemoSidebar() {
     }
   }, [pathname]);
 
-  const liveUrl = `https://${activeSlug}.menus-ps.vercel.app`;
+  const liveUrl = `https://${activeSlug}.menus.cool`;
   const directMenuUrl = `/m?restaurant=${activeSlug}`;
 
   const copyLiveUrl = () => {

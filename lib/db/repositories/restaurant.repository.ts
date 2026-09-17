@@ -43,6 +43,8 @@ declare global {
   var __menusRestaurantsStore: Map<string, RegisteredRestaurantResult> | undefined;
 }
 
+const BASE_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://menus.cool';
+
 if (!global.__menusRestaurantsStore) {
   global.__menusRestaurantsStore = new Map<string, RegisteredRestaurantResult>();
   
@@ -54,7 +56,7 @@ if (!global.__menusRestaurantsStore) {
     phone: '+970 59 900 0000',
     city: 'نابلس',
     currency: '₪',
-    subdomainUrl: 'https://menus-ps.vercel.app/r/burger-house-nablus',
+    subdomainUrl: `${BASE_APP_URL}/r/burger-house-nablus`,
     branchId: 'b0000000-0000-0000-0000-000000000001',
     branchName: 'فرع رفيديا — نابلس',
     tablesCount: 15,
@@ -62,7 +64,7 @@ if (!global.__menusRestaurantsStore) {
       id: `tbl-${i + 1}`,
       tableNumber: i + 1,
       qrToken: `qr_token_table_${i + 1}_nablus`,
-      qrUrl: `https://menus-ps.vercel.app/m?t=qr_token_table_${i + 1}_nablus&restaurant=burger-house-nablus`,
+      qrUrl: `${BASE_APP_URL}/m?t=qr_token_table_${i + 1}_nablus&restaurant=burger-house-nablus`,
     })),
     createdAt: new Date().toISOString(),
   });
@@ -155,7 +157,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
       id: `tbl-${tableNum}-${Date.now()}`,
       tableNumber: tableNum,
       qrToken,
-      qrUrl: `https://menus-ps.vercel.app/m?t=${qrToken}&restaurant=${slug}`,
+      qrUrl: `${BASE_APP_URL}/m?t=${qrToken}&restaurant=${slug}`,
     };
   });
 
@@ -174,7 +176,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     phone: cleanPhone,
     city: cleanCity,
     currency: '₪',
-    subdomainUrl: `https://menus-ps.vercel.app/r/${slug}`,
+    subdomainUrl: `${BASE_APP_URL}/r/${slug}`,
     branchId,
     branchName: 'الفرع الرئيسي',
     tablesCount,
@@ -352,13 +354,13 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
                   id: t.id,
                   tableNumber: t.table_number,
                   qrToken: t.qr_token,
-                  qrUrl: `https://menus-ps.vercel.app/m?t=${t.qr_token}&restaurant=${restData.slug}`,
+                  qrUrl: `${BASE_APP_URL}/m?t=${t.qr_token}&restaurant=${restData.slug}`,
                 }))
               : Array.from({ length: 10 }, (_, i) => ({
                   id: `tbl-${i + 1}`,
                   tableNumber: i + 1,
                   qrToken: `qr_${restData.slug}_t${i + 1}`,
-                  qrUrl: `https://menus-ps.vercel.app/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
+                  qrUrl: `${BASE_APP_URL}/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
                 }));
 
             const result: RegisteredRestaurantResult = {
@@ -370,7 +372,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               phone: restData.phone || '',
               city: restData.city || 'نابلس',
               currency: restData.currency || '₪',
-              subdomainUrl: `https://menus-ps.vercel.app/r/${restData.slug}`,
+              subdomainUrl: `${BASE_APP_URL}/r/${restData.slug}`,
               branchId,
               branchName,
               tablesCount: tables.length,
