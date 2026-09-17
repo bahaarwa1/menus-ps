@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Store, Globe, CheckCircle2, XCircle, Loader2, Phone, 
   MapPin, Lock, Mail, Sparkles, QrCode, 
-  ExternalLink, Copy, Check, ChefHat, BarChart3, Eye, EyeOff, AlertTriangle
+  ExternalLink, Copy, Check, ChefHat, BarChart3, Eye, EyeOff, AlertTriangle, Lightbulb
 } from 'lucide-react';
 import { registerRestaurantAction } from '@/app/actions/register-restaurant';
 import { RegisteredRestaurantResult } from '@/lib/db/repositories/restaurant.repository';
@@ -67,45 +67,115 @@ const PALESTINIAN_CITIES = [
   'غزة',
 ];
 
-// Simple helper to auto-convert common Arabic words to clean english slugs
+const CITY_SLUG_MAP: Record<string, string> = {
+  'نابلس': 'nablus',
+  'رام الله والبيرة': 'ramallah',
+  'القدس': 'quds',
+  'الخليل': 'khalil',
+  'بيت لحم': 'bethlehem',
+  'جنين': 'jenin',
+  'طولكرم': 'tulkarm',
+  'قلقيلية': 'qalqilya',
+  'أريحا': 'jericho',
+  'سلفيت': 'salfit',
+  'طوباس': 'tubas',
+  'الداخل 48': '48',
+  'غزة': 'gaza',
+};
+
+// Comprehensive Arabic dictionary for food & restaurant businesses
+const ARABIC_WORD_DICT: Record<string, string> = {
+  'برجر': 'burger', 'همبرغر': 'burger', 'همبرجر': 'burger',
+  'بيتزا': 'pizza',
+  'شاورما': 'shawarma', 'شاورمتنا': 'shawarma',
+  'كافيه': 'cafe', 'مقهى': 'cafe', 'قهوة': 'coffee', 'كوفي': 'coffee',
+  'مطعم': 'restaurant', 'مطاعم': 'restaurants',
+  'مشاوي': 'mashawi', 'مشويات': 'grill', 'مشوي': 'grill',
+  'فطاير': 'fatayer', 'فطائر': 'fatayer', 'معجنات': 'pastries',
+  'طابون': 'taboon', 'فرن': 'bakery', 'مخبز': 'bakery',
+  'فلافل': 'falafel', 'حمص': 'hummus', 'فول': 'foul',
+  'دجاج': 'chicken', 'شيكن': 'chicken', 'بروستد': 'broasted', 'كرسبي': 'crispy',
+  'سناك': 'snack', 'سناكات': 'snacks', 'سندويش': 'sandwich', 'سندويشات': 'sandwiches',
+  'حلويات': 'sweets', 'حلو': 'sweet', 'كنافة': 'knafeh', 'وافل': 'waffle', 'بانكيك': 'pancake',
+  'عصير': 'juice', 'عصائر': 'juice', 'كوكتيل': 'cocktail',
+  'هاوس': 'house', 'بيت': 'house', 'دار': 'dar',
+  'فاكتوري': 'factory', 'مصنع': 'factory',
+  'سلطان': 'sultan', 'السلطان': 'sultan',
+  'ملك': 'king', 'الملك': 'king', 'ملوك': 'kings', 'امير': 'prince',
+  'شيف': 'chef', 'الشيف': 'chef',
+  'رويال': 'royal', 'كلاسيك': 'classic', 'سبيشال': 'special',
+  'سيتي': 'city', 'ستي': 'city', 'مدينة': 'city',
+  'سنتر': 'center', 'كورنر': 'corner', 'زاوية': 'corner',
+  'ستار': 'star', 'نجمة': 'star', 'نجوم': 'stars',
+  'الذهبي': 'golden', 'ذهب': 'gold',
+  'طازة': 'fresh', 'طازج': 'fresh', 'فريش': 'fresh',
+  'زاكي': 'zaki', 'لذيذ': 'tasty', 'يم': 'yummy',
+  'كيفك': 'kifak', 'على كيفك': 'alakifak',
+  'ابو': 'abu', 'ام': 'om', 'ابن': 'ibn',
+  'روما': 'roma', 'باريس': 'paris', 'ميلانو': 'milano',
+  'القدس': 'alquds', 'قدس': 'quds',
+  'نابلس': 'nablus', 'رام الله': 'ramallah', 'خليل': 'khalil',
+  'جنين': 'jenin', 'طولكرم': 'tulkarm', 'يافا': 'yafa', 'حيفا': 'haifa', 'عكا': 'akka', 'غزة': 'gaza',
+  'الريان': 'alrayan', 'البركة': 'albaraka', 'الريف': 'alreef', 'الاصيل': 'alaseel', 'النور': 'alnoor',
+  'البلدة': 'albalad', 'الحارة': 'alhara', 'الياسمين': 'alyasmeen', 'الزيتون': 'alzeitoun',
+  'برغرايزر': 'burgerizer', 'برجر كينج': 'burgerking',
+};
+
+// Arabic character phonetic transliteration map
+const ARABIC_CHAR_MAP: Record<string, string> = {
+  'أ': 'a', 'إ': 'e', 'آ': 'a', 'ا': 'a', 'ء': 'a', 'ئ': 'e', 'ؤ': 'o',
+  'ب': 'b', 'ت': 't', 'ة': 'a', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
+  'د': 'd', 'ذ': 'th', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's',
+  'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+  'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'o', 'ي': 'i', 'ى': 'a',
+  'پ': 'p', 'چ': 'ch', 'ڤ': 'v', 'گ': 'g',
+};
+
+// Smart Arabic-to-English Transliteration Engine
 function convertNameToSlug(name: string): string {
-  if (!name) return '';
+  if (!name || !name.trim()) return '';
 
-  // Arabic phonetic dictionary for common words
-  const dict: Record<string, string> = {
-    'برجر': 'burger',
-    'بيتزا': 'pizza',
-    'شاورما': 'shawarma',
-    'كافيه': 'cafe',
-    'قهوة': 'coffee',
-    'مطعم': 'restaurant',
-    'هاوس': 'house',
-    'فاكتوري': 'factory',
-    'سناك': 'snack',
-    'جريل': 'grill',
-    'شيف': 'chef',
-    'طابون': 'taboon',
-    'القدس': 'quds',
-    'نابلس': 'nablus',
-    'رام': 'ram',
-    'الله': 'allah',
-    'خليل': 'khalil',
-    'رويال': 'royal',
-    'كنج': 'king',
-    'كلاسيك': 'classic',
-  };
+  const words = name.trim().toLowerCase().split(/\s+/);
+  const translatedWords = words.map((rawWord) => {
+    // Strip diacritics
+    const word = rawWord.replace(/[\u064B-\u065F\u0670]/g, '');
 
-  let clean = name.trim().toLowerCase();
-  for (const [ar, en] of Object.entries(dict)) {
-    clean = clean.replace(new RegExp(ar, 'g'), en);
-  }
+    // Check direct dictionary match
+    if (ARABIC_WORD_DICT[word]) {
+      return ARABIC_WORD_DICT[word];
+    }
 
-  let slug = clean
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
+    // Check if word has "ال" prefix
+    let cleanWord = word;
+    let hasAlPrefix = false;
+    if (cleanWord.startsWith('ال') && cleanWord.length > 3) {
+      hasAlPrefix = true;
+      const rootWord = cleanWord.substring(2);
+      if (ARABIC_WORD_DICT[rootWord]) {
+        return 'al-' + ARABIC_WORD_DICT[rootWord];
+      }
+    }
+
+    // Phonetic letter-by-letter transliteration
+    let out = hasAlPrefix ? 'al-' : '';
+    const toTransliterate = hasAlPrefix ? cleanWord.substring(2) : cleanWord;
+    
+    for (let i = 0; i < toTransliterate.length; i++) {
+      const char = toTransliterate[i];
+      if (ARABIC_CHAR_MAP[char]) {
+        out += ARABIC_CHAR_MAP[char];
+      } else {
+        out += char;
+      }
+    }
+    return out;
+  });
+
+  let slug = translatedWords.join('-')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-')
-    .toLowerCase();
+    .replace(/^-+|-+$/g, '');
 
   if (!slug || slug.length < 2) {
     slug = 'restaurant-' + Math.floor(100 + Math.random() * 900);
@@ -128,6 +198,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [tablesCount, setTablesCount] = useState(10);
 
+  // Suggestions
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
   // Inline field errors
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -142,14 +215,28 @@ export default function RegisterPage() {
   // Success State
   const [createdRestaurant, setCreatedRestaurant] = useState<RegisteredRestaurantResult | null>(null);
 
-
-  // Auto-generate slug as user types restaurant name
+  // Auto-generate slug and smart suggestions as user types restaurant name
   useEffect(() => {
-    if (!slugManualEdit && restaurantName.trim()) {
-      const generated = convertNameToSlug(restaurantName);
-      setSlug(generated);
+    if (restaurantName.trim()) {
+      const baseSlug = convertNameToSlug(restaurantName);
+      if (!slugManualEdit) {
+        setSlug(baseSlug);
+      }
+
+      // Generate 3 clever suggestions
+      const cityCode = CITY_SLUG_MAP[city] || 'pal';
+      const list = [
+        baseSlug,
+        `${baseSlug}-cafe`,
+        `${baseSlug}-${cityCode}`,
+      ].filter((v, i, a) => a.indexOf(v) === i && v.length >= 3);
+
+      setSuggestions(list);
+    } else {
+      setSuggestions([]);
+      if (!slugManualEdit) setSlug('');
     }
-  }, [restaurantName, slugManualEdit]);
+  }, [restaurantName, city, slugManualEdit]);
 
   // Debounced check for slug availability
   useEffect(() => {
@@ -169,12 +256,12 @@ export default function RegisterPage() {
           setSlugMessage('الرابط متاح وجاهز للحجز والتفعيل فوراً');
         } else {
           setSlugStatus('taken');
-          setSlugMessage(data.reason || 'هذا الرابط غير متاح، يرجى تجربة اسم آخر');
+          setSlugMessage(data.reason || 'هذا الرابط محجوز، اختر اسماً آخر من الاقتراحات');
         }
       } catch {
         setSlugStatus('idle');
       }
-    }, 400);
+    }, 350);
 
     return () => clearTimeout(timer);
   }, [slug]);
@@ -183,7 +270,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setFormError('');
 
-    // --- Client-side validation ---
     if (!restaurantName.trim() || restaurantName.trim().length < 2) {
       setFormError('يرجى إدخال اسم المطعم (حرفان على الأقل)');
       return;
@@ -194,7 +280,7 @@ export default function RegisterPage() {
     }
 
     if (slugStatus === 'taken' || slug.length < 3) {
-      setFormError('يرجى اختيار رابط صالح ومتاح للمطعم (3 أحرف على الأقل)');
+      setFormError('يرجى اختيار رابط متاح للمطعم (3 أحرف إنجليزية على الأقل)');
       return;
     }
     if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(slug)) {
@@ -202,7 +288,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Phone validation
     const phoneErr = validatePhone(phone);
     if (phoneErr) {
       setFormError(phoneErr);
@@ -210,7 +295,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Email validation (إلزامي للإدارة)
     const emailErr = validateEmail(ownerEmail.trim());
     if (emailErr) {
       setFormError(emailErr);
@@ -218,7 +302,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Password validation
     if (!password || password.length < 8) {
       setFormError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
@@ -259,51 +342,54 @@ export default function RegisterPage() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
+    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-neutral-900 flex items-center justify-center p-4 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden py-10">
       
-      {/* Background Subtle Ambient Glow */}
+      {/* Background Subtle Ambient Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[15%] -right-[10%] w-[60%] h-[60%] rounded-full bg-orange-500/5 blur-[120px]"></div>
-        <div className="absolute top-[50%] -left-[10%] w-[45%] h-[45%] rounded-full bg-blue-500/5 blur-[100px]"></div>
+        <div className="absolute -top-[20%] right-[10%] w-[500px] h-[500px] rounded-full bg-orange-500/10 blur-[130px]" />
+        <div className="absolute bottom-[10%] -left-[10%] w-[450px] h-[450px] rounded-full bg-amber-500/10 blur-[140px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293715_1px,transparent_1px),linear-gradient(to_bottom,#1f293715_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      <main className="w-full max-w-xl z-10 my-6">
+      <main className="w-full max-w-xl z-10 my-4">
         <AnimatePresence mode="wait">
           {!createdRestaurant ? (
             /* =============================================================
-               REGISTRATION FORM (COMPACT, EYE-FRIENDLY & MODERN)
+               REGISTRATION FORM (ULTRA-PREMIUM & CLEAN LTR SUBDOMAIN)
                ============================================================= */
             <motion.div
               key="form"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-slate-100 p-6 sm:p-8 relative overflow-hidden"
+              className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.3)] border border-white/20 p-6 sm:p-9 relative overflow-hidden"
             >
-              {/* Top Accent Line */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500"></div>
+              {/* Top Accent Gradient Line */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
 
               {/* Single Official Logo & Header */}
               <div className="text-center mb-6">
                 <div className="flex justify-center mb-3">
                   <Logo size="md" href="/" />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 mb-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-1.5">
                   تسجيل مطعم جديد
                 </h1>
-                <p className="text-xs font-medium text-slate-500">
-                  تفعيل فوري خلال 30 ثانية • تجربة مجانية 14 يوماً بدون بطاقة
+                <p className="text-xs sm:text-sm font-medium text-slate-500 flex items-center justify-center gap-1.5">
+                  <span>تفعيل فوري خلال 30 ثانية</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span className="text-orange-600 font-bold">تجربة مجانية 14 يوماً</span>
                 </p>
               </div>
 
               {formError && (
-                <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
-                  <XCircle size={15} className="shrink-0 text-rose-500" />
+                <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2 animate-shake">
+                  <XCircle size={16} className="shrink-0 text-rose-500" />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4.5">
                 
                 {/* 1. Restaurant Name & City */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -315,10 +401,10 @@ export default function RegisterPage() {
                     <input
                       type="text"
                       required
-                      placeholder="مثال: برجر هاوس"
+                      placeholder="مثال: كيفك أو برجر هاوس"
                       value={restaurantName}
                       onChange={(e) => setRestaurantName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all shadow-2xs"
                     />
                   </div>
 
@@ -330,7 +416,7 @@ export default function RegisterPage() {
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all cursor-pointer"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer shadow-2xs"
                     >
                       {PALESTINIAN_CITIES.map((c) => (
                         <option key={c} value={c} className="bg-white text-slate-900">
@@ -341,63 +427,102 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* 2. Subdomain Slug Engine */}
-                <div className="bg-slate-50/90 border border-slate-200/80 p-3.5 rounded-xl">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Globe size={14} className="text-orange-500" />
-                      <span>رابط موقعك الحصري (Subdomain) *</span>
+                {/* 2. Subdomain Slug Engine (STRICT LTR, PERFECT DESIGN) */}
+                <div className="bg-gradient-to-b from-orange-50/50 to-slate-50/80 border border-orange-200/80 p-4 rounded-2xl shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Globe size={15} className="text-orange-500" />
+                      <span>رابط موقعك ومنيو الزبائن (Subdomain) *</span>
                     </label>
-                    <span className="text-[10px] text-orange-600 bg-orange-100/70 px-2 py-0.5 rounded-full font-bold">
-                      تلقائي
+                    <span className="text-[10px] text-orange-700 bg-orange-100 font-bold px-2 py-0.5 rounded-full border border-orange-200">
+                      محول تلقائياً للإنجليزي ⚡
                     </span>
                   </div>
 
-                  <div className="flex items-center rounded-xl bg-white border border-slate-200 overflow-hidden focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/15 transition-all">
-                    <span className="px-2.5 py-2 bg-slate-100/80 text-slate-500 text-xs font-bold border-l border-slate-200 select-none">
+                  {/* STRICT LTR CONTAINER */}
+                  <div dir="ltr" className="flex items-center rounded-xl bg-white border-2 border-orange-300 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/15 transition-all overflow-hidden shadow-xs">
+                    <span className="px-3 py-2.5 bg-orange-500/10 text-orange-700 font-mono text-xs font-bold select-none border-r border-orange-200">
                       https://
                     </span>
                     <input
                       type="text"
+                      dir="ltr"
                       required
                       value={slug}
                       onChange={(e) => {
                         setSlugManualEdit(true);
                         setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
                       }}
-                      placeholder="اسم-المطعم"
-                      className="flex-1 px-2.5 py-2 bg-transparent text-orange-600 font-mono font-bold text-xs focus:outline-none placeholder-slate-400"
+                      placeholder="restaurant-name"
+                      className="flex-1 px-3 py-2.5 bg-transparent text-slate-900 font-mono font-bold text-sm focus:outline-none placeholder-slate-400"
                     />
-                    <span className="px-2.5 py-2 bg-slate-100/80 text-slate-500 text-[11px] font-bold border-r border-slate-200 select-none">
+                    <span className="px-3 py-2.5 bg-orange-500/10 text-orange-800 font-mono text-xs font-extrabold select-none border-l border-orange-200">
                       .menus.cool
                     </span>
                   </div>
 
-                  {/* Slug Status */}
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold">
-                    {slugStatus === 'checking' && (
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Loader2 size={12} className="animate-spin text-orange-500" />
-                        <span>جاري فحص الرابط...</span>
+                  {/* Slug Status / Validation Feedback */}
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-bold">
+                    <div className="flex items-center gap-1.5">
+                      {slugStatus === 'checking' && (
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <Loader2 size={13} className="animate-spin text-orange-500" />
+                          <span>جاري فحص وتأكيد الرابط...</span>
+                        </span>
+                      )}
+                      {slugStatus === 'available' && (
+                        <span className="text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 size={14} />
+                          <span>{slugMessage}</span>
+                        </span>
+                      )}
+                      {slugStatus === 'taken' && (
+                        <span className="text-rose-600 flex items-center gap-1">
+                          <XCircle size={14} />
+                          <span>{slugMessage}</span>
+                        </span>
+                      )}
+                      {slugStatus === 'idle' && (
+                        <span className="text-slate-400 text-[10px]">
+                          رابط منيو حصري لكل مطعم يتم فتحه من الطاولات مباشرة.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Smart Suggestions Chips (When Arabic name is typed) */}
+                  {suggestions.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-orange-100 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                        <Lightbulb size={11} className="text-amber-500" />
+                        <span>اقتراحات إنجليزية:</span>
                       </span>
-                    )}
-                    {slugStatus === 'available' && (
-                      <span className="text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 size={13} />
-                        <span>{slugMessage}</span>
-                      </span>
-                    )}
-                    {slugStatus === 'taken' && (
-                      <span className="text-rose-600 flex items-center gap-1">
-                        <XCircle size={13} />
-                        <span>{slugMessage}</span>
-                      </span>
-                    )}
-                    {slugStatus === 'idle' && (
-                      <span className="text-slate-400 text-[10px]">
-                        رابط مباشر لمنيو الزبائن على الطاولات.
-                      </span>
-                    )}
+                      {suggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setSlug(s);
+                            setSlugManualEdit(true);
+                          }}
+                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                            slug === s
+                              ? 'bg-orange-500 text-white shadow-xs scale-102 ring-2 ring-orange-400'
+                              : 'bg-white hover:bg-orange-50 text-slate-700 border border-orange-200 hover:border-orange-300 shadow-2xs'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Live URL Badge */}
+                  <div className="mt-2.5 p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 font-medium text-[10px]">الرابط الذي سيراه الزبون:</span>
+                    <span dir="ltr" className="font-mono font-bold text-orange-600 text-xs truncate">
+                      https://{slug || 'your-name'}.menus.cool
+                    </span>
                   </div>
                 </div>
 
@@ -415,8 +540,8 @@ export default function RegisterPage() {
                       value={phone}
                       onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
                       onBlur={() => setPhoneError(validatePhone(phone))}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 transition-all font-mono ${
-                        phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/15'
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                        phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
                       }`}
                     />
                     {phoneError && (
@@ -438,7 +563,7 @@ export default function RegisterPage() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50/80 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 transition-all font-mono"
+                        className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-mono shadow-2xs"
                       />
                       <button
                         type="button"
@@ -449,7 +574,7 @@ export default function RegisterPage() {
                       </button>
                     </div>
 
-                    {/* Compact Password Strength */}
+                    {/* Compact Password Strength Indicator */}
                     {password.length > 0 && (
                       <div className="mt-1.5">
                         <div className="flex gap-1 mb-1">
@@ -467,14 +592,14 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Required Email */}
+                {/* 4. Required Admin Email */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Mail size={14} className="text-orange-500" />
                       <span>البريد الإلكتروني للإدارة *</span>
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">لتسجيل الدخول واستعادة الحساب والفواتير</span>
+                    <span className="text-[10px] text-slate-400 font-normal">لتسجيل الدخول واستعادة الحساب</span>
                   </label>
                   <input
                     type="email"
@@ -483,8 +608,8 @@ export default function RegisterPage() {
                     value={ownerEmail}
                     onChange={(e) => { setOwnerEmail(e.target.value); setEmailError(''); }}
                     onBlur={() => setEmailError(validateEmail(ownerEmail))}
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 transition-all font-mono ${
-                      emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/15'
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                      emailError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
                     }`}
                   />
                   {emailError && (
@@ -494,11 +619,11 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* 4. Tables Count Selector */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                {/* 5. Tables Count Selector */}
+                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
                   <div>
                     <span className="text-xs font-bold text-slate-800 block">عدد طاولات البداية:</span>
-                    <span className="text-[10px] text-slate-400">توليد أكواد QR فورية للطاولات</span>
+                    <span className="text-[10px] text-slate-400 font-medium">توليد أكواد QR فورية للطاولات</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     {[5, 10, 15, 20].map((count) => (
@@ -506,9 +631,9 @@ export default function RegisterPage() {
                         type="button"
                         key={count}
                         onClick={() => setTablesCount(count)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                           tablesCount === count
-                            ? 'bg-orange-500 text-white shadow-xs scale-105'
+                            ? 'bg-orange-500 text-white shadow-sm scale-105'
                             : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                         }`}
                       >
@@ -522,16 +647,16 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={isPending || slugStatus === 'taken'}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black text-sm shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-orange-700 text-white font-black text-sm shadow-lg shadow-orange-500/25 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-3"
                 >
                   {isPending ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={18} className="animate-spin" />
                       <span>جاري حجز الرابط وتهيئة الطاولات...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles size={16} />
+                      <Sparkles size={18} />
                       <span>إنشاء موقع المطعم وتفعيل الرابط 🚀</span>
                     </>
                   )}
@@ -557,103 +682,95 @@ export default function RegisterPage() {
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] text-center relative overflow-hidden"
+              className="bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-9 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.2)] text-center relative overflow-hidden"
             >
-              {/* Top Accent Line */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500"></div>
+              {/* Top Accent Gradient Line */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
 
               <div className="flex justify-center mb-3">
                 <Logo size="md" href="/" />
               </div>
 
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-xs">
-                <CheckCircle2 size={26} />
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+                <CheckCircle2 size={30} />
               </div>
 
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-700 font-black text-xs mb-2">
+                تم التفعيل والحجز بنجاح 🎉
+              </span>
+
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-1">
-                تهانينا! موقع مطعمك متاح الآن 🎉
+                أهلاً بك في عائلة Menus، مطعم {createdRestaurant.name}!
               </h2>
-              <p className="text-slate-500 text-xs mb-5 font-medium">
-                تم حجز الرابط، وإنشاء <strong className="text-slate-800">{createdRestaurant.tablesCount} طاولات</strong> بأكواد QR جاهزة للاستخدام.
+              <p className="text-slate-500 text-xs mb-6 font-medium">
+                تم حجز الرابط الحصري، وتوليد <strong className="text-slate-800">{createdRestaurant.tablesCount} طاولات</strong> بأكواد QR جاهزة للطباعة فوراً.
               </p>
 
               {/* Subdomain URL Box */}
-              <div className="bg-slate-50 border border-orange-200 rounded-xl p-3 mb-5 text-right">
-                <span className="text-[10px] font-bold text-slate-500 block mb-1">
-                  رابط منيو مطعمك المباشر:
+              <div className="bg-gradient-to-b from-orange-50/70 to-slate-50 border-2 border-orange-200 rounded-2xl p-4 mb-6 text-right shadow-xs">
+                <span className="text-[11px] font-bold text-slate-600 block mb-1.5">
+                  🌐 رابط منيو مطعمك المباشر للزبائن:
                 </span>
-                <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg p-2 shadow-xs">
-                  <span className="font-mono text-xs font-bold text-orange-600 select-all truncate" dir="ltr">
+                <div className="flex items-center justify-between gap-2 bg-white border border-orange-200 rounded-xl p-2.5 shadow-2xs">
+                  <span className="font-mono text-sm font-black text-orange-600 select-all truncate" dir="ltr">
                     https://{createdRestaurant.slug}.menus.cool
                   </span>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => {
                         copyUrl(`https://${createdRestaurant.slug}.menus.cool`);
                       }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold transition-colors cursor-pointer"
                     >
-                      {copiedLink ? <Check size={12} /> : <Copy size={12} />}
+                      {copiedLink ? <Check size={13} /> : <Copy size={13} />}
                       <span>{copiedLink ? 'تم النسخ' : 'نسخ'}</span>
                     </button>
                     <a
                       href={`https://${createdRestaurant.slug}.menus.cool`}
                       target="_blank"
-                      className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
                       title="فتح منيو المطعم"
                     >
-                      <ExternalLink size={13} />
+                      <ExternalLink size={15} />
                     </a>
                   </div>
                 </div>
               </div>
 
               {/* Quick Actions Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <Link
                   href={`/dashboard?created=${createdRestaurant.slug}`}
-                  className="p-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex flex-col items-center justify-center gap-1.5 shadow-xs transition-all active:scale-98"
+                  className="p-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex flex-col items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 transition-all active:scale-98"
                 >
-                  <BarChart3 size={18} />
+                  <BarChart3 size={20} />
                   <span>لوحة التحكم</span>
                 </Link>
 
                 <Link
-                  href={`/m?restaurant=${createdRestaurant.slug}`}
-                  target="_blank"
-                  className="p-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex flex-col items-center justify-center gap-1.5 border border-slate-200 transition-all shadow-xs"
+                  href="/dashboard/tables"
+                  className="p-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs flex flex-col items-center justify-center gap-1.5 border border-slate-200 transition-all active:scale-98"
                 >
-                  <QrCode size={18} className="text-orange-500" />
-                  <span>معاينة المنيو</span>
+                  <QrCode size={20} className="text-orange-500" />
+                  <span>طباعة باركودات QR</span>
                 </Link>
 
                 <Link
-                  href="/staff"
-                  target="_blank"
-                  className="p-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex flex-col items-center justify-center gap-1.5 border border-slate-200 transition-all shadow-xs"
+                  href="/dashboard/menu"
+                  className="p-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs flex flex-col items-center justify-center gap-1.5 border border-slate-200 transition-all active:scale-98"
                 >
-                  <ChefHat size={18} className="text-emerald-600" />
-                  <span>شاشة المطبخ</span>
+                  <ChefHat size={20} className="text-orange-500" />
+                  <span>إضافة وتعديل الوجبات</span>
                 </Link>
               </div>
 
-              {/* Table QR Link */}
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
-                <span className="font-bold text-slate-700">الأكواد جاهزة للطباعة على الطاولات</span>
-                <Link
-                  href={`/dashboard/tables?created=${createdRestaurant.slug}`}
-                  className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 text-xs"
-                >
-                  <span>طباعة الستاندات</span>
-                  <ExternalLink size={12} />
-                </Link>
-              </div>
-
+              <p className="text-[11px] text-slate-400">
+                بيانات الدخول تم حفظها، ويمكنك تسجيل الدخول في أي وقت باستخدام بريدك الإلكتروني وكلمة المرور.
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
-
     </div>
   );
 }
