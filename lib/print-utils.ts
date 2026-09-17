@@ -372,7 +372,7 @@ export function printTableStand(stand: {
       <div class="stand-card">
         <div class="luxury-crest">
           ${stand.logoUrl ? `
-            <img src="${stand.logoUrl}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);" alt="Logo" />
+            <img src="${stand.logoUrl}" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2.5px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);" alt="Logo" />
           ` : `
             <span>✦</span>
             <span class="crest-icon">🍽️</span>
@@ -454,7 +454,7 @@ export function printAllTableStands(stands: Array<{
       <div class="stand-card">
         <div class="luxury-crest">
           ${stand.logoUrl ? `
-            <img src="${stand.logoUrl}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);" alt="Logo" />
+            <img src="${stand.logoUrl}" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2.5px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);" alt="Logo" />
           ` : `
             <span>✦</span>
             <span class="crest-icon">🍽️</span>

@@ -27,7 +27,7 @@ export default function ProductionTablesPage() {
 
   // QR Customization Studio States
   const [qrColor, setQrColor] = useState<string>('#0f172a');
-  const [qrStyle, setQrStyle] = useState<'image_fill' | 'center_badge' | 'solid'>('image_fill');
+  const [qrStyle, setQrStyle] = useState<'photo_watermark' | 'image_fill' | 'center_badge' | 'solid'>('photo_watermark');
   const [isUploadingQrImage, setIsUploadingQrImage] = useState<boolean>(false);
   const fileInputQrRef = React.useRef<HTMLInputElement>(null);
 
@@ -35,7 +35,7 @@ export default function ProductionTablesPage() {
   const makeBrandedQr = async (
     targetUrl: string,
     color = qrColor,
-    style: 'image_fill' | 'center_badge' | 'solid' = qrStyle,
+    style: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid' = qrStyle,
     logo = restaurantLogo,
     name = restaurantName,
     tNum?: number
@@ -72,7 +72,7 @@ export default function ProductionTablesPage() {
     }
 
     const savedColor = typeof window !== 'undefined' ? localStorage.getItem('qr_brand_color') || '#0f172a' : '#0f172a';
-    const savedStyle = (typeof window !== 'undefined' ? localStorage.getItem('qr_style') : null) as any || 'image_fill';
+    const savedStyle = ((typeof window !== 'undefined' ? localStorage.getItem('qr_style') : null) as any) || 'photo_watermark';
 
     // Direct tables fetch immediately on mount
     fetch(`/api/v1/tables/list${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
@@ -179,8 +179,8 @@ export default function ProductionTablesPage() {
     }
   };
 
-  // Handle QR style switch (image_fill vs center_badge vs solid)
-  const handleStyleChange = async (newStyle: 'image_fill' | 'center_badge' | 'solid') => {
+  // Handle QR style switch (photo_watermark vs image_fill vs center_badge vs solid)
+  const handleStyleChange = async (newStyle: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid') => {
     setQrStyle(newStyle);
     try {
       localStorage.setItem('qr_style', newStyle);
@@ -200,7 +200,7 @@ export default function ProductionTablesPage() {
     }
   };
 
-  // Upload custom photo for the QR fill
+  // Upload custom photo for the QR fill / watermark
   const handleUploadQrImage = async (file: File) => {
     setIsUploadingQrImage(true);
     try {
@@ -213,11 +213,11 @@ export default function ProductionTablesPage() {
       const data = await res.json();
       if (data.success && data.url) {
         setRestaurantLogo(data.url);
-        setQrStyle('image_fill');
+        setQrStyle('photo_watermark');
         const updated = await Promise.all(
           tables.map(async (t) => {
             const targetUrl = getTableUrl(t);
-            const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, 'image_fill', data.url, restaurantName, t.tableNumber);
+            const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, 'photo_watermark', data.url, restaurantName, t.tableNumber);
             return { ...t, qrDataUrl };
           })
         );
@@ -459,15 +459,15 @@ export default function ProductionTablesPage() {
             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
               <button
                 type="button"
-                onClick={() => handleStyleChange('image_fill')}
+                onClick={() => handleStyleChange('photo_watermark')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'image_fill'
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
+                  qrStyle === 'photo_watermark'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 ring-2 ring-orange-500/30'
                     : 'text-slate-700 hover:bg-white'
                 }`}
               >
                 <Sparkles size={14} />
-                <span>نقش صورة المطعم كاملة (بدال الأسود)</span>
+                <span>خلفية صورة المطعم كاملة (الأوضح والأجمل ✨)</span>
               </button>
 
               <button
@@ -479,7 +479,19 @@ export default function ProductionTablesPage() {
                     : 'text-slate-700 hover:bg-white'
                 }`}
               >
-                <span>شعار بالمنتصف</span>
+                <span>شعار كبير بالمنتصف</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStyleChange('image_fill')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  qrStyle === 'image_fill'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                <span>نقش على نقاط الرمز</span>
               </button>
 
               <button
@@ -531,15 +543,34 @@ export default function ProductionTablesPage() {
           </div>
         </div>
 
-        {/* Explain notice when image_fill is selected */}
-        {qrStyle === 'image_fill' && (
-          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center gap-2 text-xs text-amber-900 font-medium">
-            <span className="text-base">✨</span>
-            <span>
-              <strong>النقش الكامل مفعّل:</strong> يتم تشكيل مربعات ونقاط الرمز من صورة وهوية مطعمك كاملة بدلاً من اللون الأسود التقليدي، مع معالجة التباين ليظل شغالاً وقابلاً للمسح فوراً بكافة الهواتف 📲
-            </span>
-          </div>
-        )}
+        {/* Explain notice based on active style */}
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center gap-2 text-xs text-amber-900 font-medium">
+          <span className="text-base">
+            {qrStyle === 'photo_watermark' ? '🖼️' : qrStyle === 'center_badge' ? '🏷️' : qrStyle === 'image_fill' ? '✨' : '🎨'}
+          </span>
+          <span>
+            {qrStyle === 'photo_watermark' && (
+              <>
+                <strong>صورة المطعم كاملة بالخلفية:</strong> صورة وهوية مطعمك واضحة تماماً وبدقة عالية كخلفية فاخرة للـ QR، مع دقة وسرعة مسح فورية بنسبة 100% بكافة الهواتف 📲
+              </>
+            )}
+            {qrStyle === 'center_badge' && (
+              <>
+                <strong>شعار المنتصف مفعّل:</strong> تظهر صورة وشعار المطعم كبيرة وواضحة جداً في قلب الرمز داخل إطار ذهبي راقي.
+              </>
+            )}
+            {qrStyle === 'image_fill' && (
+              <>
+                <strong>النقش الحي مفعّل:</strong> تتشكل نقاط الرمز من ألوان صورة المطعم مع خلفية متناسقة وتباين مريح للمسح.
+              </>
+            )}
+            {qrStyle === 'solid' && (
+              <>
+                <strong>اللون الموحد مفعّل:</strong> تصميم كلاسيكي نظيف بلون الهوية المختار.
+              </>
+            )}
+          </span>
+        </div>
 
         {/* Color Presets & Custom Picker */}
         <div className="flex flex-wrap items-center gap-2 pt-1">
