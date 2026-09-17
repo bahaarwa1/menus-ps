@@ -9,6 +9,7 @@ export interface BrandedQROptions {
   restaurantName?: string;
   tableNumber?: number | string;
   style?: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid';
+  reduceGaps?: boolean; // When true, shrinks white gaps and fills them with photo for maximum clarity
 }
 
 export const QR_COLOR_PRESETS = [
@@ -69,7 +70,7 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
 /**
  * Generates an ultra-crisp, branded QR code with:
  * 1. 'photo_watermark': Full HD restaurant photo in background with frosted overlay for maximum clarity & instant scanning
- * 2. 'image_fill': Vivid, un-muddied restaurant photo pattern filling the QR modules
+ * 2. 'image_fill': Vivid, un-muddied restaurant photo pattern filling the QR modules with reduced gaps
  * 3. 'center_badge': Large, prominent center photo emblem (28% size)
  * 4. 'solid': Classic brand color QR code
  */
@@ -82,6 +83,7 @@ export async function generateBrandedQRCode({
   restaurantName,
   tableNumber,
   style = 'photo_watermark',
+  reduceGaps = true,
 }: BrandedQROptions): Promise<string> {
   if (typeof window === 'undefined') {
     return QRCode.toDataURL(text, {
@@ -104,7 +106,7 @@ export async function generateBrandedQRCode({
   }
 
   // =========================================================================
-  // MODE 1: PHOTO WATERMARK BACKGROUND (صورة المطعم واضحة بالكامل كخلفية)
+  // MODE 1: PHOTO WATERMARK BACKGROUND (صورة المطعم واضحة بالكامل كخلفية مع تقليل الفراغات)
   // The complete restaurant photo is displayed in crystal clarity behind the QR code
   // =========================================================================
   if (effectiveStyle === 'photo_watermark' && logoImg && logoImg.width > 0 && logoImg.height > 0) {
@@ -130,25 +132,94 @@ export async function generateBrandedQRCode({
         }
         ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
 
-        // 2. Apply a clean frosted white veil (keeps the photo 100% visible and clear, while ensuring high contrast for scanners)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.74)';
+        // 2. Soft luminous wash (reduced white veil so photo is 62% clear and fully visible in all gaps)
+        ctx.fillStyle = reduceGaps ? 'rgba(255, 255, 255, 0.38)' : 'rgba(255, 255, 255, 0.68)';
         ctx.fillRect(0, 0, size, size);
 
-        // 3. Draw high-contrast QR code modules on top
-        const qrCanvas = document.createElement('canvas');
-        qrCanvas.width = size;
-        qrCanvas.height = size;
-        await QRCode.toCanvas(qrCanvas, text, {
-          width: size,
-          margin: 1,
-          color: {
-            dark: color || '#0f172a',
-            light: '#00000000', // transparent
-          },
-          errorCorrectionLevel: 'M',
-        });
+        // 3. Draw high-contrast QR code modules with expanded dots to minimize empty gaps
+        const qr = QRCode.create(text, { errorCorrectionLevel: reduceGaps ? 'Q' : 'M' });
+        const modCount = qr.modules.size;
+        const margin = 1;
+        const totalModules = modCount + margin * 2;
+        const moduleSize = size / totalModules;
+        const expand = reduceGaps ? moduleSize * 0.12 : 0;
 
-        ctx.drawImage(qrCanvas, 0, 0);
+        ctx.fillStyle = color || '#0f172a';
+        for (let r = 0; r < modCount; r++) {
+          for (let c = 0; c < modCount; c++) {
+            if (qr.modules.get(r, c)) {
+              ctx.fillRect(
+                Math.max(0, (c + margin) * moduleSize - expand / 2),
+                Math.max(0, (r + margin) * moduleSize - expand / 2),
+                moduleSize + expand,
+                moduleSize + expand
+              );
+            }
+          }
+        }
+
+        // 4. Center photo emblem when reduceGaps is enabled for 100% crystal-clear restaurant brand recognition
+        if (reduceGaps) {
+          const badgeSize = Math.round(size * 0.22);
+          const bX = Math.round((size - badgeSize) / 2);
+          const bY = Math.round((size - badgeSize) / 2);
+          const bRadius = Math.round(badgeSize * 0.26);
+
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+          ctx.shadowBlur = Math.round(size * 0.02);
+          ctx.shadowOffsetY = Math.round(size * 0.006);
+
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(bX, bY, badgeSize, badgeSize, bRadius);
+          } else {
+            ctx.rect(bX, bY, badgeSize, badgeSize);
+          }
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.restore();
+
+          ctx.save();
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(bX, bY, badgeSize, badgeSize, bRadius);
+          } else {
+            ctx.rect(bX, bY, badgeSize, badgeSize);
+          }
+          ctx.lineWidth = Math.max(2, Math.round(size * 0.006));
+          ctx.strokeStyle = '#f59e0b'; // Elegant warm golden ring
+          ctx.stroke();
+
+          const pad = Math.round(badgeSize * 0.08);
+          const innerX = bX + pad;
+          const innerY = bY + pad;
+          const innerSize = badgeSize - pad * 2;
+          const innerRadius = Math.max(3, bRadius - pad);
+
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(innerX, innerY, innerSize, innerSize, innerRadius);
+          } else {
+            ctx.rect(innerX, innerY, innerSize, innerSize);
+          }
+          ctx.clip();
+
+          let drawBadgeW = innerSize;
+          let drawBadgeH = innerSize;
+          let drawBadgeX = innerX;
+          let drawBadgeY = innerY;
+          if (imgAspect > 1) {
+            drawBadgeW = innerSize * imgAspect;
+            drawBadgeX = innerX - (drawBadgeW - innerSize) / 2;
+          } else {
+            drawBadgeH = innerSize / imgAspect;
+            drawBadgeY = innerY - (drawBadgeH - innerSize) / 2;
+          }
+          ctx.drawImage(logoImg, drawBadgeX, drawBadgeY, drawBadgeW, drawBadgeH);
+          ctx.restore();
+        }
+
         return canvas.toDataURL('image/png');
       }
     } catch (err) {
@@ -212,8 +283,8 @@ export async function generateBrandedQRCode({
           fCtx.fillStyle = bgColor || '#ffffff';
           fCtx.fillRect(0, 0, size, size);
 
-          // Faint 20% photo watermark underneath so the image shapes connect seamlessly to the eye!
-          fCtx.globalAlpha = 0.18;
+          // Rich photo visibility in gaps (eliminates white empty gaps and connects the image seamlessly)
+          fCtx.globalAlpha = reduceGaps ? 0.45 : 0.20;
           fCtx.drawImage(logoImg, drawX, drawY, drawW, drawH);
           fCtx.globalAlpha = 1.0;
 

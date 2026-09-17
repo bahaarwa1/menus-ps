@@ -28,6 +28,7 @@ export default function ProductionTablesPage() {
   // QR Customization Studio States
   const [qrColor, setQrColor] = useState<string>('#0f172a');
   const [qrStyle, setQrStyle] = useState<'photo_watermark' | 'image_fill' | 'center_badge' | 'solid'>('photo_watermark');
+  const [reduceGaps, setReduceGaps] = useState<boolean>(true);
   const [isUploadingQrImage, setIsUploadingQrImage] = useState<boolean>(false);
   const fileInputQrRef = React.useRef<HTMLInputElement>(null);
 
@@ -38,7 +39,8 @@ export default function ProductionTablesPage() {
     style: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid' = qrStyle,
     logo = restaurantLogo,
     name = restaurantName,
-    tNum?: number
+    tNum?: number,
+    withReduceGaps = reduceGaps
   ) => {
     try {
       return await generateBrandedQRCode({
@@ -49,6 +51,7 @@ export default function ProductionTablesPage() {
         style,
         restaurantName: name,
         tableNumber: tNum,
+        reduceGaps: withReduceGaps,
       });
     } catch (e) {
       console.error('Error generating branded QR:', e);
@@ -68,11 +71,14 @@ export default function ProductionTablesPage() {
         if (savedColor) setQrColor(savedColor);
         const savedStyle = localStorage.getItem('qr_style') as any;
         if (savedStyle) setQrStyle(savedStyle);
+        const savedGaps = localStorage.getItem('qr_reduce_gaps');
+        if (savedGaps !== null) setReduceGaps(savedGaps === '1');
       } catch {}
     }
 
     const savedColor = typeof window !== 'undefined' ? localStorage.getItem('qr_brand_color') || '#0f172a' : '#0f172a';
     const savedStyle = ((typeof window !== 'undefined' ? localStorage.getItem('qr_style') : null) as any) || 'photo_watermark';
+    const savedReduceGaps = typeof window !== 'undefined' ? localStorage.getItem('qr_reduce_gaps') !== '0' : true;
 
     // Direct tables fetch immediately on mount
     fetch(`/api/v1/tables/list${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
@@ -120,7 +126,8 @@ export default function ProductionTablesPage() {
                 savedStyle,
                 activeLogo,
                 activeName,
-                tableNumber
+                tableNumber,
+                savedReduceGaps
               );
               return {
                 id: t.dbId || `tbl-${t.id}`,
@@ -200,6 +207,27 @@ export default function ProductionTablesPage() {
     }
   };
 
+  // Toggle reduced gaps
+  const handleToggleReduceGaps = async (newVal: boolean) => {
+    setReduceGaps(newVal);
+    try {
+      localStorage.setItem('qr_reduce_gaps', newVal ? '1' : '0');
+    } catch {}
+
+    const updated = await Promise.all(
+      tables.map(async (t) => {
+        const targetUrl = getTableUrl(t);
+        const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, restaurantName, t.tableNumber, newVal);
+        return { ...t, qrDataUrl };
+      })
+    );
+    setTables(updated);
+    if (selectedPrintTable) {
+      const cur = updated.find((u) => u.id === selectedPrintTable.id);
+      if (cur) setSelectedPrintTable(cur);
+    }
+  };
+
   // Upload custom photo for the QR fill / watermark
   const handleUploadQrImage = async (file: File) => {
     setIsUploadingQrImage(true);
@@ -217,7 +245,7 @@ export default function ProductionTablesPage() {
         const updated = await Promise.all(
           tables.map(async (t) => {
             const targetUrl = getTableUrl(t);
-            const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, 'photo_watermark', data.url, restaurantName, t.tableNumber);
+            const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, 'photo_watermark', data.url, restaurantName, t.tableNumber, reduceGaps);
             return { ...t, qrDataUrl };
           })
         );
@@ -281,7 +309,8 @@ export default function ProductionTablesPage() {
           qrStyle,
           restaurantLogo,
           restaurantName,
-          data.table.id
+          data.table.id,
+          reduceGaps
         );
 
         setTables((prev) => [
@@ -321,7 +350,7 @@ export default function ProductionTablesPage() {
     const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
     const qrDataUrl =
       table.qrDataUrl ||
-      (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
+      (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber, reduceGaps));
 
     printTableStand({
       tableNumber: table.tableNumber,
@@ -540,6 +569,26 @@ export default function ProductionTablesPage() {
                 {isUploadingQrImage ? 'جاري الرفع...' : 'تغيير صورة الـ QR'}
               </button>
             </div>
+
+            {/* Reduce Gaps / Maximize Photo Clarity Toggle */}
+            <button
+              type="button"
+              onClick={() => handleToggleReduceGaps(!reduceGaps)}
+              className={`px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-2 border transition-all cursor-pointer shadow-2xs ${
+                reduceGaps
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 ring-2 ring-emerald-400/20'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+              title="تقليل الفراغات البيضاء وإبراز صورة المطعم داخل الرمز لأقصى درجة وضوح"
+            >
+              <Sparkles size={14} className={reduceGaps ? 'text-emerald-600' : 'text-slate-400'} />
+              <span>{reduceGaps ? 'تقليل الفراغات وإبراز الصورة: مفعّل ✨' : 'تقليل الفراغات وإبراز الصورة'}</span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  reduceGaps ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                }`}
+              />
+            </button>
           </div>
         </div>
 
@@ -551,7 +600,7 @@ export default function ProductionTablesPage() {
           <span>
             {qrStyle === 'photo_watermark' && (
               <>
-                <strong>صورة المطعم كاملة بالخلفية:</strong> صورة وهوية مطعمك واضحة تماماً وبدقة عالية كخلفية فاخرة للـ QR، مع دقة وسرعة مسح فورية بنسبة 100% بكافة الهواتف 📲
+                <strong>صورة المطعم كاملة بالخلفية:</strong> صورة وهوية مطعمك واضحة تماماً وبدقة عالية كخلفية فاخرة للـ QR، مع {reduceGaps ? 'تقليل الفراغات البيضاء وإبراز معالم الصورة' : 'فراغات قياسية'} ودقة مسح فورية بنسبة 100% بكافة الهواتف 📲
               </>
             )}
             {qrStyle === 'center_badge' && (
