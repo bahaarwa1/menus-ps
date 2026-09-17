@@ -584,15 +584,12 @@ export default function RegisterPage() {
                 </span>
                 <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg p-2 shadow-xs">
                   <span className="font-mono text-xs font-bold text-orange-600 select-all truncate" dir="ltr">
-                    {typeof window !== 'undefined'
-                      ? `${window.location.origin}/r/${createdRestaurant.slug}`
-                      : `https://menus.cool/r/${createdRestaurant.slug}`}
+                    https://{createdRestaurant.slug}.menus.cool
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => {
-                        const base = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-                        copyUrl(`${base}/r/${createdRestaurant.slug}`);
+                        copyUrl(`https://${createdRestaurant.slug}.menus.cool`);
                       }}
                       className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold transition-colors cursor-pointer"
                     >
@@ -600,7 +597,7 @@ export default function RegisterPage() {
                       <span>{copiedLink ? 'تم النسخ' : 'نسخ'}</span>
                     </button>
                     <a
-                      href={`/r/${createdRestaurant.slug}`}
+                      href={`https://${createdRestaurant.slug}.menus.cool`}
                       target="_blank"
                       className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
                       title="فتح منيو المطعم"
