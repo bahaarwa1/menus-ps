@@ -27,13 +27,15 @@ export default function ProductionTablesPage() {
 
   // QR Customization Studio States
   const [qrColor, setQrColor] = useState<string>('#0f172a');
-  const [includeLogo, setIncludeLogo] = useState<boolean>(true);
+  const [qrStyle, setQrStyle] = useState<'image_fill' | 'center_badge' | 'solid'>('image_fill');
+  const [isUploadingQrImage, setIsUploadingQrImage] = useState<boolean>(false);
+  const fileInputQrRef = React.useRef<HTMLInputElement>(null);
 
   // Helper to generate branded QR code
   const makeBrandedQr = async (
     targetUrl: string,
     color = qrColor,
-    withLogo = includeLogo,
+    style: 'image_fill' | 'center_badge' | 'solid' = qrStyle,
     logo = restaurantLogo,
     name = restaurantName,
     tNum?: number
@@ -43,7 +45,8 @@ export default function ProductionTablesPage() {
         text: targetUrl,
         size: 550,
         color,
-        logoUrl: withLogo ? logo : undefined,
+        logoUrl: style !== 'solid' ? logo : undefined,
+        style,
         restaurantName: name,
         tableNumber: tNum,
       });
@@ -63,13 +66,13 @@ export default function ProductionTablesPage() {
       try {
         const savedColor = localStorage.getItem('qr_brand_color');
         if (savedColor) setQrColor(savedColor);
-        const savedIncludeLogo = localStorage.getItem('qr_include_logo');
-        if (savedIncludeLogo !== null) setIncludeLogo(savedIncludeLogo === '1');
+        const savedStyle = localStorage.getItem('qr_style') as any;
+        if (savedStyle) setQrStyle(savedStyle);
       } catch {}
     }
 
     const savedColor = typeof window !== 'undefined' ? localStorage.getItem('qr_brand_color') || '#0f172a' : '#0f172a';
-    const savedIncludeLogo = typeof window !== 'undefined' ? localStorage.getItem('qr_include_logo') !== '0' : true;
+    const savedStyle = (typeof window !== 'undefined' ? localStorage.getItem('qr_style') : null) as any || 'image_fill';
 
     // Direct tables fetch immediately on mount
     fetch(`/api/v1/tables/list${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
@@ -114,7 +117,7 @@ export default function ProductionTablesPage() {
               const qrDataUrl = await makeBrandedQr(
                 targetUrl,
                 savedColor,
-                savedIncludeLogo,
+                savedStyle,
                 activeLogo,
                 activeName,
                 tableNumber
@@ -165,28 +168,73 @@ export default function ProductionTablesPage() {
     const updated = await Promise.all(
       tables.map(async (t) => {
         const targetUrl = getTableUrl(t);
-        const qrDataUrl = await makeBrandedQr(targetUrl, newColor, includeLogo, restaurantLogo, restaurantName, t.tableNumber);
+        const qrDataUrl = await makeBrandedQr(targetUrl, newColor, qrStyle, restaurantLogo, restaurantName, t.tableNumber);
         return { ...t, qrDataUrl };
       })
     );
     setTables(updated);
+    if (selectedPrintTable) {
+      const cur = updated.find((u) => u.id === selectedPrintTable.id);
+      if (cur) setSelectedPrintTable(cur);
+    }
   };
 
-  // Handle live logo toggle for all table QR codes
-  const handleToggleLogo = async (newIncludeLogo: boolean) => {
-    setIncludeLogo(newIncludeLogo);
+  // Handle QR style switch (image_fill vs center_badge vs solid)
+  const handleStyleChange = async (newStyle: 'image_fill' | 'center_badge' | 'solid') => {
+    setQrStyle(newStyle);
     try {
-      localStorage.setItem('qr_include_logo', newIncludeLogo ? '1' : '0');
+      localStorage.setItem('qr_style', newStyle);
     } catch {}
 
     const updated = await Promise.all(
       tables.map(async (t) => {
         const targetUrl = getTableUrl(t);
-        const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, newIncludeLogo, restaurantLogo, restaurantName, t.tableNumber);
+        const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, newStyle, restaurantLogo, restaurantName, t.tableNumber);
         return { ...t, qrDataUrl };
       })
     );
     setTables(updated);
+    if (selectedPrintTable) {
+      const cur = updated.find((u) => u.id === selectedPrintTable.id);
+      if (cur) setSelectedPrintTable(cur);
+    }
+  };
+
+  // Upload custom photo for the QR fill
+  const handleUploadQrImage = async (file: File) => {
+    setIsUploadingQrImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setRestaurantLogo(data.url);
+        setQrStyle('image_fill');
+        const updated = await Promise.all(
+          tables.map(async (t) => {
+            const targetUrl = getTableUrl(t);
+            const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, 'image_fill', data.url, restaurantName, t.tableNumber);
+            return { ...t, qrDataUrl };
+          })
+        );
+        setTables(updated);
+        if (selectedPrintTable) {
+          const cur = updated.find((u) => u.id === selectedPrintTable.id);
+          if (cur) setSelectedPrintTable(cur);
+        }
+      } else {
+        alert(data.error || 'فشل رفع الصورة');
+      }
+    } catch (err) {
+      console.error('QR image upload error:', err);
+      alert('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setIsUploadingQrImage(false);
+    }
   };
 
   const copyTableLink = (table: TableItem) => {
@@ -230,7 +278,7 @@ export default function ProductionTablesPage() {
         const qrDataUrl = await makeBrandedQr(
           targetUrl,
           qrColor,
-          includeLogo,
+          qrStyle,
           restaurantLogo,
           restaurantName,
           data.table.id
@@ -273,14 +321,14 @@ export default function ProductionTablesPage() {
     const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
     const qrDataUrl =
       table.qrDataUrl ||
-      (await makeBrandedQr(targetUrl, qrColor, includeLogo, restaurantLogo, activeName, table.tableNumber));
+      (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
 
     printTableStand({
       tableNumber: table.tableNumber,
       restaurantName: activeName || 'أهلاً وسهلاً بكم',
       targetUrl,
       qrDataUrl,
-      logoUrl: includeLogo ? restaurantLogo : undefined,
+      logoUrl: qrStyle !== 'solid' ? restaurantLogo : undefined,
     });
   };
 
@@ -307,13 +355,13 @@ export default function ProductionTablesPage() {
           const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
           const qrDataUrl =
             table.qrDataUrl ||
-            (await makeBrandedQr(targetUrl, qrColor, includeLogo, restaurantLogo, activeName, table.tableNumber));
+            (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
           return {
             tableNumber: table.tableNumber,
             restaurantName: activeName || 'أهلاً وسهلاً بكم',
             targetUrl,
             qrDataUrl,
-            logoUrl: includeLogo ? restaurantLogo : undefined,
+            logoUrl: qrStyle !== 'solid' ? restaurantLogo : undefined,
           };
         })
       );
@@ -406,31 +454,92 @@ export default function ProductionTablesPage() {
             </div>
           </div>
 
-          {/* Logo in QR Toggle & Preview */}
-          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-            {restaurantLogo ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={restaurantLogo}
-                alt="Logo"
-                className="w-8 h-8 rounded-xl object-cover border border-slate-200 shadow-2xs"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-600 font-black text-xs flex items-center justify-center border border-orange-200">
-                {restaurantName ? restaurantName.trim().charAt(0) : '🍽️'}
-              </div>
-            )}
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* QR Design Modes */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => handleStyleChange('image_fill')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  qrStyle === 'image_fill'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>نقش صورة المطعم كاملة (بدال الأسود)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStyleChange('center_badge')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  qrStyle === 'center_badge'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                <span>شعار بالمنتصف</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStyleChange('solid')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  qrStyle === 'solid'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                <span>لون موحد</span>
+              </button>
+            </div>
+
+            {/* Image Thumbnail & Upload */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl">
+              {restaurantLogo ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={restaurantLogo}
+                  alt="QR Image"
+                  className="w-8 h-8 rounded-xl object-cover border border-slate-200 shadow-2xs"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-600 font-black text-xs flex items-center justify-center border border-orange-200">
+                  {restaurantName ? restaurantName.trim().charAt(0) : '🍽️'}
+                </div>
+              )}
               <input
-                type="checkbox"
-                checked={includeLogo}
-                onChange={(e) => handleToggleLogo(e.target.checked)}
-                className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer"
+                type="file"
+                ref={fileInputQrRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadQrImage(file);
+                }}
               />
-              <span className="text-xs font-bold text-slate-800">تضمين شعار المطعم داخل الـ QR</span>
-            </label>
+              <button
+                type="button"
+                disabled={isUploadingQrImage}
+                onClick={() => fileInputQrRef.current?.click()}
+                className="text-xs text-orange-600 hover:text-orange-700 font-black hover:underline cursor-pointer flex items-center gap-1"
+              >
+                {isUploadingQrImage ? 'جاري الرفع...' : 'تغيير صورة الـ QR'}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Explain notice when image_fill is selected */}
+        {qrStyle === 'image_fill' && (
+          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center gap-2 text-xs text-amber-900 font-medium">
+            <span className="text-base">✨</span>
+            <span>
+              <strong>النقش الكامل مفعّل:</strong> يتم تشكيل مربعات ونقاط الرمز من صورة وهوية مطعمك كاملة بدلاً من اللون الأسود التقليدي، مع معالجة التباين ليظل شغالاً وقابلاً للمسح فوراً بكافة الهواتف 📲
+            </span>
+          </div>
+        )}
 
         {/* Color Presets & Custom Picker */}
         <div className="flex flex-wrap items-center gap-2 pt-1">

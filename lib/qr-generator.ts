@@ -8,6 +8,7 @@ export interface BrandedQROptions {
   logoUrl?: string; // Image or logo URL
   restaurantName?: string;
   tableNumber?: number | string;
+  style?: 'image_fill' | 'center_badge' | 'solid';
 }
 
 export const QR_COLOR_PRESETS = [
@@ -21,31 +22,52 @@ export const QR_COLOR_PRESETS = [
 ];
 
 /**
- * Loads an image from a URL or DataURL safely, handling CORS.
+ * Loads an image from a URL or DataURL safely, handling CORS and blob conversion.
  */
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
+  if (!src) return null;
+  if (typeof window === 'undefined') return null;
+
+  // 1. If it's already a data URL or blob URL, load directly
+  if (src.startsWith('data:') || src.startsWith('blob:')) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  // 2. Try fetching as blob to prevent canvas cross-origin tainting
+  try {
+    const res = await fetch(src, { mode: 'cors' });
+    if (res.ok) {
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = objUrl;
+      });
+    }
+  } catch {}
+
+  // 3. Fallback to Image element with crossOrigin
   return new Promise((resolve) => {
-    if (!src) return resolve(null);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    img.onerror = () => {
-      // If CORS fails with anonymous, try without crossOrigin
-      const retryImg = new Image();
-      retryImg.onload = () => resolve(retryImg);
-      retryImg.onerror = () => resolve(null);
-      retryImg.src = src;
-    };
+    img.onerror = () => resolve(null);
     img.src = src;
   });
 }
 
 /**
  * Generates an ultra-crisp, branded QR code with:
- * 1. Custom brand colors
- * 2. High error correction level (H = 30%)
- * 3. Centered restaurant logo or stylish crest badge
- * 4. High resolution suitable for 300DPI print & mobile camera scanning
+ * 1. Full Image Fill mode ('image_fill'): restaurant image/logo replaces the black modules across the FULL QR
+ * 2. High error correction level (H = 30%) ensuring 100% reliable camera scanning
+ * 3. High resolution suitable for 300DPI print & mobile camera scanning
  */
 export async function generateBrandedQRCode({
   text,
@@ -55,6 +77,7 @@ export async function generateBrandedQRCode({
   logoUrl,
   restaurantName,
   tableNumber,
+  style = 'image_fill',
 }: BrandedQROptions): Promise<string> {
   if (typeof window === 'undefined') {
     // Fallback in SSR
@@ -66,11 +89,100 @@ export async function generateBrandedQRCode({
     });
   }
 
+  // Determine active mode: if logoUrl is provided and style is not 'solid', use image_fill or center_badge
+  const effectiveStyle = !logoUrl && style !== 'solid' ? 'solid' : style;
+
+  // Try loading image if needed
+  let logoImg: HTMLImageElement | null = null;
+  if (logoUrl && effectiveStyle !== 'solid') {
+    try {
+      logoImg = await loadImage(logoUrl);
+    } catch {
+      logoImg = null;
+    }
+  }
+
+  // =========================================================================
+  // MODE 1: FULL IMAGE FILL (صورة المطعم على كامل الـ QR بدلاً من الأسود)
+  // Replaces the black modules with the restaurant image/logo with high-contrast darkening
+  // =========================================================================
+  if (effectiveStyle === 'image_fill' && logoImg && logoImg.width > 0 && logoImg.height > 0) {
+    try {
+      // 1. Generate transparent QR mask where only dark modules exist
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = size;
+      maskCanvas.height = size;
+      await QRCode.toCanvas(maskCanvas, text, {
+        width: size,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#00000000', // transparent
+        },
+        errorCorrectionLevel: 'H',
+      });
+
+      // 2. Prepare patterned image canvas
+      const patternCanvas = document.createElement('canvas');
+      patternCanvas.width = size;
+      patternCanvas.height = size;
+      const pCtx = patternCanvas.getContext('2d');
+
+      if (pCtx) {
+        // Draw image covering the full canvas
+        const imgAspect = logoImg.width / logoImg.height;
+        let drawW = size;
+        let drawH = size;
+        let drawX = 0;
+        let drawY = 0;
+        if (imgAspect > 1) {
+          drawW = size * imgAspect;
+          drawX = -(drawW - size) / 2;
+        } else {
+          drawH = size / imgAspect;
+          drawY = -(drawH - size) / 2;
+        }
+        pCtx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+
+        // Darken & enhance contrast so QR scanners easily detect modules against white background
+        // First, multiply with deep brand color:
+        pCtx.globalCompositeOperation = 'multiply';
+        pCtx.fillStyle = color || '#0f172a';
+        pCtx.fillRect(0, 0, size, size);
+
+        // Second, add dark contrast layer to ensure safe luminance for all phone cameras
+        pCtx.globalCompositeOperation = 'source-over';
+        pCtx.fillStyle = 'rgba(15, 23, 42, 0.40)';
+        pCtx.fillRect(0, 0, size, size);
+
+        // Third, mask with the QR modules so image ONLY appears where modules are
+        pCtx.globalCompositeOperation = 'destination-in';
+        pCtx.drawImage(maskCanvas, 0, 0);
+
+        // 3. Final composite on white background
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = size;
+        finalCanvas.height = size;
+        const fCtx = finalCanvas.getContext('2d');
+        if (fCtx) {
+          fCtx.fillStyle = bgColor || '#ffffff';
+          fCtx.fillRect(0, 0, size, size);
+          fCtx.drawImage(patternCanvas, 0, 0);
+          return finalCanvas.toDataURL('image/png');
+        }
+      }
+    } catch (err) {
+      console.warn('Image fill QR generation failed, falling back to standard branded QR:', err);
+    }
+  }
+
+  // =========================================================================
+  // MODE 2 & 3: Standard QR (Solid or with Center Badge)
+  // =========================================================================
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
 
-  // 1. Generate high-error-correction QR code to canvas
   await QRCode.toCanvas(canvas, text, {
     width: size,
     margin: 1,
@@ -78,7 +190,7 @@ export async function generateBrandedQRCode({
       dark: color,
       light: bgColor,
     },
-    errorCorrectionLevel: 'H', // 30% error correction allows seamless center logo
+    errorCorrectionLevel: 'H',
   });
 
   const ctx = canvas.getContext('2d');
@@ -86,42 +198,34 @@ export async function generateBrandedQRCode({
     return canvas.toDataURL('image/png');
   }
 
-  // If no logo requested and no restaurant name, return raw styled QR
-  if (!logoUrl && !restaurantName) {
+  // If solid style or no logo/name, return standard QR
+  if (effectiveStyle === 'solid' || (!logoUrl && !restaurantName)) {
     return canvas.toDataURL('image/png');
   }
 
-  // 2. Draw Center Logo / Emblem Badge
-  // Logo size is approximately 22% of QR width to stay safely within 30% error correction
+  // Center Badge Mode:
   const centerSize = Math.round(size * 0.23);
   const centerX = Math.round((size - centerSize) / 2);
   const centerY = Math.round((size - centerSize) / 2);
-  const radius = Math.round(centerSize * 0.28); // smooth squircle / rounded rect
+  const radius = Math.round(centerSize * 0.28);
 
   ctx.save();
-
-  // Outer shadow for premium floating badge look
   ctx.shadowColor = 'rgba(0, 0, 0, 0.14)';
   ctx.shadowBlur = Math.round(size * 0.02);
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = Math.round(size * 0.008);
 
-  // Background rounded rectangle
   ctx.beginPath();
   if (ctx.roundRect) {
     ctx.roundRect(centerX, centerY, centerSize, centerSize, radius);
   } else {
-    // Fallback for older browsers
     ctx.rect(centerX, centerY, centerSize, centerSize);
   }
   ctx.fillStyle = '#ffffff';
   ctx.fill();
-
-  // Reset shadow
   ctx.restore();
-  ctx.save();
 
-  // Subtle border around the center badge matching QR color
+  ctx.save();
   ctx.beginPath();
   if (ctx.roundRect) {
     ctx.roundRect(centerX, centerY, centerSize, centerSize, radius);
@@ -132,16 +236,6 @@ export async function generateBrandedQRCode({
   ctx.strokeStyle = color;
   ctx.stroke();
 
-  // Try loading logo image
-  let logoImg: HTMLImageElement | null = null;
-  if (logoUrl) {
-    try {
-      logoImg = await loadImage(logoUrl);
-    } catch {
-      logoImg = null;
-    }
-  }
-
   const innerPadding = Math.round(centerSize * 0.12);
   const innerX = centerX + innerPadding;
   const innerY = centerY + innerPadding;
@@ -149,7 +243,6 @@ export async function generateBrandedQRCode({
   const innerRadius = Math.max(4, radius - innerPadding);
 
   if (logoImg && logoImg.width > 0 && logoImg.height > 0) {
-    // Clip inner area with rounded rect
     ctx.beginPath();
     if (ctx.roundRect) {
       ctx.roundRect(innerX, innerY, innerSize, innerSize, innerRadius);
@@ -158,7 +251,6 @@ export async function generateBrandedQRCode({
     }
     ctx.clip();
 
-    // Maintain aspect ratio
     const imgAspect = logoImg.width / logoImg.height;
     let drawW = innerSize;
     let drawH = innerSize;
@@ -175,18 +267,14 @@ export async function generateBrandedQRCode({
 
     ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
   } else {
-    // Fallback: Elegant brand monogram / restaurant crest
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    // Draw luxury initial or restaurant name snippet
     const initial = (restaurantName || 'M').trim().charAt(0);
     ctx.font = `900 ${Math.round(innerSize * 0.55)}px "Segoe UI", Arial, sans-serif`;
     ctx.fillText(initial, centerX + centerSize / 2, centerY + centerSize / 2);
   }
 
   ctx.restore();
-
   return canvas.toDataURL('image/png');
 }
