@@ -12,6 +12,7 @@ interface OrderItem {
   qty: number;
   price: number;
   extras?: string[];
+  notes?: string;
 }
 
 interface Order {
@@ -22,6 +23,7 @@ interface Order {
   items: OrderItem[];
   total: number;
   createdAt: string;
+  rawCreatedAt?: string;
   notes?: string;
 }
 
@@ -45,6 +47,7 @@ export default function ProductionOrdersPage() {
       qty: Number(it.quantity || it.qty) || 1,
       price: Number(it.unit_price || it.price) || 0,
       extras: it.selected_extras || it.extras || [],
+      notes: it.notes || it.customization || it.note || '',
     }));
 
     return {
@@ -56,6 +59,7 @@ export default function ProductionOrdersPage() {
       createdAt: raw.created_at
         ? new Date(raw.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
         : 'الآن',
+      rawCreatedAt: raw.created_at || new Date().toISOString(),
       notes: raw.customer_note || raw.customerNote || '',
       items,
     };
@@ -97,7 +101,8 @@ export default function ProductionOrdersPage() {
           const now = Date.now();
           const keptFromPrev = prev.filter((p: Order) => {
             if (nextIds.has(p.rawId)) return false;
-            return (now - (new Date(p.createdAt || 0).getTime() || 0)) < 180000;
+            const timeMs = p.rawCreatedAt ? new Date(p.rawCreatedAt).getTime() : 0;
+            return timeMs > 0 && (now - timeMs) < 180000;
           });
 
           return [...keptFromPrev, ...next];
@@ -352,9 +357,9 @@ export default function ProductionOrdersPage() {
                 </div>
 
                 {/* Items List */}
-                <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
+                <div className="space-y-2 mb-3 max-h-56 overflow-y-auto">
                   {order.items.map((item, idx) => (
-                    <div key={idx} className="bg-slate-50 rounded-xl p-2 text-xs">
+                    <div key={idx} className="bg-slate-50 rounded-xl p-2.5 text-xs">
                       <div className="flex items-center justify-between font-bold text-slate-800">
                         <span>{item.qty}x {item.name}</span>
                         <span className="font-mono text-slate-500">{item.price * item.qty} ₪</span>
@@ -364,15 +369,23 @@ export default function ProductionOrdersPage() {
                           إضافات: {item.extras.join('، ')}
                         </p>
                       )}
+                      {item.notes && (
+                        <p className="text-[11px] font-bold text-orange-700 bg-orange-100/60 border border-orange-200/80 rounded-md px-1.5 py-0.5 mt-1 inline-block">
+                          📝 ملاحظة: {item.notes}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 {/* Customer Notes */}
                 {order.notes && (
-                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-800 text-xs mb-3 flex items-start gap-1.5">
+                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs mb-3 flex items-start gap-1.5">
                     <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-600" />
-                    <p className="font-medium">{order.notes}</p>
+                    <div className="min-w-0">
+                      <span className="font-black text-amber-900 text-[11px] block">ملاحظة الزبون:</span>
+                      <p className="font-medium text-amber-800 leading-relaxed">{order.notes}</p>
+                    </div>
                   </div>
                 )}
               </div>

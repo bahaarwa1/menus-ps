@@ -163,11 +163,7 @@ export default function CustomerMenuClient({
   const [menuLoading, setMenuLoading] = useState(!hasInitialData && !isExplicitDemo);
   const [menuError, setMenuError] = useState('');
 
-  const [activeCategory, setActiveCategory] = useState(
-    hasInitialData && initialCategories[0]?.id
-      ? initialCategories[0].id
-      : isExplicitDemo ? (initialCategories[0]?.id || 'burgers') : ''
-  );
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Table state: resolve from URL table param, QR token, or demo table 1
@@ -192,6 +188,7 @@ export default function CustomerMenuClient({
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState('');
+  const [orderGeneralNote, setOrderGeneralNote] = useState('');
   const [serverVerifiedTotal, setServerVerifiedTotal] = useState<number | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
@@ -219,12 +216,13 @@ export default function CustomerMenuClient({
     const diffX = touchStartX - touchEndX;
     const diffY = touchStartY - touchEndY;
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
-      const currentIdx = dbCategories.findIndex(c => c.id === activeCategory);
-      if (diffX > 0 && currentIdx < dbCategories.length - 1) {
-        setActiveCategory(dbCategories[currentIdx + 1].id);
+      const catList = ['all', ...dbCategories.map(c => c.id)];
+      const currentIdx = catList.indexOf(activeCategory);
+      if (diffX > 0 && currentIdx < catList.length - 1) {
+        setActiveCategory(catList[currentIdx + 1]);
         setSearchQuery('');
       } else if (diffX < 0 && currentIdx > 0) {
-        setActiveCategory(dbCategories[currentIdx - 1].id);
+        setActiveCategory(catList[currentIdx - 1]);
         setSearchQuery('');
       }
     }
@@ -475,18 +473,16 @@ export default function CustomerMenuClient({
 
   // Filtered menu — from DB with resilient category fallback
   const filteredItems = useMemo(() => {
-    const currentCat = (activeCategory && dbCategories.some(c => c.id === activeCategory))
-      ? activeCategory
-      : (dbCategories[0]?.id || '');
-
     return dbMenuItems.filter(item => {
-      const matchCat = searchQuery ? true : (!currentCat || item.category === currentCat);
+      const matchCat = searchQuery || activeCategory === 'all' || !activeCategory
+        ? true
+        : item.category === activeCategory;
       const matchSearch = !searchQuery || 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase());
+        (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [dbMenuItems, dbCategories, activeCategory, searchQuery]);
+  }, [dbMenuItems, activeCategory, searchQuery]);
 
   // Cart summary — uses dbMenuItems
   const cartItemsList = useMemo(() => {
@@ -574,6 +570,7 @@ export default function CustomerMenuClient({
           restaurantSlug: activeRestaurantSlug,
           tableNumber,
           tableToken: qrTokenParam || undefined,
+          customerNote: orderGeneralNote.trim() || undefined,
           items: itemsPayload,
         }),
       });
@@ -593,6 +590,7 @@ export default function CustomerMenuClient({
       setCartQuantities({});
       setItemNotes({});
       setSelectedExtras({});
+      setOrderGeneralNote('');
     } catch {
       setOrderError('تعذر الاتصال بالسيرفر. يرجى التأكد من اتصال الإنترنت');
     } finally {
@@ -826,11 +824,35 @@ export default function CustomerMenuClient({
           {/* Categories Pill Slider */}
           {dbCategories.length > 0 ? (
             <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
+              {/* All Items Button */}
+              <button
+                key="all"
+                id="cat-btn-all"
+                onClick={() => {
+                  setActiveCategory('all');
+                  setSearchQuery('');
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                  (activeCategory === 'all' || !activeCategory) && !searchQuery
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-2 ring-orange-500/20'
+                    : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
+                }`}
+              >
+                <span>🍽️</span>
+                <span>{language === 'ar' ? 'الكل' : 'All'}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  (activeCategory === 'all' || !activeCategory) && !searchQuery ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}>
+                  {dbMenuItems.length}
+                </span>
+              </button>
+
               {dbCategories.map((cat) => {
                 const isActive = activeCategory === cat.id && !searchQuery;
                 const catName = language === 'en' 
                   ? (cat.id === 'burgers' ? 'Burgers' : cat.id === 'wraps' ? 'Wraps' : cat.id === 'sides' ? 'Sides' : cat.id === 'drinks' ? 'Drinks' : cat.id === 'desserts' ? 'Desserts' : cat.name)
                   : cat.name;
+                const catCount = dbMenuItems.filter(m => m.category === cat.id).length;
                 return (
                   <button
                     key={cat.id}
@@ -845,8 +867,15 @@ export default function CustomerMenuClient({
                         : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
                     }`}
                   >
-                    <span>{cat.icon}</span>
+                    <span>{cat.icon || '🍴'}</span>
                     <span>{catName}</span>
+                    {catCount > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
+                      }`}>
+                        {catCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1311,6 +1340,23 @@ export default function CustomerMenuClient({
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* General Order Notes Input */}
+                <div className="px-4 pt-3 pb-1 bg-white shrink-0 border-t border-slate-100">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <span>📝</span>
+                      <span>{language === 'ar' ? 'ملاحظة عامة على الطلب (اختياري)' : 'Order notes / instructions (optional)'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={language === 'ar' ? 'مثلاً: يرجى الاستعجال، بدون كاتشب...' : 'e.g., extra napkins, please hurry...'}
+                      value={orderGeneralNote}
+                      onChange={(e) => setOrderGeneralNote(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-orange-500 text-slate-800"
+                    />
+                  </div>
                 </div>
 
                 {/* Total & Send Action */}

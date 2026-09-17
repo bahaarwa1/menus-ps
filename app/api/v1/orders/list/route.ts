@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
           notes
         )
       `)
-      .in('status', ['جديد', 'قيد التحضير', 'جاهز', 'تم التسليم', 'new', 'cooking', 'ready', 'completed'])
+      .in('status', ['جديد', 'قيد التحضير', 'جاهز', 'تم التسليم', 'new', 'cooking', 'ready', 'completed', 'pending', 'in_progress', 'delivered', 'served', 'active'])
       .order('created_at', { ascending: false })
       .limit(100);
 

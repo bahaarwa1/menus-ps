@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
 import { appCache } from '@/lib/cache/lru-cache';
@@ -58,7 +58,8 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
         return null;
       }
 
-      const supabase = createClient();
+      // Use admin client to reliably query full menu without RLS dropping items
+      const supabase = createAdminClient();
 
       // Single joined query: fetch restaurant, categories, items, and extras in ONE roundtrip
       const { data: rawRestaurant, error: restError } = await (supabase as any)
@@ -68,13 +69,16 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
           menu_categories (
             id,
             name_ar,
+            name,
             icon,
             sort_order,
             is_active,
             menu_items (
               id,
               name_ar,
+              name,
               description_ar,
+              description,
               price,
               image_url,
               is_available,
@@ -84,6 +88,7 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
               item_extras (
                 id,
                 name_ar,
+                name,
                 price
               )
             )
@@ -122,34 +127,37 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
 
       const result: PublicMenuCategory[] = ((categoriesData || []) as any[]).map((cat) => ({
         id: cat.id,
-        name: cat.name_ar,
-        icon: cat.icon,
+        name: cat.name_ar || cat.name || 'قسم',
+        icon: cat.icon || '🍽️',
         items: ((cat.menu_items as unknown as Array<{
           id: string;
-          name_ar: string;
-          description_ar: string | null;
+          name_ar?: string;
+          name?: string;
+          description_ar?: string | null;
+          description?: string | null;
           price: number;
           image_url: string | null;
-          is_available: boolean;
-          is_popular: boolean;
-          is_spicy: boolean;
-          sort_order: number;
-          item_extras?: Array<{ id: string; name_ar: string; price: number }>;
+          is_available?: boolean;
+          is_popular?: boolean;
+          is_spicy?: boolean;
+          sort_order?: number;
+          item_extras?: Array<{ id: string; name_ar?: string; name?: string; price: number }>;
         }>) || [])
-          .filter((item) => item.is_available)
-          .sort((a, b) => a.sort_order - b.sort_order)
+          // Ensure null or undefined is_available does NOT hide the items
+          .filter((item: any) => item.is_available !== false)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
           .map((item) => ({
             id: item.id,
-            name: item.name_ar,
-            description: item.description_ar || '',
-            price: Number(item.price),
+            name: item.name_ar || item.name || 'وجبة',
+            description: item.description_ar || item.description || '',
+            price: Number(item.price) || 0,
             image: item.image_url || undefined,
-            popular: item.is_popular,
-            spicy: item.is_spicy,
+            popular: !!item.is_popular,
+            spicy: !!item.is_spicy,
             extras: (item.item_extras || []).map((e) => ({
               id: e.id,
-              name: e.name_ar,
-              price: Number(e.price),
+              name: e.name_ar || e.name || 'إضافة',
+              price: Number(e.price) || 0,
             })),
           })),
       }));
@@ -206,7 +214,7 @@ export async function updateMenuItem(
 ): Promise<boolean> {
   if (isSupabaseConfigured()) {
     try {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name_ar = updates.name;
       if (updates.description !== undefined) dbUpdates.description_ar = updates.description;
