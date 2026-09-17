@@ -193,8 +193,12 @@ export async function middleware(request: NextRequest) {
       });
     }
     response.headers.set('X-Site-Mode', 'demo');
-  } else if (currentSubdomain && pathname === '/') {
-    const rewriteUrl = new URL(`/m?restaurant=${encodeURIComponent(currentSubdomain)}`, request.url);
+  } else if (currentSubdomain && (pathname === '/' || pathname === '/m')) {
+    const rewriteUrl = new URL('/m', request.url);
+    rewriteUrl.searchParams.set('restaurant', currentSubdomain);
+    request.nextUrl.searchParams.forEach((val, key) => {
+      if (key !== 'restaurant') rewriteUrl.searchParams.set(key, val);
+    });
     response = NextResponse.rewrite(rewriteUrl, {
       request: { headers: requestHeaders },
     });
