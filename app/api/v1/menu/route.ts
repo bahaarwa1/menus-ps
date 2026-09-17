@@ -151,17 +151,16 @@ export async function POST(request: NextRequest) {
 
     const targetSlug = slug || session.restaurantSlug;
 
+    if (!targetSlug) {
+      return NextResponse.json({ success: false, error: 'تعذر تحديد المطعم. يرجى تسجيل الخروج والدخول مجدداً.' }, { status: 400 });
+    }
+
     if (!isSupabaseConfigured()) {
+      console.error('[menu POST] Supabase is NOT configured. Items cannot be saved. Check env vars: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY');
       return NextResponse.json({ 
-        success: true, 
-        item: { 
-          id: `item-${Date.now()}`, 
-          name, 
-          price, 
-          description, 
-          image: imageUrl || null 
-        } 
-      });
+        success: false, 
+        error: 'قاعدة البيانات غير مهيأة. يرجى التواصل مع الدعم الفني لضبط متغيرات Supabase على Vercel.'
+      }, { status: 503 });
     }
 
     const supabase = createAdminClient();
@@ -187,7 +186,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!cat) {
-      const { data: newCat } = await (supabase as any)
+      const { data: newCat, error: catErr } = await (supabase as any)
         .from('menu_categories')
         .insert({
           restaurant_id: rest.id,
@@ -196,6 +195,10 @@ export async function POST(request: NextRequest) {
         })
         .select('id')
         .single();
+      if (catErr) {
+        console.error('[menu POST] Failed to create category:', catErr.message, '| RLS issue?');
+        return NextResponse.json({ success: false, error: `فشل إنشاء القسم: ${catErr.message}` }, { status: 500 });
+      }
       cat = newCat;
     }
 
@@ -220,7 +223,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (itemErr) {
-      return NextResponse.json({ success: false, error: itemErr.message }, { status: 500 });
+      console.error('[menu POST] Failed to insert menu item:', itemErr.message, '| Code:', itemErr.code, '| Hint:', (itemErr as any).hint);
+      return NextResponse.json({ success: false, error: `فشل حفظ الصنف: ${itemErr.message}` }, { status: 500 });
     }
 
     appCache.invalidateTag('menu');

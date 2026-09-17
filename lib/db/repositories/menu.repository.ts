@@ -98,6 +98,15 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
         .maybeSingle();
 
       if (restError || !rawRestaurant) {
+        console.error('[menu.repository] Supabase restaurant fetch failed:', {
+          slug: restaurantSlug,
+          error: restError?.message,
+          errorCode: restError?.code,
+          hasData: !!rawRestaurant,
+          supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40),
+          hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        });
         if (isDemoRestaurant) {
           console.warn('Supabase restaurant fetch failed, using fallback for demo:', restError?.message);
           const fallback = buildFallbackMenu();
@@ -111,11 +120,14 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
       }
 
       const rawCats = (rawRestaurant.menu_categories || []) as any[];
+      console.log(`[menu.repository] Found ${rawCats.length} categories for slug "${restaurantSlug}"`);
+      
       const categoriesData = rawCats
         .filter((c: any) => c.is_active !== false)
         .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
       if (categoriesData.length === 0) {
+        console.log(`[menu.repository] No active categories for slug "${restaurantSlug}" (total raw: ${rawCats.length})`);
         if (isDemoRestaurant) {
           const fallback = buildFallbackMenu();
           appCache.set(cacheKey, fallback, 120, ['menu', `menu:${restaurantSlug}`]);

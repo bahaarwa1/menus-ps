@@ -46,6 +46,7 @@ export default function ProductionMenuPage() {
   const [items, setItems] = useState<MenuItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [dbStatus, setDbStatus] = useState<'ok' | 'error' | 'checking'>('checking');
 
   // Form State for Adding New Item
   const [newName, setNewName] = useState('');
@@ -74,9 +75,21 @@ export default function ProductionMenuPage() {
   const fileInputEditRef = useRef<HTMLInputElement>(null);
 
   const loadMenu = useCallback(async (slug?: string) => {
+    if (!slug) {
+      // بدون slug، ما نقدر نجيب المنيو
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/menu${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`);
+      const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        console.error('Menu fetch failed:', res.status, res.statusText);
+        setIsLoading(false);
+        return;
+      }
       const data = await res.json();
       if (data.categories && Array.isArray(data.categories)) {
         const loadedItems: MenuItemType[] = [];
@@ -117,19 +130,33 @@ export default function ProductionMenuPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/auth/session')
+    fetch('/api/auth/session', { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => {
         const slug = data.user?.restaurantSlug || '';
         if (slug) {
           setCurrentSlug(slug);
           loadMenu(slug);
+          // فحص حالة قاعدة البيانات فوراً
+          fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&withSettings=1`, { credentials: 'include' })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.success !== false && !d.error) {
+                setDbStatus('ok');
+              } else {
+                setDbStatus('error');
+              }
+            })
+            .catch(() => setDbStatus('error'));
         } else {
-          loadMenu();
+          // session ما رجع slug — المستخدم ما سجل دخول أو انتهت الجلسة
+          setIsLoading(false);
+          setDbStatus('error');
         }
       })
       .catch(() => {
-        loadMenu();
+        setIsLoading(false);
+        setDbStatus('error');
       });
   }, [loadMenu]);
 
@@ -314,6 +341,27 @@ export default function ProductionMenuPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-slate-900" dir="rtl">
       
+      {/* ⚠️ تحذير قاعدة البيانات — يظهر فقط عند وجود مشكلة */}
+      {dbStatus === 'error' && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-black text-rose-700 text-sm">⚠️ مشكلة في الاتصال بقاعدة البيانات</p>
+            <p className="text-xs text-rose-600 mt-1 leading-relaxed">
+              الأصناف التي تضيفها <strong>لن تُحفظ</strong> بسبب خطأ في إعداد Supabase.
+              تأكد من ضبط المتغيرات التالية في <strong>Vercel → Settings → Environment Variables</strong>:
+            </p>
+            <div className="mt-2 bg-rose-100 rounded-lg px-3 py-2 font-mono text-xs text-rose-800 space-y-0.5">
+              <p>NEXT_PUBLIC_SUPABASE_URL</p>
+              <p>NEXT_PUBLIC_SUPABASE_ANON_KEY</p>
+              <p>SUPABASE_SERVICE_ROLE_KEY</p>
+            </div>
+            <p className="text-xs text-rose-500 mt-2">بعد الضبط اعمل Redeploy من Vercel.</p>
+          </div>
+        </div>
+      )}
+
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
         <div>
