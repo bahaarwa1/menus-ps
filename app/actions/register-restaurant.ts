@@ -32,6 +32,9 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
     // 1. Provision restaurant, branch, and tables
     const restaurant = await registerNewRestaurant(input);
 
+    // 1.5. Automatically provision dedicated SSL subdomain on Vercel
+    provisionSubdomainInVercel(restaurant.slug).catch(() => {});
+
     // 2. Create authenticated admin session for the owner
     const sessionToken = await signSession({
       userId: `owner-${restaurant.id}`,
@@ -62,5 +65,25 @@ export async function registerRestaurantAction(input: RegisterRestaurantInput): 
       success: false,
       error: err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء المطعم، يرجى المحاولة ثانية',
     };
+  }
+}
+
+async function provisionSubdomainInVercel(slug: string) {
+  const token = process.env.VERCEL_AUTH_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  if (!token || !projectId) return;
+
+  try {
+    const domainName = `${slug}.menus.cool`;
+    await fetch(`https://api.vercel.com/v9/projects/${projectId}/domains`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: domainName }),
+    });
+  } catch (e) {
+    console.warn('Vercel domain provisioning error:', e);
   }
 }
