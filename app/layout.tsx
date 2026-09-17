@@ -11,8 +11,17 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "Menus.ps — منيو رقمي وطلبات ذكية للمطاعم | Smart Restaurant QR Menus",
+  title: "Menus.cool — منيو رقمي وطلبات ذكية للمطاعم | Smart Restaurant QR Menus",
   description: "حوّل مطعمك لتجربة رقمية كاملة مع منيو QR، طلبات ذكية، شاشة مطبخ، وتحليلات متقدمة",
+  icons: {
+    icon: [
+      { url: '/logo.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
