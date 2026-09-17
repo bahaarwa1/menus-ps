@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
   Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2,
-  Store, Home
+  Store, Home, Lock
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -645,28 +645,26 @@ function FastFrictionlessMenuContent() {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-1 shrink-0">
-              {/* Table Button / Picker */}
-              <button
-                onClick={() => setIsTablePickerOpen(true)}
-                className={`px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 transition-all cursor-pointer ${
-                  tableNumber > 0
-                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
-                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-xs animate-pulse'
-                }`}
-                title={language === 'ar' ? 'تحديد أو تغيير رقم الطاولة' : 'Select or change table'}
-              >
-                {tableNumber > 0 ? (
-                  <>
-                    <span className="text-[10px] text-amber-700 font-bold">{language === 'ar' ? 'طاولة' : 'T.'}</span>
-                    <span className="text-xs font-black text-amber-950">{tableNumber}</span>
-                  </>
-                ) : (
-                  <>
-                    <Utensils size={11} />
-                    <span>{language === 'ar' ? 'حدد الطاولة' : 'Set Table'}</span>
-                  </>
-                )}
-              </button>
+              {/* Table Badge / Locked Indicator */}
+              {tableNumber > 0 ? (
+                <div
+                  className="px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs select-none"
+                  title={language === 'ar' ? 'رقم الطاولة موثق ومقفل' : 'Table number verified and locked'}
+                >
+                  <Lock size={11} className="text-amber-700" />
+                  <span className="text-[10px] text-amber-700 font-bold">{language === 'ar' ? 'طاولة' : 'T.'}</span>
+                  <span className="text-xs font-black text-amber-950">{tableNumber}</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsTablePickerOpen(true)}
+                  className="px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white shadow-xs animate-pulse cursor-pointer"
+                  title={language === 'ar' ? 'حدد رقم طاولتك' : 'Set table'}
+                >
+                  <Utensils size={11} />
+                  <span>{language === 'ar' ? 'حدد الطاولة' : 'Set Table'}</span>
+                </button>
+              )}
 
               <button
                 onClick={handleCallWaiter}

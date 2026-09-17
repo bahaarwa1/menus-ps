@@ -237,9 +237,16 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
             status: 'فارغة',
           }));
 
-          await supabase.from('tables').insert(tablesToInsert as never);
-
-          // Menu starts completely empty as requested (no unwanted default items)
+          // Auto-create starter menu categories for the new restaurant
+          try {
+            await (supabase as any).from('menu_categories').insert([
+              { restaurant_id: dbRestId, name_ar: 'الوجبات الرئيسية', icon: '🍽️', sort_order: 1 },
+              { restaurant_id: dbRestId, name_ar: 'المقبلات والبطاطا', icon: '🍟', sort_order: 2 },
+              { restaurant_id: dbRestId, name_ar: 'المشروبات', icon: '🥤', sort_order: 3 },
+            ]);
+          } catch (catErr) {
+            console.warn('Failed to seed starter categories:', catErr);
+          }
 
           // Insert staff user record with hashed PIN
           const staffPinHash = input.password ? await hashPin(input.password.slice(0, 6)) : await hashPin('1234');

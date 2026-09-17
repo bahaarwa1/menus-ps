@@ -151,6 +151,23 @@ export async function middleware(request: NextRequest) {
   }
 
   // ──────────────────────────────────────────────────────────────────
+  // 4.5. SUPER ADMIN MASTER DASHBOARD PROTECTION
+  // ──────────────────────────────────────────────────────────────────
+  if (pathname.startsWith('/admin')) {
+    const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? await verifySession(token) : null;
+
+    const isMasterOwner = session?.email === 'almhtrf.information22@gmail.com' || session?.email === 'admin@menus.ps';
+    const isSuperAdmin = session?.role === 'admin' && (isMasterOwner || session?.restaurantSlug === 'platform-master' || session?.restaurantSlug === 'burger-house-nablus');
+
+    if (!session || !isSuperAdmin) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', '/admin');
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
   // 5. STAFF ROUTE PROTECTION
   // ──────────────────────────────────────────────────────────────────
   if (pathname.startsWith('/staff')) {
