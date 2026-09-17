@@ -35,7 +35,9 @@ export async function getRestaurantMenu(
   const cacheKey = `menu:${restaurantSlug}`;
 
   // 1. O(1) Memory Cache Check (bypassed if forceFresh is requested)
-  if (!forceFresh) {
+  if (forceFresh) {
+    appCache.delete(cacheKey);
+  } else {
     const cached = appCache.get<PublicMenuCategory[]>(cacheKey);
     if (cached) {
       return cached;
@@ -175,8 +177,8 @@ export async function getRestaurantMenu(
           })),
       }));
 
-      // Cache result for 300 seconds (5 minutes)
-      appCache.set(cacheKey, result, 300, ['menu', `menu:${restaurantSlug}`]);
+      // Cache result for 2 seconds for ultra-rapid updates
+      appCache.set(cacheKey, result, 2, ['menu', `menu:${restaurantSlug}`]);
       return result;
     } catch (error) {
       console.error('Error fetching menu from Supabase:', error);

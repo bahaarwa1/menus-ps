@@ -6,11 +6,22 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   let slug = searchParams.get('slug') || '';
   const withSettings = searchParams.get('withSettings') === '1';
-  const forceFresh = searchParams.get('fresh') === '1' || request.headers.get('cache-control')?.includes('no-cache');
+  const forceFresh = searchParams.get('fresh') === '1' || searchParams.has('_t') || request.headers.get('cache-control')?.includes('no-cache');
 
   if (!slug) {
     try {
@@ -27,8 +38,13 @@ export async function GET(request: NextRequest) {
   const cacheKey = `menu:${slug}`;
   const settingsCacheKey = `restaurant:slug:${slug}`;
 
+  if (forceFresh) {
+    appCache.delete(cacheKey);
+    appCache.delete(settingsCacheKey);
+  }
+
   try {
-    // 1. O(1) Memory Cache Check (bypassed if forceFresh is requested)
+    // 1. Memory Cache Check (bypassed if forceFresh is requested)
     const cachedMenu = forceFresh ? null : appCache.get(cacheKey);
     let cachedSettings = (withSettings && !forceFresh) ? appCache.get(settingsCacheKey) : null;
 
@@ -45,8 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response, {
         status: 200,
         headers: {
-          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
-          'Pragma': 'no-cache',
+          ...NO_CACHE_HEADERS,
           'X-Cache': 'HIT',
         },
       });
@@ -65,7 +80,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (menu !== null) {
-        appCache.set(cacheKey, menu, 300, ['menu', `menu:${slug}`]);
+        appCache.set(cacheKey, menu, 2, ['menu', `menu:${slug}`]);
       }
 
       const settings = restaurant
@@ -88,7 +103,7 @@ export async function GET(request: NextRequest) {
         : null;
 
       if (settings) {
-        appCache.set(settingsCacheKey, settings, 300, ['restaurant', `restaurant:${slug}`]);
+        appCache.set(settingsCacheKey, settings, 2, ['restaurant', `restaurant:${slug}`]);
       }
 
       return NextResponse.json(
@@ -96,8 +111,7 @@ export async function GET(request: NextRequest) {
         {
           status: 200,
           headers: {
-            'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
-            'Pragma': 'no-cache',
+            ...NO_CACHE_HEADERS,
             'X-Cache': 'MISS',
           },
         }
@@ -114,15 +128,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    appCache.set(cacheKey, menu, 180, ['menu', `menu:${slug}`]);
+    appCache.set(cacheKey, menu, 2, ['menu', `menu:${slug}`]);
 
     return NextResponse.json(
       { success: true, restaurantSlug: slug, categories: menu, cached: false },
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
-          'Pragma': 'no-cache',
+          ...NO_CACHE_HEADERS,
           'X-Cache': 'MISS',
         },
       }
@@ -231,6 +244,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: `فشل حفظ الصنف: ${itemErr.message}` }, { status: 500 });
     }
 
+    appCache.clear();
     appCache.invalidateTag('menu');
     appCache.delete(`menu:${targetSlug}`);
     appCache.delete(`restaurant:slug:${targetSlug}`);
@@ -277,6 +291,7 @@ export async function DELETE(request: NextRequest) {
       await (supabase as any).from('menu_items').delete().eq('id', itemId);
     }
 
+    appCache.clear();
     appCache.invalidateTag('menu');
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -324,6 +339,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Invalidate caches
+    appCache.clear();
     appCache.invalidateTag('menu');
     appCache.delete(`item_price:${itemId}`);
 

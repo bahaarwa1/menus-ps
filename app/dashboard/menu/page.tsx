@@ -74,17 +74,18 @@ export default function ProductionMenuPage() {
   const fileInputNewRef = useRef<HTMLInputElement>(null);
   const fileInputEditRef = useRef<HTMLInputElement>(null);
 
-  const loadMenu = useCallback(async (slug?: string) => {
+  const loadMenu = useCallback(async (slug?: string, silent = false) => {
     if (!slug) {
       // بدون slug، ما نقدر نجيب المنيو
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&fresh=1`, {
+      const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&fresh=1&_t=${Date.now()}`, {
         credentials: 'include',
         cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store' },
       });
       if (!res.ok) {
         console.error('Menu fetch failed:', res.status, res.statusText);
@@ -139,7 +140,7 @@ export default function ProductionMenuPage() {
           setCurrentSlug(slug);
           loadMenu(slug);
           // فحص حالة قاعدة البيانات فوراً
-          fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&withSettings=1&fresh=1`, { credentials: 'include', cache: 'no-store' })
+          fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&withSettings=1&fresh=1&_t=${Date.now()}`, { credentials: 'include', cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store' } })
             .then((r) => r.json())
             .then((d) => {
               if (d.success !== false && !d.error) {
@@ -263,9 +264,9 @@ export default function ProductionMenuPage() {
         setNewSpicy(false);
         setShowPresetsNew(false);
 
-        // Re-sync menu & categories from DB
+        // Re-sync menu & categories from DB silently (instant update without flicker)
         if (currentSlug) {
-          loadMenu(currentSlug);
+          loadMenu(currentSlug, true);
         }
       } else {
         alert(data.error || 'فشل حفظ الصنف');
@@ -341,7 +342,10 @@ export default function ProductionMenuPage() {
   const filteredItems = items.filter((it) => {
     if (activeCategory !== 'all') {
       const selectedCat = categories.find((c) => c.id === activeCategory);
-      const isMatch = it.category === activeCategory || (selectedCat && it.category === selectedCat.name);
+      const isMatch =
+        it.category === activeCategory ||
+        (it as any).categoryId === activeCategory ||
+        (selectedCat && (it.category === selectedCat.name || (it as any).categoryName === selectedCat.name));
       if (!isMatch) return false;
     }
     if (searchQuery && !it.name.includes(searchQuery) && !it.description.includes(searchQuery)) return false;

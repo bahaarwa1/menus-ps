@@ -359,8 +359,9 @@ export default function CustomerMenuClient({
     let isSubscribed = true;
 
     // Single Unified API Request (menu + settings in one fast roundtrip)
-    fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}&withSettings=1&fresh=1`, {
+    fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}&withSettings=1&fresh=1&_t=${Date.now()}`, {
       cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store' },
     })
       .then(async (res) => {
         if (res.status === 404) {
@@ -416,6 +417,48 @@ export default function CustomerMenuClient({
       isSubscribed = false;
     };
   }, [restaurantParam, qrTokenParam, slugFromToken, tableFromParam]);
+
+  // Live auto-refresh: polls every 3 seconds + refreshes instantly on tab focus/visibility
+  useEffect(() => {
+    const sub = extractSubdomainFromWindow();
+    const resolvedSlug = (restaurantParam || sub || slugFromToken || initialSlug || '').trim().toLowerCase();
+    if (!resolvedSlug || resolvedSlug === 'demo') return;
+
+    let isMounted = true;
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}&fresh=1&_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store' },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.categories)) {
+          setDbCategories(data.categories);
+          const allItems: MenuItem[] = data.categories.flatMap((cat: any) =>
+            (cat.items || []).map((it: any) => ({ ...it, category: cat.id }))
+          );
+          setDbMenuItems(allItems);
+        }
+      } catch {}
+    };
+
+    const handleFocus = () => fetchLatest();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchLatest();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const interval = setInterval(fetchLatest, 3000);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(interval);
+    };
+  }, [restaurantParam, slugFromToken, initialSlug]);
 
   // Fast quantity modifications
   const addOne = (id: string, e?: React.MouseEvent) => {
