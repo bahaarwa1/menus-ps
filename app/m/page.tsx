@@ -69,6 +69,30 @@ const initialMenuItems: MenuItem[] = fallbackMenuItems.map((item) => ({
   extras: item.extras,
 }));
 
+function extractSubdomainFromWindow(): string {
+  if (typeof window === 'undefined') return '';
+  const hostname = (window.location.hostname || '').toLowerCase().split(':')[0];
+  if (hostname.endsWith('.menus.cool')) {
+    const parts = hostname.slice(0, -'.menus.cool'.length).split('.');
+    if (parts[0] && parts[0] !== 'www' && parts[0] !== 'menus') {
+      return parts[0];
+    }
+  }
+  if (hostname.endsWith('.menus.ps')) {
+    const parts = hostname.slice(0, -'.menus.ps'.length).split('.');
+    if (parts[0] && parts[0] !== 'www' && parts[0] !== 'menus') {
+      return parts[0];
+    }
+  }
+  if (hostname.endsWith('.localhost')) {
+    const parts = hostname.slice(0, -'.localhost'.length).split('.');
+    if (parts[0] && parts[0] !== 'www') {
+      return parts[0];
+    }
+  }
+  return '';
+}
+
 function FastFrictionlessMenuContent() {
   const searchParams = useSearchParams();
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
@@ -83,11 +107,12 @@ function FastFrictionlessMenuContent() {
   const tableFromToken = tokenTableMatch ? parseInt(tokenTableMatch[1], 10) : 0;
   const tableFromParam = tableParam ? parseInt(tableParam, 10) : 0;
 
-  const notFoundParam = searchParams.get('notFound') === '1';
-  const effectiveSlug = restaurantParam || slugFromToken || (qrTokenParam ? '' : defaultSlug);
+  const windowSubdomain = typeof window !== 'undefined' ? extractSubdomainFromWindow() : '';
+  const effectiveSlug = restaurantParam || windowSubdomain || slugFromToken || (qrTokenParam ? '' : defaultSlug);
   const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
   const { direction, language } = useLanguage();
 
+  const notFoundParam = searchParams.get('notFound') === '1';
   const [isRestaurantNotFound, setIsRestaurantNotFound] = useState<boolean>(notFoundParam);
 
   // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean
@@ -268,7 +293,9 @@ function FastFrictionlessMenuContent() {
   useEffect(() => {
     if (!activeRestaurantSlug) return;
 
-    if (isDemo) {
+    const isCurrentDemo = activeRestaurantSlug === 'burger-house-nablus' || activeRestaurantSlug === 'demo';
+
+    if (isCurrentDemo) {
       setIsRestaurantNotFound(false);
       setActiveRestaurantName('Burger House نابلس');
       setActiveRestaurantCity('نابلس');
@@ -316,12 +343,14 @@ function FastFrictionlessMenuContent() {
     return () => {
       isSubscribed = false;
     };
-  }, [activeRestaurantSlug, isDemo]);
+  }, [activeRestaurantSlug]);
 
   // Dynamic QR Token & Table Verification on Load
   useEffect(() => {
-    if (restaurantParam) {
-      setActiveRestaurantSlug(restaurantParam);
+    const sub = extractSubdomainFromWindow();
+    const targetSlug = restaurantParam || sub;
+    if (targetSlug && targetSlug !== activeRestaurantSlug) {
+      setActiveRestaurantSlug(targetSlug);
       if (tableFromParam > 0) {
         setTableNumber(tableFromParam);
         setIsTokenVerified(true);
@@ -346,13 +375,15 @@ function FastFrictionlessMenuContent() {
           setTokenError('تعذر التحقق من رمز QR');
         });
     }
-  }, [qrTokenParam, restaurantParam, tableFromParam]);
+  }, [qrTokenParam, restaurantParam, tableFromParam, activeRestaurantSlug]);
 
   // Fetch menu with instant client-side SWR (Stale-While-Revalidate) cache
   useEffect(() => {
     if (!activeRestaurantSlug || isRestaurantNotFound) return;
 
-    if (isDemo) {
+    const isCurrentDemo = activeRestaurantSlug === 'burger-house-nablus' || activeRestaurantSlug === 'demo';
+
+    if (isCurrentDemo) {
       setDbCategories(initialCategories);
       setDbMenuItems(initialMenuItems);
       setActiveCategory(initialCategories[0]?.id || 'burgers');
