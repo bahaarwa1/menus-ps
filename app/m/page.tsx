@@ -98,7 +98,7 @@ function FastFrictionlessMenuContent() {
   const qrTokenParam = searchParams.get('t') || searchParams.get('token') || '';
   const restaurantParam = searchParams.get('restaurant') || '';
   const tableParam = searchParams.get('table') || '';
-  const defaultSlug = 'burger-house-nablus';
+  const defaultSlug = '';
 
   // Instant extraction from QR token (e.g. qr_burger-house-nablus_t2_xyz)
   const tokenSlugMatch = qrTokenParam ? qrTokenParam.match(/^qr_([a-zA-Z0-9-]+)_t\d+/) : null;
@@ -108,26 +108,26 @@ function FastFrictionlessMenuContent() {
   const tableFromParam = tableParam ? parseInt(tableParam, 10) : 0;
 
   const windowSubdomain = typeof window !== 'undefined' ? extractSubdomainFromWindow() : '';
-  const effectiveSlug = restaurantParam || windowSubdomain || slugFromToken || (qrTokenParam ? '' : defaultSlug);
-  const isDemo = effectiveSlug === 'burger-house-nablus' || effectiveSlug === 'demo';
+  const initialSlug = restaurantParam || windowSubdomain || slugFromToken || defaultSlug;
+  const isExplicitDemo = initialSlug === 'burger-house-nablus' || initialSlug === 'demo';
   const { direction, language } = useLanguage();
 
   const notFoundParam = searchParams.get('notFound') === '1';
   const [isRestaurantNotFound, setIsRestaurantNotFound] = useState<boolean>(notFoundParam);
 
-  // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean
-  const [dbCategories, setDbCategories] = useState<MenuCategory[]>(isDemo ? initialCategories : []);
-  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(isDemo ? initialMenuItems : []);
-  const [menuLoading, setMenuLoading] = useState(!isDemo);
+  // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean and load live from DB
+  const [dbCategories, setDbCategories] = useState<MenuCategory[]>(isExplicitDemo ? initialCategories : []);
+  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(isExplicitDemo ? initialMenuItems : []);
+  const [menuLoading, setMenuLoading] = useState(!isExplicitDemo);
   const [menuError, setMenuError] = useState('');
 
-  const [activeCategory, setActiveCategory] = useState(isDemo ? (initialCategories[0]?.id || 'burgers') : '');
+  const [activeCategory, setActiveCategory] = useState(isExplicitDemo ? (initialCategories[0]?.id || 'burgers') : '');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Table state: resolve from URL table param, QR token, or demo table 1
-  const initialTable = tableFromParam || tableFromToken || (isDemo ? 1 : 0);
+  const initialTable = tableFromParam || tableFromToken || (isExplicitDemo ? 1 : 0);
   const [tableNumber, setTableNumber] = useState<number>(initialTable);
-  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(initialTable > 0 || isDemo);
+  const [isTokenVerified, setIsTokenVerified] = useState<boolean>(initialTable > 0 || isExplicitDemo);
   const [tokenError, setTokenError] = useState<string>('');
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [customTableInput, setCustomTableInput] = useState('');
@@ -248,114 +248,18 @@ function FastFrictionlessMenuContent() {
     };
   }, [isOrderSubmitted, submittedOrderId]);
 
-  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(effectiveSlug);
-  const [activeRestaurantName, setActiveRestaurantName] = useState<string>(() => {
-    if (isDemo) return 'Burger House نابلس';
-    if (typeof window !== 'undefined' && effectiveSlug) {
-      try {
-        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.name) return parsed.name;
-        }
-      } catch {}
-    }
-    return '';
-  });
-  const [activeRestaurantLogo, setActiveRestaurantLogo] = useState<string>(() => {
-    if (typeof window !== 'undefined' && effectiveSlug) {
-      try {
-        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.logoUrl) return parsed.logoUrl;
-        }
-      } catch {}
-    }
-    return '';
-  });
-  const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>(() => {
-    if (isDemo) return 'نابلس';
-    if (typeof window !== 'undefined' && effectiveSlug) {
-      try {
-        const cached = sessionStorage.getItem(`restaurant_meta_${effectiveSlug}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.city) return parsed.city;
-        }
-      } catch {}
-    }
-    return '';
-  });
+  const [activeRestaurantSlug, setActiveRestaurantSlug] = useState<string>(initialSlug);
+  const [activeRestaurantName, setActiveRestaurantName] = useState<string>(isExplicitDemo ? 'Burger House نابلس' : '');
+  const [activeRestaurantLogo, setActiveRestaurantLogo] = useState<string>('');
+  const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>(isExplicitDemo ? 'نابلس' : '');
   const [activeBranchId, setActiveBranchId] = useState<string>('');
 
-  // Fetch restaurant details (logo, city, branchId, etc.) and strictly verify validity
-  useEffect(() => {
-    if (!activeRestaurantSlug) return;
-
-    const isCurrentDemo = activeRestaurantSlug === 'burger-house-nablus' || activeRestaurantSlug === 'demo';
-
-    if (isCurrentDemo) {
-      setIsRestaurantNotFound(false);
-      setActiveRestaurantName('Burger House نابلس');
-      setActiveRestaurantCity('نابلس');
-      return;
-    }
-
-    let isSubscribed = true;
-
-    fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(activeRestaurantSlug)}`)
-      .then(async (res) => {
-        if (!isSubscribed) return null;
-        if (res.status === 404) {
-          setIsRestaurantNotFound(true);
-          setMenuLoading(false);
-          setActiveRestaurantName('');
-          return null;
-        }
-        return res.json().catch(() => null);
-      })
-      .then((data) => {
-        if (!isSubscribed || !data) return;
-        if (data.success && data.settings) {
-          setIsRestaurantNotFound(false);
-          if (data.settings.logoUrl) setActiveRestaurantLogo(data.settings.logoUrl);
-          if (data.settings.name) setActiveRestaurantName(data.settings.name);
-          if (data.settings.city) setActiveRestaurantCity(data.settings.city);
-          if (data.settings.branchId) setActiveBranchId(data.settings.branchId);
-
-          try {
-            sessionStorage.setItem(`restaurant_meta_${activeRestaurantSlug}`, JSON.stringify({
-              name: data.settings.name,
-              logoUrl: data.settings.logoUrl || '',
-              city: data.settings.city || '',
-              branchId: data.settings.branchId || '',
-            }));
-          } catch {}
-        } else {
-          setIsRestaurantNotFound(true);
-          setMenuLoading(false);
-          setActiveRestaurantName('');
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isSubscribed = false;
-    };
-  }, [activeRestaurantSlug]);
-
-  // Dynamic QR Token & Table Verification on Load
+  // Authoritative DB loader: dynamically queries Supabase for settings and menu
   useEffect(() => {
     const sub = extractSubdomainFromWindow();
-    const targetSlug = restaurantParam || sub;
-    if (targetSlug && targetSlug !== activeRestaurantSlug) {
-      setActiveRestaurantSlug(targetSlug);
-      if (tableFromParam > 0) {
-        setTableNumber(tableFromParam);
-        setIsTokenVerified(true);
-      }
-    }
+    const resolvedSlug = (restaurantParam || sub || slugFromToken || '').trim().toLowerCase();
+
+    // Verify QR token for table if present
     if (qrTokenParam) {
       fetch(`/api/v1/tables/verify-token?token=${encodeURIComponent(qrTokenParam)}`)
         .then((res) => res.json())
@@ -364,8 +268,6 @@ function FastFrictionlessMenuContent() {
             setTableNumber(data.table.tableNumber);
             setIsTokenVerified(true);
             setTokenError('');
-            if (data.table.restaurantSlug) setActiveRestaurantSlug(data.table.restaurantSlug);
-            if (data.table.restaurantName) setActiveRestaurantName(data.table.restaurantName);
             if (data.table.branchId) setActiveBranchId(data.table.branchId);
           } else {
             setTokenError(data.error || 'رمز QR غير صالح أو منتهي الصلاحية');
@@ -375,96 +277,92 @@ function FastFrictionlessMenuContent() {
           setTokenError('تعذر التحقق من رمز QR');
         });
     }
-  }, [qrTokenParam, restaurantParam, tableFromParam, activeRestaurantSlug]);
 
-  // Fetch menu with instant client-side SWR (Stale-While-Revalidate) cache
-  useEffect(() => {
-    if (!activeRestaurantSlug || isRestaurantNotFound) return;
+    if (tableFromParam > 0) {
+      setTableNumber(tableFromParam);
+      setIsTokenVerified(true);
+    }
 
-    const isCurrentDemo = activeRestaurantSlug === 'burger-house-nablus' || activeRestaurantSlug === 'demo';
-
-    if (isCurrentDemo) {
+    // Demo mode: only when explicitly visiting demo or main site with no restaurant
+    if (!resolvedSlug || resolvedSlug === 'demo' || resolvedSlug === 'burger-house-nablus') {
+      setActiveRestaurantSlug('burger-house-nablus');
+      setActiveRestaurantName('Burger House نابلس');
+      setActiveRestaurantCity('نابلس');
       setDbCategories(initialCategories);
       setDbMenuItems(initialMenuItems);
       setActiveCategory(initialCategories[0]?.id || 'burgers');
       setMenuLoading(false);
+      setIsRestaurantNotFound(false);
       return;
     }
 
-    // 1. Instant Cache Hydration from sessionStorage
-    const cacheKey = `menus_cache_${activeRestaurantSlug}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setDbCategories(parsed);
-          const allItems: MenuItem[] = parsed.flatMap(cat =>
-            cat.items.map((item: any) => ({ ...item, category: cat.id }))
-          );
-          setDbMenuItems(allItems);
-          setActiveCategory((prev) => prev || parsed[0].id);
-          setMenuLoading(false); // Render immediately without waiting for network!
-        }
-      }
-    } catch {}
-
-    // 2. Background Revalidation / Initial Fetch
+    // Real Restaurant: Load directly from Supabase Database
+    setActiveRestaurantSlug(resolvedSlug);
+    setMenuLoading(true);
     setMenuError('');
+
     let isSubscribed = true;
 
-    fetch(`/api/v1/menu?slug=${encodeURIComponent(activeRestaurantSlug)}`)
-      .then(async (r) => {
-        if (!isSubscribed) return null;
-        if (r.status === 404) {
-          setIsRestaurantNotFound(true);
-          setMenuLoading(false);
-          return null;
-        }
-        return r.json().catch(() => null);
-      })
-      .then((data) => {
-        if (!isSubscribed || !data) return;
-        if (data.success === false) {
+    Promise.all([
+      fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(resolvedSlug)}`)
+        .then(async (r) => {
+          if (r.status === 404) return { success: false, notFound: true };
+          return r.json().catch(() => ({ success: false }));
+        }),
+      fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}`)
+        .then(async (r) => {
+          if (r.status === 404) return { success: false, notFound: true };
+          return r.json().catch(() => ({ success: false }));
+        }),
+    ])
+      .then(([settingsRes, menuRes]) => {
+        if (!isSubscribed) return;
+
+        if (settingsRes.notFound || menuRes.notFound) {
           setIsRestaurantNotFound(true);
           setMenuLoading(false);
           return;
         }
-        if (data.categories && Array.isArray(data.categories)) {
-          const cats: MenuCategory[] = data.categories;
+
+        setIsRestaurantNotFound(false);
+
+        if (settingsRes.success && settingsRes.settings) {
+          if (settingsRes.settings.name) setActiveRestaurantName(settingsRes.settings.name);
+          if (settingsRes.settings.city) setActiveRestaurantCity(settingsRes.settings.city);
+          if (settingsRes.settings.logoUrl) setActiveRestaurantLogo(settingsRes.settings.logoUrl);
+          if (settingsRes.settings.branchId) setActiveBranchId(settingsRes.settings.branchId);
+        }
+
+        if (menuRes.success && Array.isArray(menuRes.categories)) {
+          const cats: MenuCategory[] = menuRes.categories;
           setDbCategories(cats);
-          const allItems: MenuItem[] = cats.flatMap(cat =>
-            cat.items.map(item => ({ ...item, category: cat.id }))
+          const allItems: MenuItem[] = cats.flatMap((cat: any) =>
+            (cat.items || []).map((it: any) => ({ ...it, category: cat.id }))
           );
           setDbMenuItems(allItems);
-          setActiveCategory(cats.length > 0 ? cats[0].id : '');
-          // Update cache for instant future loads
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(cats));
-          } catch {}
+          setActiveCategory((prev) => (cats.some((c) => c.id === prev) ? prev : cats[0]?.id || ''));
         } else {
           setDbCategories([]);
           setDbMenuItems([]);
           setActiveCategory('');
         }
       })
-      .catch(() => {
-        // If network error and no cached items, show error
+      .catch((err) => {
+        console.error('Failed to load restaurant data from DB:', err);
         if (isSubscribed) {
-          setDbCategories(prev => {
-            if (prev.length === 0 && isDemo) setMenuError('تعذر تحميل قائمة الطعام');
-            return prev;
-          });
+          setMenuError('تعذر تحميل بيانات المطعم من قاعدة البيانات');
         }
       })
       .finally(() => {
-        if (isSubscribed) setMenuLoading(false);
+        if (isSubscribed) {
+          setMenuLoading(false);
+        }
       });
 
     return () => {
       isSubscribed = false;
     };
-  }, [activeRestaurantSlug, isDemo, isRestaurantNotFound]);
+  }, [restaurantParam, qrTokenParam, slugFromToken, tableFromParam]);
 
   // Fast quantity modifications
   const addOne = (id: string, e?: React.MouseEvent) => {

@@ -117,15 +117,20 @@ export default function ProductionMenuPage() {
   }, []);
 
   useEffect(() => {
-    loadMenu();
-
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {
         const slug = data.user?.restaurantSlug || '';
-        if (slug) setCurrentSlug(slug);
+        if (slug) {
+          setCurrentSlug(slug);
+          loadMenu(slug);
+        } else {
+          loadMenu();
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        loadMenu();
+      });
   }, [loadMenu]);
 
   // Upload image handler

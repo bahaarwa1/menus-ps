@@ -210,6 +210,9 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('content-security-policy', cspString);
+  if (currentSubdomain) {
+    requestHeaders.set('x-tenant-subdomain', currentSubdomain);
+  }
 
   // ──────────────────────────────────────────────────────────────────
   // 8. RESTRICTED CORS & PREFLIGHT HANDLING (NO WILDCARD *)
