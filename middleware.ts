@@ -47,7 +47,10 @@ export async function middleware(request: NextRequest) {
   // ──────────────────────────────────────────────────────────────────
   let currentSubdomain: string | null = null;
 
-  if (hostWithoutPort.endsWith('.vercel.app')) {
+  const headerTenant = request.headers.get('x-tenant-subdomain');
+  if (headerTenant && headerTenant.trim().length > 0 && headerTenant !== 'www' && headerTenant !== 'menus') {
+    currentSubdomain = headerTenant.trim().toLowerCase();
+  } else if (hostWithoutPort.endsWith('.vercel.app')) {
     const withoutSuffix = hostWithoutPort.slice(0, -'.vercel.app'.length);
     const parts = withoutSuffix.split('.');
     if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus-ps' && parts[0] !== '') {
