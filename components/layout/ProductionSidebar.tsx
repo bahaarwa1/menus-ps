@@ -58,8 +58,8 @@ export default function ProductionSidebar({
     }
   }, [pathname, activeSlug]);
 
-  const liveUrl = `${appOrigin}/r/${activeSlug}`;
-  const directMenuUrl = `/r/${activeSlug}`;
+  const liveUrl = activeSlug ? `https://${activeSlug}.menus.cool` : 'https://menus.cool';
+  const directMenuUrl = activeSlug ? `https://${activeSlug}.menus.cool` : '/';
 
   const copyLiveUrl = () => {
     navigator.clipboard.writeText(liveUrl);
@@ -128,7 +128,7 @@ export default function ProductionSidebar({
           <div className="min-w-0 flex-1 pr-1">
             <span className="text-[10px] text-slate-400 block font-semibold">رابط المنيو السريع:</span>
             <span className="text-[11px] font-mono font-bold text-slate-700 truncate block dir-ltr" dir="ltr">
-              /r/{activeSlug}
+              {activeSlug}.menus.cool
             </span>
           </div>
           <button

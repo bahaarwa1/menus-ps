@@ -52,10 +52,10 @@ export default function ProductionDashboardOverview() {
     return () => clearInterval(interval);
   }, []);
 
-  const liveUrl = typeof window !== 'undefined' && createdSlug
-    ? `${window.location.origin}/r/${createdSlug}`
-    : `https://menus.cool/r/${createdSlug || ''}`;
-  const directMenuUrl = createdSlug ? `/r/${createdSlug}` : '#';
+  const liveUrl = createdSlug
+    ? `https://${createdSlug}.menus.cool`
+    : 'https://menus.cool';
+  const directMenuUrl = createdSlug ? `https://${createdSlug}.menus.cool` : '#';
 
   const copyUrl = () => {
     if (!liveUrl) return;

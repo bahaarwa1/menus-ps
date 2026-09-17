@@ -29,7 +29,7 @@ export default function DemoSidebar() {
   }, [pathname]);
 
   const liveUrl = `https://${activeSlug}.menus.cool`;
-  const directMenuUrl = `/m?restaurant=${activeSlug}`;
+  const directMenuUrl = `https://${activeSlug}.menus.cool`;
 
   const copyLiveUrl = () => {
     navigator.clipboard.writeText(liveUrl);

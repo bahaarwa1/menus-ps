@@ -212,7 +212,7 @@ export default function StaffCodesPage() {
               </div>
             </div>
             <a
-              href={restaurantSlug ? `/r/${restaurantSlug}` : '#'}
+              href={restaurantSlug ? `https://${restaurantSlug}.menus.cool` : '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
@@ -224,13 +224,11 @@ export default function StaffCodesPage() {
 
           <div className="flex items-center gap-2 mt-3 bg-white border border-emerald-200 rounded-xl p-2">
             <code className="text-[11px] font-mono text-slate-700 font-bold truncate flex-1 dir-ltr text-left">
-              {typeof window !== 'undefined'
-                ? `${window.location.origin}/r/${restaurantSlug || ''}`
-                : `https://menus.cool/r/${restaurantSlug || ''}`}
+              {restaurantSlug ? `https://${restaurantSlug}.menus.cool` : 'https://menus.cool'}
             </code>
             <button
               onClick={() => {
-                const url = `${window.location.origin}/r/${restaurantSlug || ''}`;
+                const url = restaurantSlug ? `https://${restaurantSlug}.menus.cool` : 'https://menus.cool';
                 navigator.clipboard.writeText(url);
                 setCopiedLink('menu');
                 setTimeout(() => setCopiedLink(null), 2000);

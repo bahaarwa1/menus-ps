@@ -48,24 +48,80 @@ export async function middleware(request: NextRequest) {
   let currentSubdomain: string | null = null;
 
   if (hostWithoutPort.endsWith('.vercel.app')) {
-    const parts = hostWithoutPort.replace('.vercel.app', '').split('.');
-    if (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'menus-ps') {
+    const withoutSuffix = hostWithoutPort.slice(0, -'.vercel.app'.length);
+    const parts = withoutSuffix.split('.');
+    if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus-ps' && parts[0] !== '') {
       currentSubdomain = parts[0];
     }
   } else if (hostWithoutPort.endsWith('.menus.cool')) {
-    const parts = hostWithoutPort.replace('.menus.cool', '').split('.');
-    if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus') {
-      currentSubdomain = parts[0];
+    const withoutSuffix = hostWithoutPort.slice(0, -'.menus.cool'.length);
+    if (withoutSuffix && withoutSuffix !== 'www' && withoutSuffix !== 'menus') {
+      const parts = withoutSuffix.split('.');
+      if (parts.length > 0 && parts[0] !== '') {
+        currentSubdomain = parts[0];
+      }
     }
   } else if (hostWithoutPort.endsWith('.menus.ps')) {
-    const parts = hostWithoutPort.replace('.menus.ps', '').split('.');
-    if (parts.length > 0 && parts[0] !== 'www' && parts[0] !== 'menus') {
-      currentSubdomain = parts[0];
+    const withoutSuffix = hostWithoutPort.slice(0, -'.menus.ps'.length);
+    if (withoutSuffix && withoutSuffix !== 'www' && withoutSuffix !== 'menus') {
+      const parts = withoutSuffix.split('.');
+      if (parts.length > 0 && parts[0] !== '') {
+        currentSubdomain = parts[0];
+      }
     }
   } else if (hostWithoutPort.endsWith('.localhost')) {
-    const parts = hostWithoutPort.replace('.localhost', '').split('.');
-    if (parts.length > 0 && parts[0] !== 'www') {
-      currentSubdomain = parts[0];
+    const withoutSuffix = hostWithoutPort.slice(0, -'.localhost'.length);
+    if (withoutSuffix && withoutSuffix !== 'www') {
+      const parts = withoutSuffix.split('.');
+      if (parts.length > 0 && parts[0] !== '') {
+        currentSubdomain = parts[0];
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 3.5. REDIRECT LEGACY RESTAURANT MENU URLS TO SUBDOMAINS
+  // (e.g. menus.cool/m?restaurant=xyz or menus.cool/r/xyz -> https://xyz.menus.cool/)
+  // ──────────────────────────────────────────────────────────────────
+  if (!currentSubdomain) {
+    // A. Route /r/[slug]
+    if (pathname.startsWith('/r/')) {
+      const parts = pathname.replace(/^\/r\//, '').split('/');
+      const slug = parts[0]?.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+      if (slug && slug !== 'menus' && slug !== 'www') {
+        const subpath = parts.slice(1).join('/');
+        const redirectUrl = new URL(subpath ? `/${subpath}` : '/', `https://${slug}.menus.cool`);
+        request.nextUrl.searchParams.forEach((val, key) => {
+          redirectUrl.searchParams.set(key, val);
+        });
+        return NextResponse.redirect(redirectUrl, 301);
+      }
+    }
+
+    // B. Route /m?restaurant=xyz or /?restaurant=xyz
+    if ((pathname === '/m' || pathname === '/') && request.nextUrl.searchParams.has('restaurant')) {
+      const rawSlug = request.nextUrl.searchParams.get('restaurant') || '';
+      const cleanSlug = rawSlug.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+      if (cleanSlug && cleanSlug !== 'menus' && cleanSlug !== 'www') {
+        const redirectUrl = new URL('/', `https://${cleanSlug}.menus.cool`);
+        request.nextUrl.searchParams.forEach((val, key) => {
+          if (key !== 'restaurant') {
+            redirectUrl.searchParams.set(key, val);
+          }
+        });
+        return NextResponse.redirect(redirectUrl, 301);
+      }
+    }
+  } else {
+    // If user lands on https://[subdomain].menus.cool/m, redirect cleanly to root /
+    if (pathname === '/m') {
+      const cleanUrl = new URL('/', request.url);
+      request.nextUrl.searchParams.forEach((val, key) => {
+        if (key !== 'restaurant') {
+          cleanUrl.searchParams.set(key, val);
+        }
+      });
+      return NextResponse.redirect(cleanUrl, 301);
     }
   }
 
@@ -158,7 +214,7 @@ export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const isAllowedOrigin = Boolean(
     origin && (
-      /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:menus\.ps|vercel\.app)(?::\d+)?$/.test(origin) ||
+      /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:menus\.cool|menus\.ps|vercel\.app)(?::\d+)?$/.test(origin) ||
       /^http:\/\/localhost(?::\d+)?$/.test(origin) ||
       /^http:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin)
     )

@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
               seats: t.seats,
               status: t.status,
               qrToken: t.qr_token,
-              qrUrl: `${appUrl}/r/${targetRestaurantSlug}?table=${t.table_number}&token=${t.qr_token}`,
+              qrUrl: `https://${targetRestaurantSlug}.menus.cool/?table=${t.table_number}&token=${t.qr_token}`,
             })),
           };
 
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
           seats: t.seats,
           status: t.status,
           qrToken: token,
-          qrUrl: `${appUrl}/r/${slug}?table=${t.id}&token=${token}`,
+          qrUrl: `https://${slug}.menus.cool/?table=${t.id}&token=${token}`,
         };
       }),
     });
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
         seats: created.seats,
         status: created.status,
         qrToken: created.qr_token,
-        qrUrl: `${appUrl}/m?t=${created.qr_token}&restaurant=${slug || 'burger-house-nablus'}`,
+        qrUrl: `https://${slug || 'burger-house-nablus'}.menus.cool/?table=${created.table_number}&token=${created.qr_token}`,
       },
     });
   } catch (err) {

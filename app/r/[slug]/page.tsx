@@ -15,7 +15,6 @@ export default function RestaurantRedirectPage({ params, searchParams }: Restaur
   }
 
   const queryParams = new URLSearchParams();
-  queryParams.set('restaurant', cleanSlug);
 
   // Whitelist safe query parameters for customer menu flow
   const allowedKeys = ['table', 'token', 't', 'lang'];
@@ -28,5 +27,6 @@ export default function RestaurantRedirectPage({ params, searchParams }: Restaur
     }
   }
 
-  redirect(`/m?${queryParams.toString()}`);
+  const qs = queryParams.toString();
+  redirect(`https://${cleanSlug}.menus.cool/${qs ? `?${qs}` : ''}`);
 }

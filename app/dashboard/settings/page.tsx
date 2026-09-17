@@ -156,8 +156,7 @@ export default function ProductionSettingsPage() {
     }
   };
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-  const menuPublicUrl = `${origin}/r/${slug || 'burger-house-nablus'}`;
+  const menuPublicUrl = slug ? `https://${slug}.menus.cool` : 'https://menus.cool';
 
   if (isLoading) {
     return (
@@ -332,12 +331,12 @@ export default function ProductionSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">رابط منيو المطعم للزبائن</label>
-              <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-xs font-mono text-slate-600" dir="ltr">
-                <span className="text-slate-400 select-none">/r/</span>
+              <div className="flex items-center gap-1 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-xs font-mono text-slate-600" dir="ltr">
+                <span className="text-slate-400 select-none">https://</span>
                 <input
                   type="text"
                   disabled
-                  value={slug}
+                  value={slug ? `${slug}.menus.cool` : '...'}
                   className="bg-transparent font-bold text-slate-800 w-full outline-none"
                 />
               </div>

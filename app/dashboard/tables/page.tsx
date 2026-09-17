@@ -50,7 +50,8 @@ export default function ProductionTablesPage() {
             res.tables.map(async (t: any) => {
               const tableNumber = t.id;
               const qrToken = t.qrToken;
-              const targetUrl = `${origin}/r/${effectiveSlug || slug}?table=${tableNumber}&token=${qrToken}`;
+              const targetSlug = effectiveSlug || slug || 'burger-house-nablus';
+              const targetUrl = `https://${targetSlug}.menus.cool/?table=${tableNumber}&token=${qrToken}`;
               let qrDataUrl = '';
               try {
                 qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 280, margin: 1 });
@@ -96,8 +97,8 @@ export default function ProductionTablesPage() {
   }, []);
 
   const getTableUrl = (table: TableItem) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-    return `${origin}/r/${currentSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
+    const active = currentSlug || 'burger-house-nablus';
+    return `https://${active}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
   };
 
   const copyTableLink = (table: TableItem) => {
@@ -126,8 +127,8 @@ export default function ProductionTablesPage() {
 
       const data = await res.json();
       if (data.success && data.table) {
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-        const targetUrl = `${origin}/r/${currentSlug}?table=${data.table.id}&token=${data.table.qrToken}`;
+        const active = currentSlug || 'burger-house-nablus';
+        const targetUrl = `https://${active}.menus.cool/?table=${data.table.id}&token=${data.table.qrToken}`;
         let qrDataUrl = '';
         try {
           qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 300, margin: 1 });
@@ -167,8 +168,7 @@ export default function ProductionTablesPage() {
       } catch {}
     }
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-    const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
+    const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
     const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
 
     printTableStand({
@@ -197,10 +197,9 @@ export default function ProductionTablesPage() {
         } catch {}
       }
 
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
       const stands = await Promise.all(
         tables.map(async (table) => {
-          const targetUrl = `${origin}/r/${activeSlug}?table=${table.tableNumber}&token=${table.qrToken}`;
+          const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
           const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
           return {
             tableNumber: table.tableNumber,

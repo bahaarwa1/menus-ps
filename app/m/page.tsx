@@ -638,7 +638,7 @@ function FastFrictionlessMenuContent() {
             </a>
 
             <a
-              href="/m?restaurant=burger-house-nablus"
+              href="https://burger-house-nablus.menus.cool"
               className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Utensils size={15} />

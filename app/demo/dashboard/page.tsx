@@ -26,8 +26,8 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const liveUrl = createdSlug ? `https://${createdSlug}.menus.cool` : 'https://burger-house.menus.cool';
-  const directMenuUrl = createdSlug ? `/m?restaurant=${createdSlug}` : '/m';
+  const liveUrl = createdSlug ? `https://${createdSlug}.menus.cool` : 'https://burger-house-nablus.menus.cool';
+  const directMenuUrl = createdSlug ? `https://${createdSlug}.menus.cool` : 'https://burger-house-nablus.menus.cool';
 
   const copyUrl = () => {
     navigator.clipboard.writeText(liveUrl);
