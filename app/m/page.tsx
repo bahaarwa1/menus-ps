@@ -4,6 +4,9 @@ import { getRestaurantBySlug } from '@/lib/db/repositories/restaurant.repository
 import CustomerMenuClient from './CustomerMenuClient';
 import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Pre-compute fallback dataset for instant 0ms demo rendering
 const precomputedDemoCategories = fallbackCategories.map((cat) => ({
   id: cat.id,
@@ -113,7 +116,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
   // 4. Authoritative Server-Side Fetch (SSR)
   // Queries Supabase + appCache directly in parallel — NO client waterfall
   const [menu, restaurant] = await Promise.all([
-    getRestaurantMenu(cleanSlug),
+    getRestaurantMenu(cleanSlug, true),
     getRestaurantBySlug(cleanSlug),
   ]);
 

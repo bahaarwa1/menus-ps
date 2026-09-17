@@ -298,15 +298,18 @@ export default function CustomerMenuClient({
   const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>(initialSettings?.city || (isExplicitDemo ? 'نابلس' : ''));
   const [activeBranchId, setActiveBranchId] = useState<string>(initialSettings?.branchId || '');
 
+  // Synchronize state when SSR props update
+  useEffect(() => {
+    if (initialCategories && initialCategories.length > 0) {
+      setDbCategories(initialCategories);
+      setDbMenuItems(initialMenuItems || []);
+    }
+  }, [initialCategories, initialMenuItems]);
+
   // Authoritative DB loader: dynamically queries Supabase for settings and menu
   useEffect(() => {
-    // If SSR already hydrated the categories and settings, we display instantly with 0ms delay!
-    if (hasInitialData) {
-      return;
-    }
-
     const sub = extractSubdomainFromWindow();
-    const resolvedSlug = (restaurantParam || sub || slugFromToken || '').trim().toLowerCase();
+    const resolvedSlug = (restaurantParam || sub || slugFromToken || initialSlug || '').trim().toLowerCase();
 
     // Verify QR token for table if present
     if (qrTokenParam) {
@@ -345,44 +348,20 @@ export default function CustomerMenuClient({
       return;
     }
 
-    // Real Restaurant: Load directly with Client Cache + Single Request
+    // Real Restaurant: Load directly with Single Request and no stale cache
     setActiveRestaurantSlug(resolvedSlug);
     setMenuError('');
 
-    // 1. Instant Cache-First Hydration (0ms load from sessionStorage)
-    const cacheKey = `menu_cache_${resolvedSlug}`;
-    let hasCachedData = false;
-    try {
-      const cachedRaw = typeof window !== 'undefined' ? sessionStorage.getItem(cacheKey) : null;
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw);
-        if (cached && Array.isArray(cached.categories) && cached.categories.length > 0) {
-          hasCachedData = true;
-          setDbCategories(cached.categories);
-          const allItems: MenuItem[] = cached.categories.flatMap((cat: any) =>
-            (cat.items || []).map((it: any) => ({ ...it, category: cat.id }))
-          );
-          setDbMenuItems(allItems);
-          setActiveCategory((prev) => (cached.categories.some((c: any) => c.id === prev) ? prev : cached.categories[0]?.id || ''));
-          if (cached.settings) {
-            if (cached.settings.name) setActiveRestaurantName(cached.settings.name);
-            if (cached.settings.city) setActiveRestaurantCity(cached.settings.city);
-            if (cached.settings.logoUrl) setActiveRestaurantLogo(cached.settings.logoUrl);
-            if (cached.settings.branchId) setActiveBranchId(cached.settings.branchId);
-          }
-          setMenuLoading(false);
-        }
-      }
-    } catch {}
-
-    if (!hasCachedData) {
+    if (!hasInitialData) {
       setMenuLoading(true);
     }
 
     let isSubscribed = true;
 
-    // 2. Single Unified API Request (menu + settings in one fast roundtrip)
-    fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}&withSettings=1`)
+    // Single Unified API Request (menu + settings in one fast roundtrip)
+    fetch(`/api/v1/menu?slug=${encodeURIComponent(resolvedSlug)}&withSettings=1&fresh=1`, {
+      cache: 'no-store',
+    })
       .then(async (res) => {
         if (res.status === 404) {
           if (isSubscribed) {
@@ -414,19 +393,8 @@ export default function CustomerMenuClient({
             (cat.items || []).map((it: any) => ({ ...it, category: cat.id }))
           );
           setDbMenuItems(allItems);
-          setActiveCategory((prev) => (data.categories.some((c: any) => c.id === prev) ? prev : data.categories[0]?.id || ''));
-
-          // Cache locally for instant loading on refresh or revisit
-          try {
-            sessionStorage.setItem(
-              cacheKey,
-              JSON.stringify({
-                categories: data.categories,
-                settings: data.settings,
-              })
-            );
-          } catch {}
-        } else if (!hasCachedData) {
+          setActiveCategory((prev) => (data.categories.some((c: any) => c.id === prev) ? prev : 'all'));
+        } else if (!hasInitialData) {
           setDbCategories([]);
           setDbMenuItems([]);
           setActiveCategory('');
@@ -434,7 +402,7 @@ export default function CustomerMenuClient({
       })
       .catch((err) => {
         console.error('Failed to load menu data:', err);
-        if (isSubscribed && !hasCachedData) {
+        if (isSubscribed && !hasInitialData) {
           setMenuError('تعذر تحميل بيانات المطعم من قاعدة البيانات');
         }
       })
@@ -474,15 +442,16 @@ export default function CustomerMenuClient({
   // Filtered menu — from DB with resilient category fallback
   const filteredItems = useMemo(() => {
     return dbMenuItems.filter(item => {
+      const selectedCat = dbCategories.find(c => c.id === activeCategory);
       const matchCat = searchQuery || activeCategory === 'all' || !activeCategory
         ? true
-        : item.category === activeCategory;
+        : (item.category === activeCategory || (selectedCat && item.category === selectedCat.name));
       const matchSearch = !searchQuery || 
         (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [dbMenuItems, activeCategory, searchQuery]);
+  }, [dbMenuItems, dbCategories, activeCategory, searchQuery]);
 
   // Cart summary — uses dbMenuItems
   const cartItemsList = useMemo(() => {

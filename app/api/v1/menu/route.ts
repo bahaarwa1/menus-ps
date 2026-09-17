@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     if (withSettings) {
       const { getRestaurantBySlug } = await import('@/lib/db/repositories/restaurant.repository');
       const [menu, restaurant] = await Promise.all([
-        cachedMenu ? Promise.resolve(cachedMenu) : getRestaurantMenu(slug),
+        cachedMenu ? Promise.resolve(cachedMenu) : getRestaurantMenu(slug, forceFresh),
         getRestaurantBySlug(slug),
       ]);
 
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Fetch menu only
-    const menu = await getRestaurantMenu(slug);
+    const menu = await getRestaurantMenu(slug, forceFresh);
 
     if (menu === null) {
       return NextResponse.json(

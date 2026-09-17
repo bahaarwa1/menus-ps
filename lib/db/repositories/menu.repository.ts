@@ -28,17 +28,22 @@ const inFlightMenuRequests = new Map<string, Promise<PublicMenuCategory[] | null
  * Fetches active menu categories and items for a restaurant with multi-tier caching.
  * Returns null if the restaurant does not exist.
  */
-export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'): Promise<PublicMenuCategory[] | null> {
+export async function getRestaurantMenu(
+  restaurantSlug = 'burger-house-nablus',
+  forceFresh = false
+): Promise<PublicMenuCategory[] | null> {
   const cacheKey = `menu:${restaurantSlug}`;
 
-  // 1. O(1) Memory Cache Check
-  const cached = appCache.get<PublicMenuCategory[]>(cacheKey);
-  if (cached) {
-    return cached;
+  // 1. O(1) Memory Cache Check (bypassed if forceFresh is requested)
+  if (!forceFresh) {
+    const cached = appCache.get<PublicMenuCategory[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
   }
 
   // 2. Request Coalescing: if another request is already fetching this slug, share the promise
-  if (inFlightMenuRequests.has(cacheKey)) {
+  if (!forceFresh && inFlightMenuRequests.has(cacheKey)) {
     return inFlightMenuRequests.get(cacheKey)!;
   }
 
