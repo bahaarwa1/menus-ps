@@ -69,16 +69,13 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
           menu_categories (
             id,
             name_ar,
-            name,
             icon,
             sort_order,
             is_active,
             menu_items (
               id,
               name_ar,
-              name,
               description_ar,
-              description,
               price,
               image_url,
               is_available,
@@ -88,7 +85,6 @@ export async function getRestaurantMenu(restaurantSlug = 'burger-house-nablus'):
               item_extras (
                 id,
                 name_ar,
-                name,
                 price
               )
             )

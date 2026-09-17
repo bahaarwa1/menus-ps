@@ -116,18 +116,16 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // B. Route /m?restaurant=xyz or /?restaurant=xyz
-    if ((pathname === '/m' || pathname === '/') && request.nextUrl.searchParams.has('restaurant')) {
+    // B. Route /?restaurant=xyz -> rewrite to /m?restaurant=xyz
+    if (pathname === '/' && request.nextUrl.searchParams.has('restaurant')) {
       const rawSlug = request.nextUrl.searchParams.get('restaurant') || '';
       const cleanSlug = rawSlug.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
       if (cleanSlug && cleanSlug !== 'menus' && cleanSlug !== 'www') {
-        const redirectUrl = new URL('/', `https://${cleanSlug}.menus.cool`);
+        const mUrl = new URL('/m', request.url);
         request.nextUrl.searchParams.forEach((val, key) => {
-          if (key !== 'restaurant') {
-            redirectUrl.searchParams.set(key, val);
-          }
+          mUrl.searchParams.set(key, val);
         });
-        return NextResponse.redirect(redirectUrl, 301);
+        return NextResponse.rewrite(mUrl);
       }
     }
   } else {

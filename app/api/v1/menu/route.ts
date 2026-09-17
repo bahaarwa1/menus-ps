@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   let slug = searchParams.get('slug') || '';
   const withSettings = searchParams.get('withSettings') === '1';
+  const forceFresh = searchParams.get('fresh') === '1' || request.headers.get('cache-control')?.includes('no-cache');
 
   if (!slug) {
     try {
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
   const settingsCacheKey = `restaurant:slug:${slug}`;
 
   try {
-    // 1. O(1) Memory Cache Check
-    const cachedMenu = appCache.get(cacheKey);
-    let cachedSettings = withSettings ? appCache.get(settingsCacheKey) : null;
+    // 1. O(1) Memory Cache Check (bypassed if forceFresh is requested)
+    const cachedMenu = forceFresh ? null : appCache.get(cacheKey);
+    let cachedSettings = (withSettings && !forceFresh) ? appCache.get(settingsCacheKey) : null;
 
     if (cachedMenu && (!withSettings || cachedSettings)) {
       const response: any = {
@@ -44,7 +45,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response, {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+          'Pragma': 'no-cache',
           'X-Cache': 'HIT',
         },
       });
@@ -94,7 +96,8 @@ export async function GET(request: NextRequest) {
         {
           status: 200,
           headers: {
-            'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+            'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+            'Pragma': 'no-cache',
             'X-Cache': 'MISS',
           },
         }
@@ -118,7 +121,8 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=30, s-maxage=180, stale-while-revalidate=600',
+          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+          'Pragma': 'no-cache',
           'X-Cache': 'MISS',
         },
       }
@@ -228,6 +232,8 @@ export async function POST(request: NextRequest) {
     }
 
     appCache.invalidateTag('menu');
+    appCache.delete(`menu:${targetSlug}`);
+    appCache.delete(`restaurant:slug:${targetSlug}`);
 
     return NextResponse.json({
       success: true,
@@ -240,7 +246,9 @@ export async function POST(request: NextRequest) {
         popular: newItem.is_popular,
         spicy: newItem.is_spicy,
         available: newItem.is_available,
-        category: catTitle,
+        category: cat.id,
+        categoryId: cat.id,
+        categoryName: catTitle,
       },
     });
   } catch (err) {

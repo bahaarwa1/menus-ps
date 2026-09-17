@@ -82,8 +82,9 @@ export default function ProductionMenuPage() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}`, {
+      const res = await fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&fresh=1`, {
         credentials: 'include',
+        cache: 'no-store',
       });
       if (!res.ok) {
         console.error('Menu fetch failed:', res.status, res.statusText);
@@ -130,7 +131,7 @@ export default function ProductionMenuPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/auth/session', { credentials: 'include' })
+    fetch('/api/auth/session', { credentials: 'include', cache: 'no-store' })
       .then((r) => r.json())
       .then((data) => {
         const slug = data.user?.restaurantSlug || '';
@@ -138,7 +139,7 @@ export default function ProductionMenuPage() {
           setCurrentSlug(slug);
           loadMenu(slug);
           // فحص حالة قاعدة البيانات فوراً
-          fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&withSettings=1`, { credentials: 'include' })
+          fetch(`/api/v1/menu?slug=${encodeURIComponent(slug)}&withSettings=1&fresh=1`, { credentials: 'include', cache: 'no-store' })
             .then((r) => r.json())
             .then((d) => {
               if (d.success !== false && !d.error) {
@@ -261,6 +262,11 @@ export default function ProductionMenuPage() {
         setNewPopular(false);
         setNewSpicy(false);
         setShowPresetsNew(false);
+
+        // Re-sync menu & categories from DB
+        if (currentSlug) {
+          loadMenu(currentSlug);
+        }
       } else {
         alert(data.error || 'فشل حفظ الصنف');
       }
@@ -333,7 +339,11 @@ export default function ProductionMenuPage() {
   };
 
   const filteredItems = items.filter((it) => {
-    if (activeCategory !== 'all' && it.category !== activeCategory) return false;
+    if (activeCategory !== 'all') {
+      const selectedCat = categories.find((c) => c.id === activeCategory);
+      const isMatch = it.category === activeCategory || (selectedCat && it.category === selectedCat.name);
+      if (!isMatch) return false;
+    }
     if (searchQuery && !it.name.includes(searchQuery) && !it.description.includes(searchQuery)) return false;
     return true;
   });
