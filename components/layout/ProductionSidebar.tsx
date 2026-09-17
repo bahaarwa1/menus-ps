@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { 
   Menu, X, ExternalLink, LogOut, 
   Copy, Check, ChefHat, 
-  BarChart3, Utensils, QrCode, Settings, ShoppingBag, Key
+  BarChart3, Utensils, QrCode, Settings, ShoppingBag, Key, ShieldCheck
 } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import { useLanguage } from '@/context/LanguageContext';
@@ -74,6 +74,7 @@ export default function ProductionSidebar({
     { href: '/dashboard/tables', label: 'الطاولات وأكواد QR', icon: QrCode },
     { href: '/dashboard/staff/codes', label: 'رموز وصول الموظفين', icon: Key },
     { href: '/dashboard/settings', label: 'إعدادات المطعم', icon: Settings },
+    { href: '/admin', label: 'لوحة الإدارة العامة (Master)', icon: ShieldCheck },
   ];
 
   const isActive = (href: string, exact?: boolean) => {
