@@ -173,6 +173,7 @@ export function printTableStand(stand: {
   restaurantName?: string;
   qrDataUrl: string;
   targetUrl: string;
+  logoUrl?: string;
 }) {
   if (typeof window === 'undefined') return;
 
@@ -235,7 +236,7 @@ export function printTableStand(stand: {
           background: #ffffff;
           border-radius: 28px;
           border: 2px solid #eab308;
-          padding: 26px 22px 22px 22px;
+          padding: 24px 20px 20px 20px;
           text-align: center;
           position: relative;
           display: flex;
@@ -370,9 +371,13 @@ export function printTableStand(stand: {
     <body>
       <div class="stand-card">
         <div class="luxury-crest">
-          <span>✦</span>
-          <span class="crest-icon">🍽️</span>
-          <span>✦</span>
+          ${stand.logoUrl ? `
+            <img src="${stand.logoUrl}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);" alt="Logo" />
+          ` : `
+            <span>✦</span>
+            <span class="crest-icon">🍽️</span>
+            <span>✦</span>
+          `}
         </div>
 
         <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً وسهلاً بكم'}</h1>
@@ -424,6 +429,7 @@ export function printAllTableStands(stands: Array<{
   targetUrl: string;
   qrDataUrl: string;
   branchName?: string;
+  logoUrl?: string;
 }>) {
   if (typeof window === 'undefined' || stands.length === 0) return;
 
@@ -447,9 +453,13 @@ export function printAllTableStands(stands: Array<{
     <div class="stand-wrapper ${idx < stands.length - 1 ? 'page-break' : ''}">
       <div class="stand-card">
         <div class="luxury-crest">
-          <span>✦</span>
-          <span class="crest-icon">🍽️</span>
-          <span>✦</span>
+          ${stand.logoUrl ? `
+            <img src="${stand.logoUrl}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #eab308; margin-bottom: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);" alt="Logo" />
+          ` : `
+            <span>✦</span>
+            <span class="crest-icon">🍽️</span>
+            <span>✦</span>
+          `}
         </div>
 
         <h1 class="restaurant-title">${stand.restaurantName || 'أهلاً وسهلاً بكم'}</h1>

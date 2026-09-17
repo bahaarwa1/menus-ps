@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, ExternalLink, Copy, Check, QrCode } from 'lucide-react';
-import QRCode from 'qrcode';
+import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles } from 'lucide-react';
 import { printTableStand, printAllTableStands } from '@/lib/print-utils';
+import { generateBrandedQRCode, QR_COLOR_PRESETS } from '@/lib/qr-generator';
 
 interface TableItem {
   id: string;
@@ -18,11 +18,40 @@ export default function ProductionTablesPage() {
   const [tables, setTables] = useState<TableItem[]>([]);
   const [currentSlug, setCurrentSlug] = useState<string>('');
   const [restaurantName, setRestaurantName] = useState<string>('');
+  const [restaurantLogo, setRestaurantLogo] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedPrintTable, setSelectedPrintTable] = useState<TableItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPrintingAll, setIsPrintingAll] = useState(false);
+
+  // QR Customization Studio States
+  const [qrColor, setQrColor] = useState<string>('#0f172a');
+  const [includeLogo, setIncludeLogo] = useState<boolean>(true);
+
+  // Helper to generate branded QR code
+  const makeBrandedQr = async (
+    targetUrl: string,
+    color = qrColor,
+    withLogo = includeLogo,
+    logo = restaurantLogo,
+    name = restaurantName,
+    tNum?: number
+  ) => {
+    try {
+      return await generateBrandedQRCode({
+        text: targetUrl,
+        size: 550,
+        color,
+        logoUrl: withLogo ? logo : undefined,
+        restaurantName: name,
+        tableNumber: tNum,
+      });
+    } catch (e) {
+      console.error('Error generating branded QR:', e);
+      return '';
+    }
+  };
 
   useEffect(() => {
     let slug = '';
@@ -30,7 +59,17 @@ export default function ProductionTablesPage() {
       const params = new URLSearchParams(window.location.search);
       const urlSlug = params.get('created') || params.get('restaurant');
       if (urlSlug) slug = urlSlug;
+
+      try {
+        const savedColor = localStorage.getItem('qr_brand_color');
+        if (savedColor) setQrColor(savedColor);
+        const savedIncludeLogo = localStorage.getItem('qr_include_logo');
+        if (savedIncludeLogo !== null) setIncludeLogo(savedIncludeLogo === '1');
+      } catch {}
     }
+
+    const savedColor = typeof window !== 'undefined' ? localStorage.getItem('qr_brand_color') || '#0f172a' : '#0f172a';
+    const savedIncludeLogo = typeof window !== 'undefined' ? localStorage.getItem('qr_include_logo') !== '0' : true;
 
     // Direct tables fetch immediately on mount
     fetch(`/api/v1/tables/list${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
@@ -41,21 +80,45 @@ export default function ProductionTablesPage() {
           if (effectiveSlug) {
             setCurrentSlug(effectiveSlug);
           }
-          if (res.restaurantName) {
-            setRestaurantName(res.restaurantName);
+          let activeName = res.restaurantName || '';
+          if (activeName) {
+            setRestaurantName(activeName);
           }
-          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool';
-          // Load tables and generate QR codes in parallel
+          let activeLogo = '';
+
+          // Fetch restaurant settings for logo and name
+          if (effectiveSlug) {
+            try {
+              const sRes = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`);
+              const sData = await sRes.json();
+              if (sData.success && sData.settings) {
+                if (sData.settings.name) {
+                  activeName = sData.settings.name;
+                  setRestaurantName(activeName);
+                }
+                if (sData.settings.logoUrl) {
+                  activeLogo = sData.settings.logoUrl;
+                  setRestaurantLogo(activeLogo);
+                }
+              }
+            } catch {}
+          }
+
+          // Load tables and generate branded QR codes in parallel
           const loadedTables: TableItem[] = await Promise.all(
             res.tables.map(async (t: any) => {
               const tableNumber = t.id;
               const qrToken = t.qrToken;
               const targetSlug = effectiveSlug || slug || 'burger-house-nablus';
               const targetUrl = `https://${targetSlug}.menus.cool/?table=${tableNumber}&token=${qrToken}`;
-              let qrDataUrl = '';
-              try {
-                qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 280, margin: 1 });
-              } catch {}
+              const qrDataUrl = await makeBrandedQr(
+                targetUrl,
+                savedColor,
+                savedIncludeLogo,
+                activeLogo,
+                activeName,
+                tableNumber
+              );
               return {
                 id: t.dbId || `tbl-${t.id}`,
                 tableNumber,
@@ -67,33 +130,24 @@ export default function ProductionTablesPage() {
             })
           );
           setTables(loadedTables);
-
-          // Once slug is resolved, also ensure latest restaurant name is fetched
-          if (effectiveSlug) {
-            fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`)
-              .then((r) => r.json())
-              .then((sData) => {
-                if (sData.success && sData.settings?.name) {
-                  setRestaurantName(sData.settings.name);
-                }
-              })
-              .catch(() => {});
-          }
         }
       })
       .catch((err) => console.error('Error fetching tables:', err))
       .finally(() => setIsLoading(false));
 
-    // Fetch authoritative restaurant settings directly to get the current restaurant name!
-    fetch(`/api/v1/restaurant/settings${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.settings) {
-          if (data.settings.name) setRestaurantName(data.settings.name);
-          if (data.settings.slug && !slug) setCurrentSlug(data.settings.slug);
-        }
-      })
-      .catch(() => {});
+    // Also fetch authoritative settings if no slug in url
+    if (!slug) {
+      fetch('/api/v1/restaurant/settings')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.settings) {
+            if (data.settings.name) setRestaurantName(data.settings.name);
+            if (data.settings.logoUrl) setRestaurantLogo(data.settings.logoUrl);
+            if (data.settings.slug) setCurrentSlug(data.settings.slug);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const getTableUrl = (table: TableItem) => {
@@ -101,11 +155,55 @@ export default function ProductionTablesPage() {
     return `https://${active}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
   };
 
+  // Handle live color change for all table QR codes
+  const handleColorChange = async (newColor: string) => {
+    setQrColor(newColor);
+    try {
+      localStorage.setItem('qr_brand_color', newColor);
+    } catch {}
+
+    const updated = await Promise.all(
+      tables.map(async (t) => {
+        const targetUrl = getTableUrl(t);
+        const qrDataUrl = await makeBrandedQr(targetUrl, newColor, includeLogo, restaurantLogo, restaurantName, t.tableNumber);
+        return { ...t, qrDataUrl };
+      })
+    );
+    setTables(updated);
+  };
+
+  // Handle live logo toggle for all table QR codes
+  const handleToggleLogo = async (newIncludeLogo: boolean) => {
+    setIncludeLogo(newIncludeLogo);
+    try {
+      localStorage.setItem('qr_include_logo', newIncludeLogo ? '1' : '0');
+    } catch {}
+
+    const updated = await Promise.all(
+      tables.map(async (t) => {
+        const targetUrl = getTableUrl(t);
+        const qrDataUrl = await makeBrandedQr(targetUrl, qrColor, newIncludeLogo, restaurantLogo, restaurantName, t.tableNumber);
+        return { ...t, qrDataUrl };
+      })
+    );
+    setTables(updated);
+  };
+
   const copyTableLink = (table: TableItem) => {
     const url = getTableUrl(table);
     navigator.clipboard.writeText(url);
     setCopiedId(table.id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const downloadTableQr = (table: TableItem) => {
+    if (!table.qrDataUrl) return;
+    const a = document.createElement('a');
+    a.href = table.qrDataUrl;
+    a.download = `table-${table.tableNumber}-qr.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleStatusChange = (tableId: string, newStatus: TableItem['status']) => {
@@ -129,10 +227,14 @@ export default function ProductionTablesPage() {
       if (data.success && data.table) {
         const active = currentSlug || 'burger-house-nablus';
         const targetUrl = `https://${active}.menus.cool/?table=${data.table.id}&token=${data.table.qrToken}`;
-        let qrDataUrl = '';
-        try {
-          qrDataUrl = await QRCode.toDataURL(targetUrl, { width: 300, margin: 1 });
-        } catch {}
+        const qrDataUrl = await makeBrandedQr(
+          targetUrl,
+          qrColor,
+          includeLogo,
+          restaurantLogo,
+          restaurantName,
+          data.table.id
+        );
 
         setTables((prev) => [
           ...prev,
@@ -169,13 +271,16 @@ export default function ProductionTablesPage() {
     }
 
     const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
-    const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
+    const qrDataUrl =
+      table.qrDataUrl ||
+      (await makeBrandedQr(targetUrl, qrColor, includeLogo, restaurantLogo, activeName, table.tableNumber));
 
     printTableStand({
       tableNumber: table.tableNumber,
       restaurantName: activeName || 'أهلاً وسهلاً بكم',
       targetUrl,
       qrDataUrl,
+      logoUrl: includeLogo ? restaurantLogo : undefined,
     });
   };
 
@@ -200,12 +305,15 @@ export default function ProductionTablesPage() {
       const stands = await Promise.all(
         tables.map(async (table) => {
           const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
-          const qrDataUrl = table.qrDataUrl || (await QRCode.toDataURL(targetUrl, { width: 500, margin: 1 }));
+          const qrDataUrl =
+            table.qrDataUrl ||
+            (await makeBrandedQr(targetUrl, qrColor, includeLogo, restaurantLogo, activeName, table.tableNumber));
           return {
             tableNumber: table.tableNumber,
             restaurantName: activeName || 'أهلاً وسهلاً بكم',
             targetUrl,
             qrDataUrl,
+            logoUrl: includeLogo ? restaurantLogo : undefined,
           };
         })
       );
@@ -223,9 +331,14 @@ export default function ProductionTablesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">إدارة الطاولات وأكواد QR المشفرة</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+            <span>إدارة الطاولات وأكواد QR المشفرة</span>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-black">
+              ألوان وشعار المطعم
+            </span>
+          </h1>
           <p className="text-xs text-slate-500 mt-1">
-            كل طاولة تمتلك رمز QR فريد ومشفر يربط الزبون بطاولته تلقائياً ويطبع بدقة عالية وبدون أي تشويش
+            كل طاولة تمتلك رمز QR فريد ومشفر باللون وهوية المطعم يربط الزبون بطاولته تلقائياً ويطبع بدقة فائقة
           </p>
         </div>
 
@@ -265,6 +378,95 @@ export default function ProductionTablesPage() {
         <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200/60 text-center">
           <span className="text-xs text-orange-700 font-bold block mb-1">طاولات مشغولة حالياً</span>
           <span className="text-2xl font-black text-orange-700">{tables.filter((t) => t.status === 'busy').length}</span>
+        </div>
+      </div>
+
+      {/* ============================================================
+          QR BRANDING & COLOR CUSTOMIZATION STUDIO PANEL
+      ============================================================ */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-sm shadow-orange-500/20">
+              <Palette size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-black text-slate-900">
+                  استوديو ألوان وتصميم باركود الـ QR
+                </h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
+                  <Sparkles size={11} />
+                  <span>تحديث فوري</span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                اختر لون الهوية الخاص بمطعمك وفعّل لوجو المطعم داخل قلب الرمز لتصميم احترافي يطبع بدقة
+              </p>
+            </div>
+          </div>
+
+          {/* Logo in QR Toggle & Preview */}
+          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
+            {restaurantLogo ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={restaurantLogo}
+                alt="Logo"
+                className="w-8 h-8 rounded-xl object-cover border border-slate-200 shadow-2xs"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-600 font-black text-xs flex items-center justify-center border border-orange-200">
+                {restaurantName ? restaurantName.trim().charAt(0) : '🍽️'}
+              </div>
+            )}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeLogo}
+                onChange={(e) => handleToggleLogo(e.target.checked)}
+                className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-slate-800">تضمين شعار المطعم داخل الـ QR</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Color Presets & Custom Picker */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-xs font-black text-slate-700 ml-1">ألوان الـ QR المقترحة:</span>
+          {QR_COLOR_PRESETS.map((preset) => {
+            const isSelected = qrColor.toLowerCase() === preset.hex.toLowerCase();
+            return (
+              <button
+                key={preset.id}
+                onClick={() => handleColorChange(preset.hex)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/30'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80'
+                }`}
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs shrink-0"
+                  style={{ backgroundColor: preset.hex }}
+                />
+                <span>{preset.name}</span>
+              </button>
+            );
+          })}
+
+          {/* Custom Color Input */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80">
+            <input
+              type="color"
+              value={qrColor}
+              onChange={(e) => handleColorChange(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent p-0"
+              title="اختر لوناً مخصصاً"
+            />
+            <span className="text-[11px] font-mono text-slate-600 font-bold uppercase">{qrColor}</span>
+          </div>
         </div>
       </div>
 
@@ -311,7 +513,10 @@ export default function ProductionTablesPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-8 h-8 rounded-xl bg-slate-900 text-white font-black text-sm flex items-center justify-center">
+                      <span
+                        className="w-8 h-8 rounded-xl text-white font-black text-sm flex items-center justify-center"
+                        style={{ backgroundColor: qrColor }}
+                      >
                         {table.tableNumber}
                       </span>
                       <div>
@@ -338,8 +543,12 @@ export default function ProductionTablesPage() {
                   </div>
 
                   {/* QR Code Center Box */}
-                  <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-3 flex flex-col items-center justify-center mb-3 text-center">
-                    <div className="w-28 h-28 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs mb-2 flex items-center justify-center">
+                  <div
+                    onClick={() => setSelectedPrintTable(table)}
+                    className="group relative bg-slate-50 border border-slate-200/70 hover:border-orange-300 rounded-2xl p-3 flex flex-col items-center justify-center mb-3 text-center cursor-pointer transition-all hover:shadow-sm"
+                    title="انقر للمعاينة والتحميل بدقة عالية"
+                  >
+                    <div className="relative w-32 h-32 bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs mb-2 flex items-center justify-center overflow-hidden group-hover:scale-102 transition-transform">
                       {table.qrDataUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -350,6 +559,10 @@ export default function ProductionTablesPage() {
                       ) : (
                         <QrCode size={40} className="text-slate-300" />
                       )}
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl text-white text-xs font-bold gap-1">
+                        <Eye size={14} />
+                        <span>معاينة</span>
+                      </div>
                     </div>
                     <span className="font-mono text-[10px] text-slate-400 block truncate max-w-[160px]" dir="ltr">
                       token: {table.qrToken.slice(0, 14)}...
@@ -368,11 +581,19 @@ export default function ProductionTablesPage() {
                       <span>{copiedId === table.id ? 'تم النسخ!' : 'نسخ الرابط'}</span>
                     </button>
 
+                    <button
+                      onClick={() => downloadTableQr(table)}
+                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                      title="تحميل كود QR بدقة عالية PNG"
+                    >
+                      <Download size={14} />
+                    </button>
+
                     <a
                       href={directTableUrl}
                       target="_blank"
                       className="p-1.5 rounded-xl bg-slate-100 hover:bg-orange-50 text-slate-600 hover:text-orange-600 transition-colors"
-                      title="فتح منيو الطاولة"
+                      title="فتح منيو الطاولة في نافذة جديدة"
                     >
                       <ExternalLink size={14} />
                     </a>
@@ -380,10 +601,10 @@ export default function ProductionTablesPage() {
 
                   <button
                     onClick={() => handlePrintSingle(table)}
-                    className="w-full py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 font-black text-[11px] flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    className="w-full py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 font-black text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Printer size={12} />
-                    <span>طباعة بطاقة الاستاند للطلب</span>
+                    <Printer size={13} />
+                    <span>طباعة ستاند طاولة {table.tableNumber}</span>
                   </button>
                 </div>
 
@@ -393,37 +614,51 @@ export default function ProductionTablesPage() {
         </div>
       )}
 
-      {/* Printable Card Modal (if user wants a preview modal first) */}
+      {/* Printable / Preview Card Modal */}
       {selectedPrintTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-150">
             
             {/* Printable Preview Frame */}
-            <div className="border-2 border-amber-400 rounded-3xl p-6 bg-gradient-to-b from-amber-50/50 via-white to-white mb-5 relative shadow-lg text-center">
+            <div className="border-2 border-amber-400 rounded-3xl p-5 bg-gradient-to-b from-amber-50/50 via-white to-white mb-4 relative shadow-lg text-center">
               <div className="flex items-center justify-center gap-1.5 text-amber-600 text-xs font-black mb-1">
-                <span>✦</span>
-                <span>🍽️</span>
-                <span>✦</span>
+                {restaurantLogo ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={restaurantLogo}
+                    alt="Logo"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-amber-400 shadow-xs mb-1"
+                  />
+                ) : (
+                  <>
+                    <span>✦</span>
+                    <span className="text-base">🍽️</span>
+                    <span>✦</span>
+                  </>
+                )}
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-0.5">
+              <h3 className="text-lg font-black text-slate-900 mb-0.5">
                 {restaurantName || 'أهلاً وسهلاً بكم'}
               </h3>
-              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-3">
+              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-2.5">
                 قائمة الطعام الرقمية والطلب المباشر
               </p>
 
-              <div className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full bg-slate-900 text-white text-xs font-black border border-amber-400 mb-4 shadow-sm">
+              <div
+                className="inline-flex items-center justify-center gap-2 px-4 py-1 rounded-full text-white text-xs font-black border border-amber-400 mb-3 shadow-sm"
+                style={{ backgroundColor: qrColor }}
+              >
                 <span>طاولة رقم</span>
                 <span className="text-yellow-300 text-sm font-black">{selectedPrintTable.tableNumber}</span>
               </div>
 
-              <div className="w-44 h-44 bg-white p-3 rounded-2xl border-2 border-amber-200 mx-auto shadow-md mb-3 flex items-center justify-center">
+              <div className="w-48 h-48 bg-white p-3 rounded-2xl border-2 border-amber-200 mx-auto shadow-md mb-3 flex items-center justify-center">
                 {selectedPrintTable.qrDataUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={selectedPrintTable.qrDataUrl}
                     alt="QR"
-                    className="w-full h-full object-contain rounded-lg"
+                    className="w-full h-full object-contain rounded-xl"
                   />
                 ) : (
                   <QrCode size={60} className="text-slate-300" />
@@ -431,33 +666,44 @@ export default function ProductionTablesPage() {
               </div>
 
               <p className="text-xs font-black text-slate-900 mb-0.5">امسح الرمز لطلب طعامك مباشرة 📲</p>
-              <p className="text-[10px] text-slate-500 font-medium max-w-[200px] mx-auto mb-3">
+              <p className="text-[10px] text-slate-500 font-medium max-w-[200px] mx-auto mb-2.5">
                 وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك
               </p>
 
-              <div className="flex items-center justify-center gap-1.5 pt-2.5 border-t border-amber-100 text-[10px] font-extrabold text-amber-800">
+              <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-amber-100 text-[10px] font-extrabold text-amber-800">
                 <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">📷 ١. وجّه الكاميرا</span>
                 <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">🍔 ٢. اختر وجبتك</span>
                 <span className="bg-amber-100/70 border border-amber-300/60 px-2 py-0.5 rounded-md">⚡ ٣. يجهز فوراً</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Modal Actions */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => downloadTableQr(selectedPrintTable)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Download size={14} />
+                  <span>تحميل PNG</span>
+                </button>
+                <button
+                  onClick={() => {
+                    handlePrintSingle(selectedPrintTable);
+                    setSelectedPrintTable(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Printer size={14} />
+                  <span>طباعة الستاند</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setSelectedPrintTable(null)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer"
+                className="w-full py-2 rounded-xl text-slate-400 hover:text-slate-600 font-bold text-xs cursor-pointer transition-colors"
               >
                 إغلاق
-              </button>
-              <button
-                onClick={() => {
-                  handlePrintSingle(selectedPrintTable);
-                  setSelectedPrintTable(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <Printer size={14} />
-                <span>طباعة الستاند الآن</span>
               </button>
             </div>
 

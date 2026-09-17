@@ -9,6 +9,8 @@ import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   let slug = searchParams.get('slug') || '';
+  const withSettings = searchParams.get('withSettings') === '1';
+
   if (!slug) {
     try {
       const cookieStore = await cookies();
@@ -22,25 +24,84 @@ export async function GET(request: NextRequest) {
   }
 
   const cacheKey = `menu:${slug}`;
+  const settingsCacheKey = `restaurant:slug:${slug}`;
 
   try {
     // 1. O(1) Memory Cache Check
     const cachedMenu = appCache.get(cacheKey);
-    if (cachedMenu) {
+    let cachedSettings = withSettings ? appCache.get(settingsCacheKey) : null;
+
+    if (cachedMenu && (!withSettings || cachedSettings)) {
+      const response: any = {
+        success: true,
+        restaurantSlug: slug,
+        categories: cachedMenu,
+        cached: true,
+      };
+      if (withSettings && cachedSettings) {
+        response.settings = cachedSettings;
+      }
+      return NextResponse.json(response, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
+
+    // 2. Parallel fetch: menu + settings in a single DB round
+    if (withSettings) {
+      const { getRestaurantBySlug } = await import('@/lib/db/repositories/restaurant.repository');
+      const [menu, restaurant] = await Promise.all([
+        cachedMenu ? Promise.resolve(cachedMenu) : getRestaurantMenu(slug),
+        getRestaurantBySlug(slug),
+      ]);
+
+      if (menu === null && !restaurant) {
+        return NextResponse.json({ success: false, error: 'المطعم غير موجود' }, { status: 404 });
+      }
+
+      if (menu !== null) {
+        appCache.set(cacheKey, menu, 300, ['menu', `menu:${slug}`]);
+      }
+
+      const settings = restaurant
+        ? {
+            id: restaurant.id,
+            name: restaurant.name,
+            slug: restaurant.slug,
+            logoUrl: (restaurant as any).logoUrl || '',
+            phone: restaurant.phone,
+            city: restaurant.city,
+            address: restaurant.address || '',
+            currency: restaurant.currency,
+            subdomainUrl: restaurant.subdomainUrl,
+            branchId: restaurant.branchId,
+            branchName: restaurant.branchName,
+            tablesCount: restaurant.tablesCount,
+            isActive: (restaurant as any).isActive !== false,
+            subscription: restaurant.subscription,
+          }
+        : null;
+
+      if (settings) {
+        appCache.set(settingsCacheKey, settings, 300, ['restaurant', `restaurant:${slug}`]);
+      }
+
       return NextResponse.json(
-        { success: true, restaurantSlug: slug, categories: cachedMenu, cached: true },
+        { success: true, restaurantSlug: slug, categories: menu ?? [], settings, cached: false },
         {
           status: 200,
           headers: {
-            'Cache-Control': 'public, max-age=30, s-maxage=180, stale-while-revalidate=600',
-            'X-Cache': 'HIT',
-            'X-Edge-Cache-Policy': 'in-memory-lru',
+            'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+            'X-Cache': 'MISS',
           },
         }
       );
     }
 
-    // 2. Fetch from repository
+    // 3. Fetch menu only
     const menu = await getRestaurantMenu(slug);
 
     if (menu === null) {
@@ -50,22 +111,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 3. Populate memory cache with 180s TTL and 'menu' tag
     appCache.set(cacheKey, menu, 180, ['menu', `menu:${slug}`]);
 
     return NextResponse.json(
-      {
-        success: true,
-        restaurantSlug: slug,
-        categories: menu,
-        cached: false,
-      },
+      { success: true, restaurantSlug: slug, categories: menu, cached: false },
       {
         status: 200,
         headers: {
           'Cache-Control': 'public, max-age=30, s-maxage=180, stale-while-revalidate=600',
           'X-Cache': 'MISS',
-          'X-Edge-Cache-Policy': 'stale-while-revalidate',
         },
       }
     );

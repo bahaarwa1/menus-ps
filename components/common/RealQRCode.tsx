@@ -5,6 +5,8 @@ import QRCode from 'qrcode';
 import { Download, Check, Copy, Printer, Sparkles, Smartphone } from 'lucide-react';
 import { printTableStand } from '@/lib/print-utils';
 
+import { generateBrandedQRCode } from '@/lib/qr-generator';
+
 interface RealQRCodeProps {
   value: string;
   size?: number;
@@ -12,6 +14,8 @@ interface RealQRCodeProps {
   restaurantName?: string;
   showActions?: boolean;
   className?: string;
+  color?: string;
+  logoUrl?: string;
 }
 
 export default function RealQRCode({
@@ -20,21 +24,19 @@ export default function RealQRCode({
   tableNumber,
   restaurantName = 'Burger House نابلس',
   showActions = false,
-  className = ''
+  className = '',
+  color = '#0f172a',
+  logoUrl,
 }: RealQRCodeProps) {
   const [dataUrl, setDataUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  // Strictly format the URL so smartphone cameras ALWAYS recognize it as an actionable web link:
-  // 1) Must start with https://
-  // 2) Point to the live public domain menus-ps.vercel.app
-  // 3) Clean query parameters without invalid characters
+  // Strictly format the URL so smartphone cameras ALWAYS recognize it as an actionable web link
   const sanitizedUrl = useMemo(() => {
     if (!value) return '';
     let url = value.trim();
 
-    // If local, relative, or placeholder domain, route to the live production deployment
     if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('/') || url.includes('menus.ps') || url.includes('menus-ps.vercel.app')) {
       const match = url.match(/([?&].*)$/);
       const query = match ? match[1] : `?table=${tableNumber || 1}`;
@@ -44,7 +46,6 @@ export default function RealQRCode({
       url = `https://${url}`;
     }
 
-    // Force https protocol so phone cameras immediately detect URI schema
     if (url.startsWith('http://')) {
       url = url.replace('http://', 'https://');
     }
@@ -55,15 +56,14 @@ export default function RealQRCode({
   useEffect(() => {
     if (!sanitizedUrl) return;
 
-    // Generate high-resolution, high-contrast QR code
-    QRCode.toDataURL(sanitizedUrl, {
-      width: Math.max(size * 2.5, 450), // Ultra crisp resolution for print and camera scanning
-      margin: 1, // Compact clean white border
-      color: {
-        dark: '#000000', // Pure black for 100% camera contrast
-        light: '#ffffff'
-      },
-      errorCorrectionLevel: 'M' // Standard medium error correction (optimum for smartphone cameras)
+    // Generate high-resolution, branded QR code with colors & optional logo
+    generateBrandedQRCode({
+      text: sanitizedUrl,
+      size: Math.max(size * 2.5, 500),
+      color,
+      logoUrl,
+      restaurantName,
+      tableNumber,
     })
       .then((url) => {
         setDataUrl(url);
@@ -73,7 +73,7 @@ export default function RealQRCode({
         console.error('QR Generation error:', err);
         setError('تعذر توليد كود الـ QR');
       });
-  }, [sanitizedUrl, size]);
+  }, [sanitizedUrl, size, color, logoUrl, restaurantName, tableNumber]);
 
   const handleDownload = () => {
     if (!dataUrl) return;
