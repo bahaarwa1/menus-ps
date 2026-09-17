@@ -14,6 +14,15 @@ export async function middleware(request: NextRequest) {
   const method = request.method;
 
   // ──────────────────────────────────────────────────────────────────
+  // 0. PERMANENT REDIRECT FROM VERCEL.APP TO MENUS.COOL
+  // ──────────────────────────────────────────────────────────────────
+  const hostWithoutPort = (hostname.split(':')[0] || '').toLowerCase();
+  if (hostWithoutPort.endsWith('.vercel.app')) {
+    const redirectUrl = new URL(pathname + request.nextUrl.search, 'https://menus.cool');
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // ──────────────────────────────────────────────────────────────────
   // 1. BLOCK SENSITIVE HTTP METHODS ON NON-API ROUTES
   // ──────────────────────────────────────────────────────────────────
   const isMutationMethod = ['PUT', 'DELETE', 'PATCH'].includes(method);
@@ -37,7 +46,6 @@ export async function middleware(request: NextRequest) {
   // 3. MULTI-TENANT SUBDOMAIN EXTRACTION
   // ──────────────────────────────────────────────────────────────────
   let currentSubdomain: string | null = null;
-  const hostWithoutPort = hostname.split(':')[0].toLowerCase();
 
   if (hostWithoutPort.endsWith('.vercel.app')) {
     const parts = hostWithoutPort.replace('.vercel.app', '').split('.');
