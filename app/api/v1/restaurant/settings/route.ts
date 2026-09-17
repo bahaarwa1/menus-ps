@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         branchId: restaurant.branchId,
         branchName: restaurant.branchName,
         tablesCount: restaurant.tablesCount,
+        isActive: restaurant.isActive !== false,
+        subscription: restaurant.subscription,
       },
     });
   } catch (error) {

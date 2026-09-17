@@ -114,6 +114,7 @@ function FastFrictionlessMenuContent() {
 
   const notFoundParam = searchParams.get('notFound') === '1';
   const [isRestaurantNotFound, setIsRestaurantNotFound] = useState<boolean>(notFoundParam);
+  const [isRestaurantSuspended, setIsRestaurantSuspended] = useState<boolean>(false);
 
   // Instant 0ms menu state pre-hydrated ONLY for demo; registered restaurants start clean and load live from DB
   const [dbCategories, setDbCategories] = useState<MenuCategory[]>(isExplicitDemo ? initialCategories : []);
@@ -327,6 +328,13 @@ function FastFrictionlessMenuContent() {
         setIsRestaurantNotFound(false);
 
         if (settingsRes.success && settingsRes.settings) {
+          // Check suspension status immediately before rendering anything
+          if (settingsRes.settings.isActive === false) {
+            setIsRestaurantSuspended(true);
+            setMenuLoading(false);
+            return;
+          }
+          setIsRestaurantSuspended(false);
           if (settingsRes.settings.name) setActiveRestaurantName(settingsRes.settings.name);
           if (settingsRes.settings.city) setActiveRestaurantCity(settingsRes.settings.city);
           if (settingsRes.settings.logoUrl) setActiveRestaurantLogo(settingsRes.settings.logoUrl);
@@ -517,6 +525,41 @@ function FastFrictionlessMenuContent() {
     setWaiterCalled(true);
     setTimeout(() => setWaiterCalled(false), 5000);
   };
+
+  if (isRestaurantSuspended) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col justify-center items-center px-4 py-12 text-white font-sans antialiased" dir="rtl">
+        <div className="w-full max-w-md bg-slate-800/80 border border-slate-700/60 rounded-3xl shadow-2xl p-6 sm:p-8 text-center relative overflow-hidden">
+          <div className="absolute -top-16 -right-16 w-36 h-36 bg-rose-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="w-20 h-20 rounded-3xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center mx-auto mb-5 text-rose-400">
+            <AlertCircle size={40} className="stroke-[1.5]" />
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-500/15 text-rose-400 border border-rose-500/25 mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+            المطعم متوقف مؤقتاً
+          </span>
+          <h1 className="text-xl sm:text-2xl font-black text-white mb-3 leading-tight">
+            عذراً، هذا المطعم متوقف
+          </h1>
+          <p className="text-sm text-slate-400 mb-5 leading-relaxed">
+            تم إيقاف هذا المطعم مؤقتاً من قِبل الإدارة. يرجى التواصل مع إدارة المطعم للاستفسار عن إعادة الخدمة.
+          </p>
+          <div className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-4 mb-6 text-right">
+            <p className="text-[11px] text-slate-500 font-bold mb-1">رابط المطعم</p>
+            <p className="text-sm font-mono text-amber-400 font-bold">{activeRestaurantSlug}.menus.cool</p>
+          </div>
+          <a
+            href="/"
+            className="w-full py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <Home size={16} />
+            <span>العودة للصفحة الرئيسية</span>
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (isRestaurantNotFound) {
     return (

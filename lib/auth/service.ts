@@ -83,18 +83,20 @@ export async function authenticateWithEmailPassword(
 
       if (!error && data?.user) {
         const meta = data.user.user_metadata || {};
-        const appRole = (meta.role as UserRole) || 'admin';
+        const userEmail = (data.user.email || '').toLowerCase();
+        const isMaster = userEmail === 'almhtrf.information22@gmail.com' || userEmail === 'admin@menus.ps';
+        const appRole = isMaster ? 'admin' : ((meta.role as UserRole) || 'admin');
 
         return {
           success: true,
           session: {
             userId: data.user.id,
             email: data.user.email,
-            name: meta.full_name || 'مدير المطعم',
+            name: isMaster ? 'مدير المنصة الرئيسي' : (meta.full_name || 'مدير المطعم'),
             role: appRole,
-            branchId: meta.branch_id || '',
-            restaurantId: meta.restaurant_id || '',
-            restaurantSlug: meta.restaurant_slug || '',
+            branchId: isMaster ? 'master' : (meta.branch_id || ''),
+            restaurantId: isMaster ? 'platform-master' : (meta.restaurant_id || ''),
+            restaurantSlug: isMaster ? 'platform-master' : (meta.restaurant_slug || ''),
           },
         };
       }

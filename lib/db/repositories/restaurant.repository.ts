@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { hashPassword, hashPin, generateSecureToken, sanitizeInput } from '@/lib/security/crypto';
 import { appCache } from '@/lib/cache/lru-cache';
+import { parseSubscriptionFromAddress, SubscriptionInfo } from '@/lib/subscription/subscription.service';
 
 export interface RegisterRestaurantInput {
   name: string;
@@ -32,6 +33,8 @@ export interface RegisteredRestaurantResult {
   }>;
   logoUrl?: string;
   address?: string;
+  isActive?: boolean;
+  subscription?: SubscriptionInfo;
   ownerEmail?: string;
   ownerPassword?: string;
   createdAt: string;
@@ -341,14 +344,16 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
             // Fetch primary branch
             const { data: branchData } = await supabase
               .from('branches')
-              .select('id, name, address, tables_count')
+              .select('id, name, address, tables_count, is_active')
               .eq('restaurant_id', restData.id)
               .limit(1)
               .maybeSingle();
 
             const branchId = (branchData as any)?.id || restData.id;
             const branchName = (branchData as any)?.name || `${restData.name} — الفرع الرئيسي`;
-            const branchAddress = (branchData as any)?.address || '';
+            const rawBranchAddress = (branchData as any)?.address || '';
+            const { cleanAddress, subscription } = parseSubscriptionFromAddress(rawBranchAddress, restData.created_at);
+            const isActive = (branchData as any)?.is_active !== false;
 
             const { data: tablesData } = await supabase
               .from('tables')
@@ -375,7 +380,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               name: restData.name,
               slug: restData.slug,
               logoUrl: restData.logo_url || '',
-              address: branchAddress,
+              address: cleanAddress,
               phone: restData.phone || '',
               city: restData.city || 'نابلس',
               currency: restData.currency || '₪',
@@ -384,6 +389,8 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               branchName,
               tablesCount: tables.length,
               tables,
+              isActive,
+              subscription,
               createdAt: restData.created_at,
             };
 

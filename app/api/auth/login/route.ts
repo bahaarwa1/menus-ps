@@ -65,7 +65,14 @@ export async function POST(request: NextRequest) {
 
     // Determine safe redirect
     let target = typeof redirectTo === 'string' ? redirectTo.replace(/[^a-zA-Z0-9\/\-_?=&]/g, '') : '';
-    if (!target || !target.startsWith('/') || target.startsWith('//')) {
+    
+    // Master admin emails always go to /admin panel — no restaurant dashboard
+    const isMasterAdmin =
+      authResult.session.email === 'almhtrf.information22@gmail.com' ||
+      authResult.session.email === 'admin@menus.ps';
+    if (isMasterAdmin) {
+      target = '/admin';
+    } else if (!target || !target.startsWith('/') || target.startsWith('//')) {
       target = authResult.session.role === 'staff' || authResult.session.role === 'kitchen' ? '/staff' : '/dashboard';
     }
 

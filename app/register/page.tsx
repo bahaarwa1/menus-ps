@@ -212,6 +212,15 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // OTP Verification State
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
+
   // Success State
   const [createdRestaurant, setCreatedRestaurant] = useState<RegisteredRestaurantResult | null>(null);
 
@@ -315,24 +324,68 @@ export default function RegisterPage() {
       return;
     }
 
-    startTransition(async () => {
-      const res = await registerRestaurantAction({
-        name: restaurantName,
-        slug,
-        phone,
-        city,
-        ownerEmail,
-        password,
-        tablesCount,
+    // All validations passed: send OTP and show verification step
+    const formPayload = { name: restaurantName, slug, phone, city, ownerEmail, password, tablesCount };
+    setPendingFormData(formPayload);
+    setOtpError('');
+    setOtpCode('');
+    setOtpSending(true);
+    try {
+      const otpRes = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: ownerEmail }),
       });
+      const otpData = await otpRes.json();
+      if (otpData.success) {
+        setOtpSent(true);
+        setShowOtpStep(true);
+      } else {
+        setFormError(otpData.error || 'تعذر إرسال رمز التحقق');
+      }
+    } catch {
+      setFormError('خطأ في الاتصال بالسيرفر');
+    } finally {
+      setOtpSending(false);
+    }
+  };
 
-      if (!res.success || !res.restaurant) {
-        setFormError(res.error || 'حدث خطأ أثناء إنشاء المطعم');
+  const handleVerifyOtpAndRegister = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      setOtpError('يرجى إدخال الرمز المكون من 6 أرقام كاملاً');
+      return;
+    }
+    setOtpVerifying(true);
+    setOtpError('');
+    try {
+      const verifyRes = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingFormData.ownerEmail, code: otpCode }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        setOtpError(verifyData.error || 'رمز التحقق غير صحيح');
+        setOtpVerifying(false);
         return;
       }
-
-      setCreatedRestaurant(res.restaurant);
-    });
+      // OTP verified: register the restaurant
+      startTransition(async () => {
+        const res = await registerRestaurantAction(pendingFormData);
+        setOtpVerifying(false);
+        if (!res.success || !res.restaurant) {
+          setOtpError(res.error || 'حدث خطأ أثناء إنشاء المطعم');
+          setShowOtpStep(false);
+          setFormError(res.error || 'حدث خطأ أثناء إنشاء المطعم');
+          return;
+        }
+        setCreatedRestaurant(res.restaurant);
+        setShowOtpStep(false);
+      });
+    } catch {
+      setOtpError('خطأ في الاتصال بالسيرفر');
+      setOtpVerifying(false);
+    }
   };
 
   const copyUrl = (url: string) => {
@@ -352,6 +405,70 @@ export default function RegisterPage() {
       </div>
 
       <main className="w-full max-w-xl z-10 my-4">
+
+        {/* OTP Verification Modal Overlay */}
+        {showOtpStep && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="rtl">
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-full max-w-sm bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mx-auto mb-4 text-orange-400">
+                  <Mail size={32} />
+                </div>
+                <h2 className="text-lg font-black text-white mb-1">تحقق من بريدك الإلكتروني</h2>
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                  تم إرسال رمز تحقق مكون من 6 أرقام إلى<br />
+                  <span className="font-bold text-orange-400">{pendingFormData?.ownerEmail}</span>
+                </p>
+
+                {otpError && (
+                  <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold">
+                    {otpError}
+                  </div>
+                )}
+
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="• • • • • •"
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    dir="ltr"
+                    className="w-full text-center text-3xl font-black tracking-[0.5em] py-4 px-4 rounded-2xl bg-slate-800 border-2 border-slate-700 focus:border-orange-500 focus:outline-none text-white transition-all"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-2">الرمز صالح لمدة 10 دقائق</p>
+                </div>
+
+                <button
+                  onClick={handleVerifyOtpAndRegister}
+                  disabled={otpVerifying || isPending || otpCode.length !== 6}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {otpVerifying || isPending ? (
+                    <><Loader2 size={16} className="animate-spin" /> جارٍ التحقق والإنشاء...</>
+                  ) : (
+                    <><CheckCircle2 size={16} /> تحقق وأكمل التسجيل</>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowOtpStep(false)}
+                  disabled={otpVerifying || isPending}
+                  className="mt-3 text-xs text-slate-500 hover:text-slate-300 transition-all cursor-pointer"
+                >
+                  رجوع وتعديل البيانات
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {!createdRestaurant ? (
             /* =============================================================
@@ -646,13 +763,13 @@ export default function RegisterPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isPending || slugStatus === 'taken'}
+                  disabled={isPending || otpSending || slugStatus === 'taken'}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-orange-700 text-white font-black text-sm shadow-lg shadow-orange-500/25 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer mt-3"
                 >
-                  {isPending ? (
+                  {isPending || otpSending ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      <span>جاري حجز الرابط وتهيئة الطاولات...</span>
+                      <span>{otpSending ? 'جارٍ إرسال رمز التحقق...' : 'جاري حجز الرابط وتهيئة الطاولات...'}</span>
                     </>
                   ) : (
                     <>

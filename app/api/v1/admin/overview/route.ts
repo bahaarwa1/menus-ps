@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { parseSubscriptionFromAddress } from '@/lib/subscription/subscription.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
         branches (
           id,
           name,
+          address,
           tables_count,
           is_active,
           tables (
@@ -79,18 +81,25 @@ export async function GET(request: NextRequest) {
       const restOrders = allOrders.filter((o: any) => o.branch_id === branchId);
       const restRevenue = restOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || 0), 0);
 
+      const { cleanAddress, subscription } = parseSubscriptionFromAddress(
+        primaryBranch?.address,
+        r.created_at
+      );
+
       return {
         id: r.id,
         name: r.name,
         slug: r.slug,
         phone: r.phone || '',
         city: r.city || '',
+        address: cleanAddress,
         currency: r.currency || '₪',
         createdAt: r.created_at,
         subdomainUrl: `https://${r.slug}.menus.cool`,
         branchId: branchId || '',
         tablesCount: tablesCount,
         isActive: primaryBranch?.is_active !== false,
+        subscription,
         totalOrders: restOrders.length,
         totalRevenue: restRevenue,
       };
