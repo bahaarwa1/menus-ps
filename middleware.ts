@@ -25,13 +25,12 @@ export async function middleware(request: NextRequest) {
   // ──────────────────────────────────────────────────────────────────
   // 0.5. OAUTH CALLBACK CODE INTERCEPTION
   // If Supabase redirects the OAuth code to root (/?code=...) instead of
-  // /api/auth/callback, catch and forward it immediately.
+  // /auth/callback, catch and forward it to the client-side handler.
   // ──────────────────────────────────────────────────────────────────
   const oauthCode = request.nextUrl.searchParams.get('code');
-  if (oauthCode && (pathname === '/' || pathname === '')) {
-    const callbackUrl = new URL('/api/auth/callback', request.url);
+  if (oauthCode && pathname === '/') {
+    const callbackUrl = new URL('/auth/callback', request.url);
     callbackUrl.searchParams.set('code', oauthCode);
-    // Preserve any extra params (e.g. state)
     request.nextUrl.searchParams.forEach((val, key) => {
       if (key !== 'code') callbackUrl.searchParams.set(key, val);
     });

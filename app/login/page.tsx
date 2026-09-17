@@ -72,7 +72,7 @@ function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/callback`,
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : 'https://menus.cool'}/auth/callback`,
         },
       });
       if (error) {
