@@ -417,11 +417,9 @@ export function buildStandCardHtml(
       z-index: 10;
     }
     .glass-shield {
-      background: rgba(255, 255, 255, 0.93) !important;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid rgba(255, 255, 255, 0.95);
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
     }
     .glass-shield .restaurant-name { color: #0f172a !important; }
     .glass-shield .restaurant-tagline { color: #475569 !important; }

@@ -138,12 +138,11 @@ export async function generateBrandedQRCode({
         targetCtx.drawImage(img, dx, dy, dw, dh);
       };
 
-      // ── 2. Draw brand image at HIGH opacity so it's clearly visible ──
+      // ── 2. Draw brand image at 100% FULL opacity so it's completely clear ──
       if (logoImg && logoImg.width > 0) {
         ctx.save();
-        ctx.globalAlpha = 0.75; // prominent — like the Colonel's face in KFC
+        ctx.globalAlpha = 1.0; // 100% full opacity - no transparency
         coverDraw(ctx, logoImg, 0, 0, size, size);
-        ctx.globalAlpha = 1.0;
         ctx.restore();
       }
 
@@ -242,7 +241,7 @@ export async function generateBrandedQRCode({
       const ctx = canvas.getContext('2d');
 
       if (ctx) {
-        // 1. Draw full photo covering the canvas
+        // 1. Draw full photo covering the canvas at 100% full opacity (NO transparent wash or veil)
         const imgAspect = logoImg.width / logoImg.height;
         let drawW = size;
         let drawH = size;
@@ -257,43 +256,64 @@ export async function generateBrandedQRCode({
         }
         ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
 
-        // 2. Soft luminous wash (reduced white veil so photo is 62% clear and fully visible in all gaps)
-        ctx.fillStyle = reduceGaps ? 'rgba(255, 255, 255, 0.38)' : 'rgba(255, 255, 255, 0.68)';
-        ctx.fillRect(0, 0, size, size);
-
-        // 3. Draw high-contrast QR code modules with expanded dots to minimize empty gaps
-        const qr = QRCode.create(text, { errorCorrectionLevel: reduceGaps ? 'Q' : 'M' });
+        // 2. High-contrast QR code modules drawn directly on top with crisp contrast (NO white veil over the photo!)
+        const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
         const modCount = qr.modules.size;
         const margin = 1;
         const totalModules = modCount + margin * 2;
         const moduleSize = size / totalModules;
         const expand = reduceGaps ? moduleSize * 0.12 : 0;
 
-        ctx.fillStyle = color || '#0f172a';
+        // Draw crisp solid white backings for the 3 finder eyes for instantaneous camera locking
+        const finderStarts = [
+          [0, 0],
+          [modCount - 7, 0],
+          [0, modCount - 7],
+        ];
+        ctx.fillStyle = '#ffffff';
+        finderStarts.forEach(([c, r]) => {
+          const fx = (c + margin) * moduleSize - 2;
+          const fy = (r + margin) * moduleSize - 2;
+          const fSize = 7 * moduleSize + 4;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(fx, fy, fSize, fSize, 6);
+          } else {
+            ctx.rect(fx, fy, fSize, fSize);
+          }
+          ctx.fill();
+        });
+
+        // Draw data modules with crisp contrast against the photo
         for (let r = 0; r < modCount; r++) {
           for (let c = 0; c < modCount; c++) {
             if (qr.modules.get(r, c)) {
-              ctx.fillRect(
-                Math.max(0, (c + margin) * moduleSize - expand / 2),
-                Math.max(0, (r + margin) * moduleSize - expand / 2),
-                moduleSize + expand,
-                moduleSize + expand
-              );
+              const mx = (c + margin) * moduleSize - expand / 2;
+              const my = (r + margin) * moduleSize - expand / 2;
+              const mDim = moduleSize + expand;
+
+              // Crisp white backing per module so camera decodes instantly regardless of photo colors
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(mx - 0.75, my - 0.75, mDim + 1.5, mDim + 1.5);
+
+              // Solid brand color module
+              ctx.fillStyle = color || '#0f172a';
+              ctx.fillRect(mx, my, mDim, mDim);
             }
           }
         }
 
-        // 4. Center photo emblem when reduceGaps is enabled for 100% crystal-clear restaurant brand recognition
+        // 3. Center photo emblem when reduceGaps or center photo is desired
         if (reduceGaps) {
-          const badgeSize = Math.round(size * 0.22);
+          const badgeSize = Math.round(size * 0.24);
           const bX = Math.round((size - badgeSize) / 2);
           const bY = Math.round((size - badgeSize) / 2);
           const bRadius = Math.round(badgeSize * 0.26);
 
           ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-          ctx.shadowBlur = Math.round(size * 0.02);
-          ctx.shadowOffsetY = Math.round(size * 0.006);
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+          ctx.shadowBlur = Math.round(size * 0.025);
+          ctx.shadowOffsetY = Math.round(size * 0.008);
 
           ctx.beginPath();
           if (ctx.roundRect) {
@@ -312,8 +332,8 @@ export async function generateBrandedQRCode({
           } else {
             ctx.rect(bX, bY, badgeSize, badgeSize);
           }
-          ctx.lineWidth = Math.max(2, Math.round(size * 0.006));
-          ctx.strokeStyle = '#f59e0b'; // Elegant warm golden ring
+          ctx.lineWidth = Math.max(2, Math.round(size * 0.007));
+          ctx.strokeStyle = '#f59e0b'; // Warm golden border
           ctx.stroke();
 
           const pad = Math.round(badgeSize * 0.08);
