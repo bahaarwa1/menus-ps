@@ -459,7 +459,7 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293715_1px,transparent_1px),linear-gradient(to_bottom,#1f293715_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      <main className="w-full max-w-xl z-10 my-4">
+      <main className="w-full max-w-6xl z-10 my-4">
 
         {/* OTP Verification Modal Overlay */}
         {showOtpStep && (
@@ -527,17 +527,97 @@ export default function RegisterPage() {
         <AnimatePresence mode="wait">
           {!createdRestaurant ? (
             /* =============================================================
-               REGISTRATION FORM (ULTRA-PREMIUM & CLEAN LTR SUBDOMAIN)
+               REGISTRATION LAYOUT (DUAL COLUMN: FORM + BENEFITS SIDEBAR)
                ============================================================= */
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.3)] border border-white/20 p-6 sm:p-9 relative overflow-hidden"
-            >
-              {/* Top Accent Gradient Line */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+              
+              {/* LEFT SIDEBAR: BENEFITS & LIVE PREVIEW (lg:col-span-5) */}
+              <div className="hidden lg:flex lg:col-span-5 flex-col gap-4 text-white">
+                
+                {/* Brand & Setup Highlights */}
+                <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
+                  
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-base text-white">ماذا ستحصل فور التسجيل؟</h3>
+                      <p className="text-xs text-slate-400">تفعيل فوري خلال 30 ثانية بدون أي التزام</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                      <div className="w-6 h-6 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center shrink-0 font-bold mt-0.5">
+                        📱
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">منيو QR رقمي فائق السرعة</p>
+                        <p className="text-[11px] text-slate-400">كود QR مخصص لكل طاولة تفتحه كاميرا الهاتف فوراً بدون تنزيل تطبيق.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                      <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 font-bold mt-0.5">
+                        👨‍🍳
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">شاشة مطبخ فورية (KDS)</p>
+                        <p className="text-[11px] text-slate-400">الطلبات تنزل للمطبخ بلحظتها مع رنة تنبيه صوتي وإلغاء أخطاء الطلبات.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 font-bold mt-0.5">
+                        📈
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">زيادة المبيعات عبر AI</p>
+                        <p className="text-[11px] text-slate-400">اقتراحات تلقائية للأطباق والإضافات ترفع متوسط فاتورة الزبائن حتى +35%.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                      <div className="w-6 h-6 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 font-bold mt-0.5">
+                        🎁
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">14 يوماً تجربة مجانية كاملة</p>
+                        <p className="text-[11px] text-slate-400">بدون طلب بطاقة بنكية وبدون أي عمولات على مبيعات مطعمك.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subdomain Live Preview Card */}
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 text-xs">
+                  <span className="text-slate-400 font-bold block mb-1.5 flex items-center gap-1.5">
+                    <Globe size={14} className="text-orange-400" />
+                    <span>معاينة رابط مطعمك المباشر:</span>
+                  </span>
+                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-orange-400 text-xs font-bold truncate text-left" dir="ltr">
+                    https://{slug || 'your-restaurant'}.menus.cool
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>🇵🇸 موثوق في فلسطين</span>
+                    <span className="text-emerald-400 font-bold">جاهز للتفعيل الفوري ✓</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* RIGHT / MAIN: REGISTRATION FORM (lg:col-span-7) */}
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="lg:col-span-7 bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-9 relative overflow-hidden"
+              >
+                {/* Top Accent Gradient Line */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600" />
 
               {/* Single Official Logo & Header */}
               <div className="text-center mb-6">
@@ -911,6 +991,7 @@ export default function RegisterPage() {
 
               </form>
             </motion.div>
+            </div>
           ) : (
             /* =============================================================
                SUCCESS SCREEN (INSTANT AUTO-PROVISIONING COMPLETE)
