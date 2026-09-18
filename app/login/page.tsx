@@ -140,101 +140,6 @@ function LoginForm() {
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-orange-500 selection:text-white" dir={direction}>
       
       {/* =========================================================================
-          LEFT PANEL: RICH BRAND SHOWCASE & LIVE PRODUCT PREVIEW (Desktop Only)
-      ========================================================================= */}
-      <div className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 xl:p-14 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 border-e border-slate-800/80 text-white">
-        
-        {/* Ambient Glows */}
-        <div className="absolute -top-20 -right-20 w-[480px] h-[480px] bg-orange-500/15 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-[450px] h-[450px] bg-sky-500/10 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
-
-        {/* Top: Logo & Palestine Badge */}
-        <div className="relative z-10 flex items-center justify-between">
-          <Logo size="md" href="/" />
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-slate-300 text-xs font-bold shadow-xs">
-            <span>🇵🇸</span>
-            <span>{isEn ? 'The #1 Restaurant OS in Palestine' : 'المنصة الأولى لإدارة المطاعم في فلسطين'}</span>
-          </div>
-        </div>
-
-        {/* Middle: Brand Headline + Live Floating Cards */}
-        <div className="relative z-10 my-8 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-black mb-3">
-            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-            <span>{isEn ? 'Fast • Smart • Zero Extra Hardware' : 'سريع • ذكي • بدون تكلفة أجهزة'}</span>
-          </div>
-
-          <h2 className="text-3xl xl:text-[2.6rem] font-black text-white leading-tight mb-4 tracking-tight">
-            {isEn ? (
-              <>Unified Command Center <br /><span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">For Your Entire Dining Room</span></>
-            ) : (
-              <>نظام تشغيل متكامل <br /><span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">لمطعمك، مطبخك، وزبائنك</span></>
-            )}
-          </h2>
-
-          <p className="text-sm xl:text-base text-slate-300 leading-relaxed mb-6 font-medium">
-            {isEn 
-              ? 'Ultra-fast QR digital menu per table, live kitchen screen sync, and smart AI upselling to boost restaurant sales.' 
-              : 'منيو رقمي فائق السرعة بكود QR، ومزامنة حية بلحظتها مع شاشة المطبخ (KDS)، ومساعد ذكاء اصطناعي لرفع مبيعات مطعمك.'}
-          </p>
-
-          {/* Live Order Ticket Telemetry Preview */}
-          <div className="space-y-3">
-            <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs font-black text-white">
-                    {isEn ? 'Live Table Order • Table 12' : 'طلب حي ومباشر • طاولة 12'}
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
-                  0.1s Sync
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-bold text-slate-200">2x دبل سماش برغر + 1x تشيز فرايز</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">⚡ وصل شاشة المطبخ تلقائياً بدون نادل</p>
-                </div>
-                <span className="text-base font-black text-orange-400">64 ₪</span>
-              </div>
-            </div>
-
-            {/* 3 Metric Pills */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
-                <p className="text-lg font-black text-emerald-400">+35%</p>
-                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Avg Ticket Growth' : 'زيادة المبيعات'}</p>
-              </div>
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
-                <p className="text-lg font-black text-orange-400">0 ₪</p>
-                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Hardware Cost' : 'أجهزة إضافية'}</p>
-              </div>
-              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
-                <p className="text-lg font-black text-sky-400">0%</p>
-                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Sales Commission' : 'عمولات مبيعات'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom: Cities & Security */}
-        <div className="relative z-10 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <div className="flex items-center gap-1.5 font-medium">
-            <ShieldCheck size={15} className="text-emerald-400" />
-            <span>{isEn ? 'End-to-end encrypted restaurant cloud' : 'سحابة آمنة ومحمية بتشفير 256-bit'}</span>
-          </div>
-          <span className="text-[11px] text-slate-500">
-            {isEn ? 'Nablus • Ramallah • Jerusalem • Hebron' : 'نابلس • رام الله • القدس • الخليل • بيت لحم'}
-          </span>
-        </div>
-
-      </div>
-
-
-      {/* =========================================================================
           RIGHT PANEL: THE AUTH FORM (Responsive & Perfectly Centered)
       ========================================================================= */}
       <div className="w-full lg:w-[45%] min-h-screen flex items-center justify-center p-4 sm:p-8 lg:p-12 relative bg-slate-950 sm:bg-slate-900/40">
@@ -542,6 +447,100 @@ function LoginForm() {
           </div>
 
         </motion.div>
+      </div>
+
+      {/* =========================================================================
+          LEFT PANEL: RICH BRAND SHOWCASE & LIVE PRODUCT PREVIEW (Placed Second so in RTL it renders on the LEFT)
+      ========================================================================= */}
+      <div className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 xl:p-14 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 border-s border-slate-800/80 text-white">
+        
+        {/* Ambient Glows */}
+        <div className="absolute -top-20 -right-20 w-[480px] h-[480px] bg-orange-500/15 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-[450px] h-[450px] bg-sky-500/10 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
+
+        {/* Top: Logo & Palestine Badge */}
+        <div className="relative z-10 flex items-center justify-between">
+          <Logo size="md" href="/" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-slate-300 text-xs font-bold shadow-xs">
+            <span>🇵🇸</span>
+            <span>{isEn ? 'The #1 Restaurant OS in Palestine' : 'المنصة الأولى لإدارة المطاعم في فلسطين'}</span>
+          </div>
+        </div>
+
+        {/* Middle: Brand Headline + Live Floating Cards */}
+        <div className="relative z-10 my-8 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-black mb-3">
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+            <span>{isEn ? 'Fast • Smart • Zero Extra Hardware' : 'سريع • ذكي • بدون تكلفة أجهزة'}</span>
+          </div>
+
+          <h2 className="text-3xl xl:text-[2.6rem] font-black text-white leading-tight mb-4 tracking-tight">
+            {isEn ? (
+              <>Unified Command Center <br /><span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">For Your Entire Dining Room</span></>
+            ) : (
+              <>نظام تشغيل متكامل <br /><span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">لمطعمك، مطبخك، وزبائنك</span></>
+            )}
+          </h2>
+
+          <p className="text-sm xl:text-base text-slate-300 leading-relaxed mb-6 font-medium">
+            {isEn 
+              ? 'Ultra-fast QR digital menu per table, live kitchen screen sync, and smart AI upselling to boost restaurant sales.' 
+              : 'منيو رقمي فائق السرعة بكود QR، ومزامنة حية بلحظتها مع شاشة المطبخ (KDS)، ومساعد ذكاء اصطناعي لرفع مبيعات مطعمك.'}
+          </p>
+
+          {/* Live Order Ticket Telemetry Preview */}
+          <div className="space-y-3">
+            <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-xs font-black text-white">
+                    {isEn ? 'Live Table Order • Table 12' : 'طلب حي ومباشر • طاولة 12'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
+                  0.1s Sync
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-bold text-slate-200">2x دبل سماش برغر + 1x تشيز فرايز</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">⚡ وصل شاشة المطبخ تلقائياً بدون نادل</p>
+                </div>
+                <span className="text-base font-black text-orange-400">64 ₪</span>
+              </div>
+            </div>
+
+            {/* 3 Metric Pills */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
+                <p className="text-lg font-black text-emerald-400">+35%</p>
+                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Avg Ticket Growth' : 'زيادة المبيعات'}</p>
+              </div>
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
+                <p className="text-lg font-black text-orange-400">0 ₪</p>
+                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Hardware Cost' : 'أجهزة إضافية'}</p>
+              </div>
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
+                <p className="text-lg font-black text-sky-400">0%</p>
+                <p className="text-[10px] text-slate-400 font-bold">{isEn ? 'Sales Commission' : 'عمولات مبيعات'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom: Cities & Security */}
+        <div className="relative z-10 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck size={15} className="text-emerald-400" />
+            <span>{isEn ? 'End-to-end encrypted restaurant cloud' : 'سحابة آمنة ومحمية بتشفير 256-bit'}</span>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            {isEn ? 'Nablus • Ramallah • Jerusalem • Hebron' : 'نابلس • رام الله • القدس • الخليل • بيت لحم'}
+          </span>
+        </div>
+
       </div>
 
     </div>

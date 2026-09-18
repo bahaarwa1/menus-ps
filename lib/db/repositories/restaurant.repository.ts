@@ -35,6 +35,14 @@ export interface RegisteredRestaurantResult {
   address?: string;
   isActive?: boolean;
   subscription?: SubscriptionInfo;
+  whatsappNumber?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  offersBannerUrl?: string;
+  offersBannerTitle?: string;
+  offersBannerSubtitle?: string;
+  offersBannerActive?: boolean;
   ownerEmail?: string;
   ownerPassword?: string;
   createdAt: string;
@@ -449,6 +457,14 @@ export interface UpdateRestaurantSettingsInput {
   address?: string;
   currency?: string;
   staffPin?: string;
+  whatsappNumber?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  offersBannerUrl?: string;
+  offersBannerTitle?: string;
+  offersBannerSubtitle?: string;
+  offersBannerActive?: boolean;
 }
 
 /**
@@ -466,6 +482,14 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
     if (input.city) existing.city = input.city.trim();
     if (input.address !== undefined) existing.address = input.address.trim();
     if (input.currency) existing.currency = input.currency.trim();
+    if (input.whatsappNumber !== undefined) existing.whatsappNumber = input.whatsappNumber.trim();
+    if (input.instagramUrl !== undefined) existing.instagramUrl = input.instagramUrl.trim();
+    if (input.facebookUrl !== undefined) existing.facebookUrl = input.facebookUrl.trim();
+    if (input.tiktokUrl !== undefined) existing.tiktokUrl = input.tiktokUrl.trim();
+    if (input.offersBannerUrl !== undefined) existing.offersBannerUrl = input.offersBannerUrl.trim();
+    if (input.offersBannerTitle !== undefined) existing.offersBannerTitle = input.offersBannerTitle.trim();
+    if (input.offersBannerSubtitle !== undefined) existing.offersBannerSubtitle = input.offersBannerSubtitle.trim();
+    if (input.offersBannerActive !== undefined) existing.offersBannerActive = input.offersBannerActive;
     global.__menusRestaurantsStore?.set(cleanSlug, existing);
   }
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Store, Globe, Check, Save, Shield, Loader2, AlertCircle, 
   ExternalLink, Upload, Image as ImageIcon, Trash2, Clock, 
-  MapPin, Phone
+  MapPin, Phone, MessageCircle, Share2, Sparkles, Tag, Percent, Flame
 } from 'lucide-react';
 
 const PRESET_LOGOS = [
@@ -14,6 +14,39 @@ const PRESET_LOGOS = [
   { label: 'مشاوي ومأكولات شرقية', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&auto=format&fit=crop&q=80' },
   { label: 'شاورما وساندوتشات', url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=200&auto=format&fit=crop&q=80' },
   { label: 'حلويات ومخبوزات', url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=200&auto=format&fit=crop&q=80' },
+];
+
+const PRESET_BANNERS = [
+  { 
+    label: 'برجر وسماش عائلي', 
+    url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1000&auto=format&fit=crop&q=80', 
+    title: 'عرض التوفير للوجبات العائلية 🔥', 
+    subtitle: 'خصم 20% على جميع وجبات البرجر والسماش - اطلب الآن واستمتع!' 
+  },
+  { 
+    label: 'بيتزا إيطالية طازجة', 
+    url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1000&auto=format&fit=crop&q=80', 
+    title: 'عروض البيتزا الكبرى 🍕', 
+    subtitle: 'اطلب 2 بيتزا كبيرة واحصل على مشروب غازي وبطاطا مقرمشة مجاناً' 
+  },
+  { 
+    label: 'دجاج مقلي ومسحب كرسبي', 
+    url: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=1000&auto=format&fit=crop&q=80', 
+    title: 'كرانشي كومبو دجاج مقلي 🍗', 
+    subtitle: 'قطع دجاج مقرمشة وذهبية مع صوص الشيف الخاص وبطاطا ودجز' 
+  },
+  { 
+    label: 'مشاوي ومأكولات شرقية', 
+    url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&auto=format&fit=crop&q=80', 
+    title: 'سدر المشاوي الملكي 🥩', 
+    subtitle: 'تشكيلة كباب وشقف وشيش طاووق طازجة على الفحم يومياً' 
+  },
+  { 
+    label: 'حلويات ومشروبات منعشة', 
+    url: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=1000&auto=format&fit=crop&q=80', 
+    title: 'حلّي يومك بأشهى الحلويات 🍰', 
+    subtitle: 'وافل، كريب، وتشيز كيك طازج مع تشكيلة من أشهى العصائر الطبيعية' 
+  },
 ];
 
 export default function ProductionSettingsPage() {
@@ -31,6 +64,19 @@ export default function ProductionSettingsPage() {
   const [openingHours, setOpeningHours] = useState('يومياً من 11:00 صباحاً حتى 12:00 منتصف الليل');
   const [isOpen, setIsOpen] = useState(true);
 
+  // Social Media Links
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
+
+  // Offers & Discounts Banner
+  const [offersBannerUrl, setOffersBannerUrl] = useState('https://images.unsplash.com/photo-1550547660-d9450f859349?w=1000&auto=format&fit=crop&q=80');
+  const [offersBannerTitle, setOffersBannerTitle] = useState('عروض وخصومات اليوم 🔥');
+  const [offersBannerSubtitle, setOffersBannerSubtitle] = useState('خصم 20% على جميع الأصناف لفترة محدودة');
+  const [offersBannerActive, setOffersBannerActive] = useState(true);
+  const [isBannerUploading, setIsBannerUploading] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +84,7 @@ export default function ProductionSettingsPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch real settings on mount
   useEffect(() => {
@@ -57,6 +104,28 @@ export default function ProductionSettingsPage() {
           } catch {}
         }
 
+        const effectiveSlug = activeSlug || 'burger-house-nablus';
+
+        // Load local caches first for instant display
+        try {
+          const savedSocial = localStorage.getItem(`restaurant_social_${effectiveSlug}`);
+          if (savedSocial) {
+            const parsed = JSON.parse(savedSocial);
+            if (parsed.whatsappNumber) setWhatsappNumber(parsed.whatsappNumber);
+            if (parsed.instagramUrl) setInstagramUrl(parsed.instagramUrl);
+            if (parsed.facebookUrl) setFacebookUrl(parsed.facebookUrl);
+            if (parsed.tiktokUrl) setTiktokUrl(parsed.tiktokUrl);
+          }
+          const savedOffers = localStorage.getItem(`restaurant_offers_${effectiveSlug}`);
+          if (savedOffers) {
+            const parsed = JSON.parse(savedOffers);
+            if (parsed.bannerUrl) setOffersBannerUrl(parsed.bannerUrl);
+            if (parsed.title) setOffersBannerTitle(parsed.title);
+            if (parsed.subtitle) setOffersBannerSubtitle(parsed.subtitle);
+            if (parsed.active !== undefined) setOffersBannerActive(parsed.active);
+          }
+        } catch {}
+
         const settingsUrl = `/api/v1/restaurant/settings${activeSlug ? `?slug=${encodeURIComponent(activeSlug)}` : ''}`;
         const res = await fetch(settingsUrl);
         const data = await res.json();
@@ -69,6 +138,14 @@ export default function ProductionSettingsPage() {
           setCity(data.settings.city || 'نابلس');
           setAddress(data.settings.address || '');
           setCurrency(data.settings.currency || '₪');
+          if (data.settings.whatsappNumber) setWhatsappNumber(data.settings.whatsappNumber);
+          if (data.settings.instagramUrl) setInstagramUrl(data.settings.instagramUrl);
+          if (data.settings.facebookUrl) setFacebookUrl(data.settings.facebookUrl);
+          if (data.settings.tiktokUrl) setTiktokUrl(data.settings.tiktokUrl);
+          if (data.settings.offersBannerUrl) setOffersBannerUrl(data.settings.offersBannerUrl);
+          if (data.settings.offersBannerTitle) setOffersBannerTitle(data.settings.offersBannerTitle);
+          if (data.settings.offersBannerSubtitle) setOffersBannerSubtitle(data.settings.offersBannerSubtitle);
+          if (data.settings.offersBannerActive !== undefined) setOffersBannerActive(data.settings.offersBannerActive);
         }
       } catch (err) {
         console.error('Error fetching settings:', err);
@@ -112,6 +189,38 @@ export default function ProductionSettingsPage() {
     }
   };
 
+  // Handle Banner Upload via Supabase Storage API
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsBannerUploading(true);
+    setErrorMessage('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.url) {
+        setOffersBannerUrl(data.url);
+        setSavedMessage('تم رفع بانر العروض بنجاح! اضغط على حفظ التغييرات لاعتمادها.');
+        setTimeout(() => setSavedMessage(''), 4000);
+      } else {
+        setErrorMessage(data.error || 'فشل رفع صورة البانر');
+      }
+    } catch {
+      setErrorMessage('حدث خطأ أثناء رفع بانر العروض');
+    } finally {
+      setIsBannerUploading(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -131,19 +240,41 @@ export default function ProductionSettingsPage() {
           address,
           currency,
           staffPin,
+          whatsappNumber,
+          instagramUrl,
+          facebookUrl,
+          tiktokUrl,
+          offersBannerUrl,
+          offersBannerTitle,
+          offersBannerSubtitle,
+          offersBannerActive,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        setSavedMessage(data.message || 'تم حفظ جميع التعديلات وشعار المطعم بنجاح!');
+        setSavedMessage(data.message || 'تم حفظ جميع التعديلات بنجاح وتحديث كافة الأنظمة المرتبطة!');
         setTimeout(() => setSavedMessage(''), 4000);
+        
+        const effectiveSlug = slug || 'burger-house-nablus';
         try {
-          const effectiveSlug = slug || 'burger-house-nablus';
           sessionStorage.setItem(`restaurant_meta_${effectiveSlug}`, JSON.stringify({
             name: restaurantName,
             logoUrl: logoUrl || '',
             city: city || '',
+          }));
+          localStorage.setItem(`restaurant_social_${effectiveSlug}`, JSON.stringify({
+            whatsappNumber,
+            instagramUrl,
+            facebookUrl,
+            tiktokUrl,
+            phone,
+          }));
+          localStorage.setItem(`restaurant_offers_${effectiveSlug}`, JSON.stringify({
+            bannerUrl: offersBannerUrl,
+            title: offersBannerTitle,
+            subtitle: offersBannerSubtitle,
+            active: offersBannerActive,
           }));
         } catch {}
       } else {
@@ -403,7 +534,238 @@ export default function ProductionSettingsPage() {
           </div>
         </div>
 
-        {/* Section 3: Currency, Taxes & Hours */}
+        {/* Section 3: Social Media Links (تظهر في رأس منيو الزبائن) */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+              <Share2 size={16} className="text-orange-500" />
+              <span>صفحات وحسابات التواصل الاجتماعي للمطعم</span>
+            </h2>
+            <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+              تظهر كأزرار اتصال وتواصل في رأس المنيو
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+            أضف روابط حسابات مطعمك لتظهر لزبائنك في أعلى قائمة الطعام، مما يمكّنهم من متابعتكم على إنستغرام، تيك توك، ومحادثتكم فوراً عبر واتساب.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <MessageCircle size={14} className="text-emerald-500" />
+                <span>رقم الواتساب المباشر للزبائن (WhatsApp)</span>
+              </label>
+              <input
+                type="text"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="مثال: 970599000000 أو 0599000000"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 font-mono"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">يفتح محادثة واتساب فورية بكبسة زر</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <span className="text-pink-500 font-black text-xs">📸</span>
+                <span>حساب أو رابط إنستغرام (Instagram)</span>
+              </label>
+              <input
+                type="text"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                placeholder="مثال: @restaurant_name أو رابط كامل"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">رابط صفحة مطعمك على إنستغرام</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <span className="text-blue-600 font-black text-xs">📘</span>
+                <span>رابط صفحة فيسبوك (Facebook)</span>
+              </label>
+              <input
+                type="text"
+                value={facebookUrl}
+                onChange={(e) => setFacebookUrl(e.target.value)}
+                placeholder="مثال: https://facebook.com/restaurant"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <span className="text-slate-900 font-black text-xs">🎵</span>
+                <span>حساب أو رابط تيك توك (TikTok)</span>
+              </label>
+              <input
+                type="text"
+                value={tiktokUrl}
+                onChange={(e) => setTiktokUrl(e.target.value)}
+                placeholder="مثال: @restaurant_tiktok"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Promotional Offers Hero Banner (بانر العروض والخصومات بالمنيو) */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+              <Flame size={16} className="text-orange-500" />
+              <span>بانر العروض والخصومات الرئيسي (Hero Offer Banner)</span>
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600">تفعيل البانر في المنيو:</span>
+              <button
+                type="button"
+                onClick={() => setOffersBannerActive(!offersBannerActive)}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                  offersBannerActive ? 'bg-orange-500' : 'bg-slate-300'
+                }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                    offersBannerActive ? 'translate-x-[-1.25rem]' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+            صورة إعلانية كبيرة وجذابة تظهر في أعلى منيو الزبائن للترويج لعروضك اليومية، الخصومات الحصرية، أو وجبات التوفير العائلية.
+          </p>
+
+          {/* Banner Live Preview */}
+          <div className="mb-5 relative rounded-2xl overflow-hidden shadow-md border border-slate-200 aspect-[21/9] sm:aspect-[24/9] bg-slate-900 group">
+            {offersBannerUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img 
+                src={offersBannerUrl} 
+                alt="بانر العروض" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-400">
+                <ImageIcon size={32} />
+              </div>
+            )}
+            
+            {/* Gradient Overlay & Text */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="bg-orange-500 text-white text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                  <Sparkles size={11} /> عرض مميز
+                </span>
+                <span className="bg-black/60 backdrop-blur-xs text-amber-300 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border border-amber-400/30">
+                  🔥 خصومات حصرية
+                </span>
+              </div>
+              <h3 className="text-white font-black text-sm sm:text-lg leading-tight mb-0.5">
+                {offersBannerTitle || 'عنوان العرض الترويجي'}
+              </h3>
+              <p className="text-slate-200 text-[11px] sm:text-xs font-medium line-clamp-1">
+                {offersBannerSubtitle || 'تفاصيل العرض ونسبة الخصم الخاصة بالمطعم'}
+              </p>
+            </div>
+          </div>
+
+          {/* Banner Quick Presets */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold text-slate-700 mb-2">
+              اختر تصميماً جاهزاً بنقرة واحدة أو اكتب رابط صورة خاصة:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+              {PRESET_BANNERS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setOffersBannerUrl(preset.url);
+                    setOffersBannerTitle(preset.title);
+                    setOffersBannerSubtitle(preset.subtitle);
+                  }}
+                  className={`rounded-xl border p-1 text-right transition-all group overflow-hidden ${
+                    offersBannerUrl === preset.url
+                      ? 'border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                  }`}
+                >
+                  <div className="aspect-video rounded-lg overflow-hidden mb-1.5 bg-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={preset.url} alt={preset.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  </div>
+                  <span className="block text-[11px] font-black text-slate-800 truncate px-1">{preset.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Banner Custom URL and Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">رابط صورة البانر (URL أو رفع صورة)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={offersBannerUrl}
+                  onChange={(e) => setOffersBannerUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 font-mono"
+                  dir="ltr"
+                />
+                <input
+                  type="file"
+                  ref={bannerInputRef}
+                  onChange={handleBannerUpload}
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={isBannerUploading}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1 shrink-0 transition-colors"
+                >
+                  {isBannerUploading ? (
+                    <Loader2 size={13} className="animate-spin text-orange-500" />
+                  ) : (
+                    <Upload size={13} />
+                  )}
+                  <span>رفع صورة</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">عنوان العرض الترويجي الرئيسي</label>
+              <input
+                type="text"
+                value={offersBannerTitle}
+                onChange={(e) => setOffersBannerTitle(e.target.value)}
+                placeholder="مثال: عروض نهاية الأسبوع العائلية 🔥"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">تفاصيل العرض أو الخصم (Subtitle)</label>
+              <input
+                type="text"
+                value={offersBannerSubtitle}
+                onChange={(e) => setOffersBannerSubtitle(e.target.value)}
+                placeholder="مثال: خصم 20% على جميع وجبات الكرسبي والسماش"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 5: Currency, Taxes & Hours */}
         <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
           <h2 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
             <Globe size={16} className="text-orange-500" />

@@ -7,12 +7,53 @@ import {
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
   Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2,
-  Store, Home, Lock
+  Store, Home, Lock, MessageCircle, Share2, PhoneCall
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+import { 
+  translateFoodName, 
+  translateFoodDescription, 
+  translateCategoryName, 
+  translateExtraName 
+} from '@/lib/smart-food-translator';
 
 import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
+
+// --- Smart Food Image Helper with Appetizing Fallbacks ---
+function getSmartFoodImage(item: MenuItem): string {
+  if (item.imageUrl && item.imageUrl.trim() && item.imageUrl.startsWith('http')) return item.imageUrl;
+  if (item.image && item.image.trim() && (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/'))) return item.image;
+  
+  const name = (item.name || '').toLowerCase();
+  const cat = (item.category || '').toLowerCase();
+  
+  if (name.includes('برجر') || name.includes('burger') || cat.includes('burger')) {
+    return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('بيتزا') || name.includes('pizza') || cat.includes('pizza')) {
+    return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('دجاج') || name.includes('chicken') || name.includes('مسحب') || name.includes('بسشب') || name.includes('كرسبي') || name.includes('بروستد') || name.includes('ستربس') || name.includes('شاورما') || name.includes('زنجر')) {
+    return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('سلط') || name.includes('salad')) {
+    return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('عصير') || name.includes('مشروب') || name.includes('كولا') || name.includes('drink') || name.includes('juice') || cat.includes('drink')) {
+    return 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('حلو') || name.includes('كيك') || name.includes('dessert') || name.includes('وافل') || name.includes('كريب')) {
+    return 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('مشاوي') || name.includes('لحم') || name.includes('كباب') || name.includes('steak')) {
+    return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80';
+  }
+  if (name.includes('بطاطا') || name.includes('fries') || name.includes('مقبلات')) {
+    return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&auto=format&fit=crop&q=80';
+}
 
 // --- DB-driven types (mirrors PublicMenuCategory from menu.repository) ---
 interface Extra { id: string; name: string; price: number; }
@@ -106,6 +147,15 @@ export interface CustomerMenuClientProps {
     branchId?: string;
     branchName?: string;
     isActive?: boolean;
+    phone?: string;
+    whatsappNumber?: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
+    tiktokUrl?: string;
+    offersBannerUrl?: string;
+    offersBannerTitle?: string;
+    offersBannerSubtitle?: string;
+    offersBannerActive?: boolean;
   } | null;
   initialCategories?: MenuCategory[];
   initialMenuItems?: MenuItem[];
@@ -298,6 +348,90 @@ export default function CustomerMenuClient({
   const [activeRestaurantCity, setActiveRestaurantCity] = useState<string>(initialSettings?.city || (isExplicitDemo ? 'نابلس' : ''));
   const [activeBranchId, setActiveBranchId] = useState<string>(initialSettings?.branchId || '');
 
+  // Social media links
+  const [socialWhatsapp, setSocialWhatsapp] = useState<string>(initialSettings?.whatsappNumber || initialSettings?.phone || '');
+  const [socialInstagram, setSocialInstagram] = useState<string>(initialSettings?.instagramUrl || '');
+  const [socialFacebook, setSocialFacebook] = useState<string>(initialSettings?.facebookUrl || '');
+  const [socialTiktok, setSocialTiktok] = useState<string>(initialSettings?.tiktokUrl || '');
+  const [restaurantPhone, setRestaurantPhone] = useState<string>(initialSettings?.phone || '');
+
+  // Promotional Hero Banner
+  const [offersBannerUrl, setOffersBannerUrl] = useState<string>(
+    initialSettings?.offersBannerUrl || 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1000&auto=format&fit=crop&q=80'
+  );
+  const [offersBannerTitle, setOffersBannerTitle] = useState<string>(
+    initialSettings?.offersBannerTitle || 'عروض وخصومات اليوم 🔥'
+  );
+  const [offersBannerSubtitle, setOffersBannerSubtitle] = useState<string>(
+    initialSettings?.offersBannerSubtitle || 'خصم 20% على الوجبات المميزة - لفترة محدودة'
+  );
+  const [offersBannerActive, setOffersBannerActive] = useState<boolean>(
+    initialSettings?.offersBannerActive !== undefined ? initialSettings.offersBannerActive : true
+  );
+
+  // Sync with localStorage for instant 0ms updates when configured in dashboard
+  useEffect(() => {
+    const slugToUse = resolvedSlug || activeRestaurantSlug;
+    if (!slugToUse) return;
+    try {
+      const savedSocial = localStorage.getItem(`restaurant_social_${slugToUse}`);
+      if (savedSocial) {
+        const parsed = JSON.parse(savedSocial);
+        if (parsed.whatsappNumber) setSocialWhatsapp(parsed.whatsappNumber);
+        if (parsed.instagramUrl) setSocialInstagram(parsed.instagramUrl);
+        if (parsed.facebookUrl) setSocialFacebook(parsed.facebookUrl);
+        if (parsed.tiktokUrl) setSocialTiktok(parsed.tiktokUrl);
+        if (parsed.phone) setRestaurantPhone(parsed.phone);
+      }
+      const savedOffers = localStorage.getItem(`restaurant_offers_${slugToUse}`);
+      if (savedOffers) {
+        const parsed = JSON.parse(savedOffers);
+        if (parsed.bannerUrl) setOffersBannerUrl(parsed.bannerUrl);
+        if (parsed.title) setOffersBannerTitle(parsed.title);
+        if (parsed.subtitle) setOffersBannerSubtitle(parsed.subtitle);
+        if (parsed.active !== undefined) setOffersBannerActive(parsed.active);
+      }
+    } catch {}
+  }, [resolvedSlug, activeRestaurantSlug]);
+
+  const cleanWhatsappUrl = useMemo(() => {
+    const num = (socialWhatsapp || restaurantPhone || '').replace(/\D/g, '');
+    if (!num) return '';
+    return `https://wa.me/${num}`;
+  }, [socialWhatsapp, restaurantPhone]);
+
+  const cleanInstagramUrl = useMemo(() => {
+    if (!socialInstagram) return '';
+    if (socialInstagram.startsWith('http')) return socialInstagram;
+    const handle = socialInstagram.replace(/^@/, '').trim();
+    return `https://instagram.com/${handle}`;
+  }, [socialInstagram]);
+
+  const cleanFacebookUrl = useMemo(() => {
+    if (!socialFacebook) return '';
+    if (socialFacebook.startsWith('http')) return socialFacebook;
+    return `https://facebook.com/${socialFacebook.trim()}`;
+  }, [socialFacebook]);
+
+  const cleanTiktokUrl = useMemo(() => {
+    if (!socialTiktok) return '';
+    if (socialTiktok.startsWith('http')) return socialTiktok;
+    const handle = socialTiktok.replace(/^@/, '').trim();
+    return `https://tiktok.com/@${handle}`;
+  }, [socialTiktok]);
+
+  const cleanPhoneUrl = useMemo(() => {
+    const p = (restaurantPhone || socialWhatsapp || '').trim();
+    return p ? `tel:${p}` : '';
+  }, [restaurantPhone, socialWhatsapp]);
+
+  // Featured / Top dishes for 2-row section
+  const featuredItems = useMemo(() => {
+    const popular = dbMenuItems.filter(i => i.popular);
+    if (popular.length >= 2) return popular.slice(0, 4);
+    return dbMenuItems.slice(0, 4);
+  }, [dbMenuItems]);
+
   // Synchronize state when SSR props update
   useEffect(() => {
     if (initialCategories && initialCategories.length > 0) {
@@ -385,6 +519,15 @@ export default function CustomerMenuClient({
           if (data.settings.city) setActiveRestaurantCity(data.settings.city);
           if (data.settings.logoUrl) setActiveRestaurantLogo(data.settings.logoUrl);
           if (data.settings.branchId) setActiveBranchId(data.settings.branchId);
+          if (data.settings.whatsappNumber) setSocialWhatsapp(data.settings.whatsappNumber);
+          if (data.settings.instagramUrl) setSocialInstagram(data.settings.instagramUrl);
+          if (data.settings.facebookUrl) setSocialFacebook(data.settings.facebookUrl);
+          if (data.settings.tiktokUrl) setSocialTiktok(data.settings.tiktokUrl);
+          if (data.settings.phone) setRestaurantPhone(data.settings.phone);
+          if (data.settings.offersBannerUrl) setOffersBannerUrl(data.settings.offersBannerUrl);
+          if (data.settings.offersBannerTitle) setOffersBannerTitle(data.settings.offersBannerTitle);
+          if (data.settings.offersBannerSubtitle) setOffersBannerSubtitle(data.settings.offersBannerSubtitle);
+          if (data.settings.offersBannerActive !== undefined) setOffersBannerActive(data.settings.offersBannerActive);
         }
 
         if (data.success && Array.isArray(data.categories)) {
@@ -811,6 +954,74 @@ export default function CustomerMenuClient({
             </div>
           </div>
 
+          {/* Social Media & Contact Quick Bar */}
+          {(cleanWhatsappUrl || cleanInstagramUrl || cleanFacebookUrl || cleanTiktokUrl || cleanPhoneUrl) && (
+            <div className="px-3 pb-2 pt-0.5 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+              <span className="text-[10px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
+                <Share2 size={10} className="text-orange-500" />
+                <span>{language === 'ar' ? 'تابعنا:' : 'Social:'}</span>
+              </span>
+              {cleanWhatsappUrl && (
+                <a
+                  href={cleanWhatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  title="WhatsApp"
+                >
+                  <MessageCircle size={10} className="text-emerald-600" />
+                  <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>
+                </a>
+              )}
+              {cleanInstagramUrl && (
+                <a
+                  href={cleanInstagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-0.5 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  title="Instagram"
+                >
+                  <span className="text-[10px]">📸</span>
+                  <span>{language === 'ar' ? 'إنستغرام' : 'Instagram'}</span>
+                </a>
+              )}
+              {cleanFacebookUrl && (
+                <a
+                  href={cleanFacebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  title="Facebook"
+                >
+                  <span className="text-[10px]">📘</span>
+                  <span>{language === 'ar' ? 'فيسبوك' : 'Facebook'}</span>
+                </a>
+              )}
+              {cleanTiktokUrl && (
+                <a
+                  href={cleanTiktokUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-0.5 rounded-full bg-slate-900 hover:bg-black text-white text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  title="TikTok"
+                >
+                  <span className="text-[10px]">🎵</span>
+                  <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
+                </a>
+              )}
+              {cleanPhoneUrl && (
+                <a
+                  href={cleanPhoneUrl}
+                  className="px-2.5 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  title="Call"
+                >
+                  <PhoneCall size={10} className="text-orange-600" />
+                  <span>{language === 'ar' ? 'اتصال' : 'Call'}</span>
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Search Input Bar */}
           <div className="px-3 pb-2">
             <div className="relative">
@@ -862,7 +1073,7 @@ export default function CustomerMenuClient({
               {dbCategories.map((cat) => {
                 const isActive = activeCategory === cat.id && !searchQuery;
                 const catName = language === 'en' 
-                  ? (cat.id === 'burgers' ? 'Burgers' : cat.id === 'wraps' ? 'Wraps' : cat.id === 'sides' ? 'Sides' : cat.id === 'drinks' ? 'Drinks' : cat.id === 'desserts' ? 'Desserts' : cat.name)
+                  ? translateCategoryName(cat.name, 'en')
                   : cat.name;
                 const catCount = dbMenuItems.filter(m => m.category === cat.id).length;
                 return (
@@ -1002,109 +1213,255 @@ export default function CustomerMenuClient({
               </p>
             </div>
           ) : (
-            filteredItems.map((item: MenuItem) => {
-              const qty = cartQuantities[item.id] || 0;
-              const note = itemNotes[item.id];
-              const extras = selectedExtras[item.id] || [];
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => openProductModal(item)}
-                  className={`bg-white rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer relative overflow-hidden group ${
-                    qty > 0 
-                      ? 'border-orange-500 ring-2 ring-orange-500/15 bg-orange-50/10' 
-                      : 'border-slate-200/70 hover:border-orange-200'
-                  }`}
-                >
-                  {/* Left (RTL Right): Details & Pricing */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                      <h3 className="font-bold text-sm sm:text-base text-slate-900 leading-snug group-hover:text-orange-600 transition-colors">
-                        {item.name}
-                      </h3>
-                      {item.popular && (
-                        <span className="bg-amber-50 text-amber-800 border border-amber-200/60 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Flame size={10} className="text-amber-500" /> {language === 'ar' ? 'الأكثر طلباً' : 'Popular'}
-                        </span>
-                      )}
-                      {item.spicy && (
-                        <span className="text-xs" title={language === 'ar' ? "حار وسبايسي" : "Spicy"}>🌶️</span>
-                      )}
+            <div className="space-y-4">
+              {/* 1. Large Hero Promotional Offers Banner (صورة كبيرة وعروض ترويجية قابلة للتبديل) */}
+              {!searchQuery && offersBannerActive && offersBannerUrl && (
+                <div className="relative rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 aspect-[21/9] sm:aspect-[24/9] bg-slate-900 group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={offersBannerUrl} 
+                    alt={offersBannerTitle || "Special Offers"} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex flex-col justify-end p-3.5 sm:p-4.5">
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <span className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                        <Sparkles size={11} />
+                        <span>{language === 'ar' ? 'عرض حصري' : 'Special Deal'}</span>
+                      </span>
+                      <span className="bg-black/50 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
+                        🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Offer'}
+                      </span>
                     </div>
-
-                    <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-3">
-                      {item.description}
+                    <h2 className="text-white font-black text-sm sm:text-lg leading-tight mb-0.5 drop-shadow-md">
+                      {language === 'en' ? translateFoodName(offersBannerTitle, 'en') : offersBannerTitle}
+                    </h2>
+                    <p className="text-slate-200 text-[11px] sm:text-xs font-medium line-clamp-1 drop-shadow-sm">
+                      {language === 'en' ? translateFoodDescription(offersBannerSubtitle, 'en') : offersBannerSubtitle}
                     </p>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-baseline gap-0.5">
-                        <span className="font-extrabold text-sm sm:text-base text-slate-900">{item.price}</span>
-                        <span className="text-xs text-orange-600 font-bold">₪</span>
-                      </div>
-
-                      {/* Customization label if active */}
-                      {(note || extras.length > 0) && (
-                        <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Edit3 size={10} />
-                          <span>
-                            {language === 'ar' 
-                              ? `مخصص (${extras.length > 0 ? `+${extras.length}` : 'ملاحظة'})` 
-                              : `Custom (${extras.length > 0 ? `+${extras.length}` : 'note'})`}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right (RTL Left): Food Image & Quick Action */}
-                  <div className="flex flex-col items-center gap-2 shrink-0">
-                    <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative shadow-2xs">
-                      {item.imageUrl || (item.image && (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/'))) ? (
-                        <img 
-                          src={item.imageUrl || item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl bg-orange-50">
-                          {item.image || '🍽️'}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Stepper or Add Button */}
-                    {qty === 0 ? (
-                      <button
-                        onClick={(e) => addOne(item.id, e)}
-                        className="w-full min-h-[32px] px-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer"
-                      >
-                        <Plus size={13} strokeWidth={3} />
-                        <span>{language === 'ar' ? 'أضف' : 'Add'}</span>
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-1.5 bg-orange-500 text-white p-0.5 rounded-xl shadow-xs">
-                        <button
-                          onClick={(e) => removeOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
-                        >
-                          <Minus size={12} strokeWidth={3} />
-                        </button>
-                        <span className="font-extrabold text-xs min-w-[18px] text-center">{qty}</span>
-                        <button
-                          onClick={(e) => addOne(item.id, e)}
-                          className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
-                        >
-                          <Plus size={12} strokeWidth={3} />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
-              );
-            })
+              )}
+
+              {/* 2. Top / Featured Items in 2 Rows (الأصناف سطرين تحت صورة العروض) */}
+              {!searchQuery && (activeCategory === 'all' || !activeCategory) && featuredItems.length > 0 && (
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
+                      <Flame size={15} className="text-orange-500 fill-orange-500" />
+                      <span>{language === 'ar' ? 'الأكثر طلباً والعروض المميزة' : 'Top Specials & Best Sellers'}</span>
+                    </h3>
+                    <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200/60">
+                      {language === 'ar' ? 'موصى بها 🔥' : 'Recommended 🔥'}
+                    </span>
+                  </div>
+
+                  {/* 2-Row Grid for Top Items (سطرين للأصناف المميزة) */}
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    {featuredItems.slice(0, 4).map((item) => {
+                      const qty = cartQuantities[item.id] || 0;
+                      const foodImg = getSmartFoodImage(item);
+                      const translatedTitle = language === 'en' ? translateFoodName(item.name, 'en') : item.name;
+                      const translatedDesc = language === 'en' ? translateFoodDescription(item.description, 'en') : item.description;
+
+                      return (
+                        <div
+                          key={`featured-${item.id}`}
+                          onClick={() => openProductModal(item)}
+                          className={`bg-white rounded-2xl p-2.5 border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer relative group ${
+                            qty > 0 ? 'border-orange-500 ring-2 ring-orange-500/15 bg-orange-50/10' : 'border-slate-200/80 hover:border-orange-200'
+                          }`}
+                        >
+                          {/* Top Food Photo with Badge */}
+                          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 mb-2 shadow-2xs">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={foodImg}
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                            <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-amber-300/30">
+                              <Flame size={9} className="text-orange-400 fill-orange-400" />
+                              <span>{language === 'ar' ? 'الأكثر طلباً' : 'Popular'}</span>
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate mb-0.5 group-hover:text-orange-600 transition-colors">
+                              {translatedTitle}
+                            </h4>
+                            <p className="text-[10px] text-slate-500 line-clamp-1 mb-2">
+                              {translatedDesc}
+                            </p>
+                          </div>
+
+                          {/* Bottom Row: Price + Add Button */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                            <div className="flex items-baseline gap-0.5">
+                              <span className="font-black text-xs sm:text-sm text-slate-900">{item.price}</span>
+                              <span className="text-[10px] text-orange-600 font-bold">₪</span>
+                            </div>
+
+                            {qty === 0 ? (
+                              <button
+                                onClick={(e) => addOne(item.id, e)}
+                                className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                              >
+                                <Plus size={11} strokeWidth={3} />
+                                <span>{language === 'ar' ? 'أضف' : 'Add'}</span>
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-1 bg-orange-500 text-white px-1 py-0.5 rounded-lg shadow-2xs">
+                                <button
+                                  onClick={(e) => removeOne(item.id, e)}
+                                  className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
+                                >
+                                  <Minus size={10} strokeWidth={3} />
+                                </button>
+                                <span className="font-bold text-[10px] sm:text-xs min-w-[14px] text-center">{qty}</span>
+                                <button
+                                  onClick={(e) => addOne(item.id, e)}
+                                  className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
+                                >
+                                  <Plus size={10} strokeWidth={3} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. All Menu Items in Modern 2-Column Grid (وتحتهن الباقي بشبكة ثنائية أنيقة) */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
+                    <Utensils size={14} className="text-orange-500" />
+                    <span>
+                      {searchQuery 
+                        ? (language === 'ar' ? `نتائج البحث عن "${searchQuery}"` : `Search results for "${searchQuery}"`)
+                        : activeCategory === 'all'
+                          ? (language === 'ar' ? 'جميع أطباق القائمة' : 'All Menu Dishes')
+                          : (language === 'en' ? translateCategoryName(dbCategories.find(c => c.id === activeCategory)?.name || '', 'en') : (dbCategories.find(c => c.id === activeCategory)?.name || 'الأصناف'))}
+                    </span>
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">
+                    {filteredItems.length} {language === 'ar' ? 'أصناف' : 'dishes'}
+                  </span>
+                </div>
+
+                {/* 2-Column Food Grid */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                  {filteredItems.map((item: MenuItem) => {
+                    const qty = cartQuantities[item.id] || 0;
+                    const note = itemNotes[item.id];
+                    const extras = selectedExtras[item.id] || [];
+                    const foodImg = getSmartFoodImage(item);
+                    const translatedTitle = language === 'en' ? translateFoodName(item.name, 'en') : item.name;
+                    const translatedDesc = language === 'en' ? translateFoodDescription(item.description, 'en') : item.description;
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => openProductModal(item)}
+                        className={`bg-white rounded-2xl p-2.5 sm:p-3 border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer relative group ${
+                          qty > 0 
+                            ? 'border-orange-500 ring-2 ring-orange-500/15 bg-orange-50/10' 
+                            : 'border-slate-200/80 hover:border-orange-200'
+                        }`}
+                      >
+                        {/* Top Photo */}
+                        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 mb-2 shadow-2xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={foodImg}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 items-end">
+                            {item.popular && (
+                              <span className="bg-black/60 backdrop-blur-xs text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-amber-300/30">
+                                <Flame size={9} className="text-orange-400 fill-orange-400" />
+                                <span>{language === 'ar' ? 'الأكثر طلباً' : 'Popular'}</span>
+                              </span>
+                            )}
+                            {item.spicy && (
+                              <span className="bg-red-950/70 backdrop-blur-xs text-rose-300 text-[9px] font-black px-1.5 py-0.5 rounded-md border border-red-500/30">
+                                🌶️ {language === 'ar' ? 'حار' : 'Spicy'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug group-hover:text-orange-600 transition-colors mb-1 line-clamp-1">
+                            {translatedTitle}
+                          </h4>
+                          <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium line-clamp-2 leading-relaxed mb-2">
+                            {translatedDesc}
+                          </p>
+
+                          {/* Customization label if active */}
+                          {(note || extras.length > 0) && (
+                            <div className="mb-2">
+                              <span className="text-[9px] font-bold text-orange-700 bg-orange-50 border border-orange-200/80 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                <Edit3 size={8} />
+                                <span>
+                                  {language === 'ar' 
+                                    ? `مخصص (${extras.length > 0 ? `+${extras.length}` : 'ملاحظة'})` 
+                                    : `Custom (${extras.length > 0 ? `+${extras.length}` : 'note'})`}
+                                </span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom: Price + Stepper or Add Button */}
+                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="font-extrabold text-xs sm:text-sm text-slate-900">{item.price}</span>
+                            <span className="text-[10px] text-orange-600 font-bold">₪</span>
+                          </div>
+
+                          {qty === 0 ? (
+                            <button
+                              onClick={(e) => addOne(item.id, e)}
+                              className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                            >
+                              <Plus size={11} strokeWidth={3} />
+                              <span>{language === 'ar' ? 'أضف' : 'Add'}</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1 bg-orange-500 text-white px-1 py-0.5 rounded-lg shadow-2xs">
+                              <button
+                                onClick={(e) => removeOne(item.id, e)}
+                                className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
+                              >
+                                <Minus size={10} strokeWidth={3} />
+                              </button>
+                              <span className="font-bold text-[10px] sm:text-xs min-w-[14px] text-center">{qty}</span>
+                              <button
+                                onClick={(e) => addOne(item.id, e)}
+                                className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
+                              >
+                                <Plus size={10} strokeWidth={3} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </main>
 
@@ -1161,20 +1518,14 @@ export default function CustomerMenuClient({
 
                 {/* Product Image Header */}
                 <div className="relative h-44 sm:h-52 w-full bg-orange-50 shrink-0 overflow-hidden">
-                  {selectedProduct.imageUrl || (selectedProduct.image && (selectedProduct.image.startsWith('http') || selectedProduct.image.startsWith('data:') || selectedProduct.image.startsWith('/'))) ? (
-                    <img 
-                      src={selectedProduct.imageUrl || selectedProduct.image} 
-                      alt={selectedProduct.name} 
-                      className="w-full h-full object-cover" 
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl">
-                      {selectedProduct.image || '🍽️'}
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={getSmartFoodImage(selectedProduct)} 
+                    alt={selectedProduct.name} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
                   
                   <button 
                     onClick={() => setSelectedProduct(null)} 
@@ -1187,8 +1538,12 @@ export default function CustomerMenuClient({
                     <div className="inline-block px-2.5 py-0.5 rounded-full bg-orange-500 text-white font-bold text-xs mb-1 shadow-xs">
                       {selectedProduct.price} ₪
                     </div>
-                    <h3 className="text-xl font-bold leading-tight">{selectedProduct.name}</h3>
-                    <p className="text-xs text-white/90 font-medium mt-0.5 line-clamp-2">{selectedProduct.description}</p>
+                    <h3 className="text-xl font-bold leading-tight">
+                      {language === 'en' ? translateFoodName(selectedProduct.name, 'en') : selectedProduct.name}
+                    </h3>
+                    <p className="text-xs text-white/90 font-medium mt-0.5 line-clamp-2">
+                      {language === 'en' ? translateFoodDescription(selectedProduct.description, 'en') : selectedProduct.description}
+                    </p>
                   </div>
                 </div>
 
@@ -1220,7 +1575,9 @@ export default function CustomerMenuClient({
                                 }`}>
                                   {isChecked && <Check size={12} strokeWidth={3} />}
                                 </div>
-                                <span className="text-xs font-bold text-slate-800">{extra.name}</span>
+                                <span className="text-xs font-bold text-slate-800">
+                                  {language === 'en' ? translateExtraName(extra.name, 'en') : extra.name}
+                                </span>
                               </div>
                               <span className="text-xs font-bold text-orange-600">+{extra.price} ₪</span>
                             </label>
@@ -1325,11 +1682,14 @@ export default function CustomerMenuClient({
                   {cartItemsList.map((ci) => (
                     <div key={ci.item.id} className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-slate-900">{ci.item.name}</p>
+                        <p className="font-bold text-sm text-slate-900">
+                          {language === 'en' ? translateFoodName(ci.item.name, 'en') : ci.item.name}
+                        </p>
                         
                         {ci.extras.length > 0 && (
                           <p className="text-xs text-slate-400 font-medium mt-0.5">
-                            {language === 'ar' ? 'إضافات: ' : 'Extras: '}{ci.extras.join('، ')}
+                            {language === 'ar' ? 'إضافات: ' : 'Extras: '}
+                            {ci.extras.map(e => language === 'en' ? translateExtraName(e, 'en') : e).join('، ')}
                           </p>
                         )}
                         {ci.note && (

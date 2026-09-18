@@ -35,6 +35,14 @@ export async function GET(request: NextRequest) {
         tablesCount: restaurant.tablesCount,
         isActive: restaurant.isActive !== false,
         subscription: restaurant.subscription,
+        whatsappNumber: restaurant.whatsappNumber || '',
+        instagramUrl: restaurant.instagramUrl || '',
+        facebookUrl: restaurant.facebookUrl || '',
+        tiktokUrl: restaurant.tiktokUrl || '',
+        offersBannerUrl: restaurant.offersBannerUrl || '',
+        offersBannerTitle: restaurant.offersBannerTitle || '',
+        offersBannerSubtitle: restaurant.offersBannerSubtitle || '',
+        offersBannerActive: restaurant.offersBannerActive !== false,
       },
     });
   } catch (error) {
@@ -59,7 +67,11 @@ export async function POST(request: NextRequest) {
     const session = token ? await verifySession(token) : null;
 
     const body = await request.json();
-    const { name, logoUrl, phone, city, address, currency, staffPin, slug } = body;
+    const { 
+      name, logoUrl, phone, city, address, currency, staffPin, slug,
+      whatsappNumber, instagramUrl, facebookUrl, tiktokUrl,
+      offersBannerUrl, offersBannerTitle, offersBannerSubtitle, offersBannerActive
+    } = body;
 
     const targetSlug = slug || session?.restaurantSlug || 'burger-house-nablus';
 
@@ -79,6 +91,14 @@ export async function POST(request: NextRequest) {
       address,
       currency,
       staffPin,
+      whatsappNumber,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
+      offersBannerUrl,
+      offersBannerTitle,
+      offersBannerSubtitle,
+      offersBannerActive,
     });
 
     if (!success) {

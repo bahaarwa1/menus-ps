@@ -102,6 +102,15 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
           logoUrl: '',
           currency: '₪',
           isActive: true,
+          phone: '+970599000000',
+          whatsappNumber: '+970599000000',
+          instagramUrl: '@burgerhouse_ps',
+          facebookUrl: 'https://facebook.com',
+          tiktokUrl: '@burgerhouse',
+          offersBannerUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1000&auto=format&fit=crop&q=80',
+          offersBannerTitle: 'عروض الوجبات العائلية المميزة 🔥',
+          offersBannerSubtitle: 'خصم 20% على وجبات الكرسبي والسماش لفترة محدودة',
+          offersBannerActive: true,
         }}
         initialCategories={precomputedDemoCategories}
         initialMenuItems={precomputedDemoItems}
@@ -159,6 +168,15 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
         branchId: restaurant.branchId || '',
         branchName: restaurant.branchName || '',
         isActive: !isSuspended,
+        phone: restaurant.phone || '',
+        whatsappNumber: (restaurant as any).whatsappNumber || restaurant.phone || '',
+        instagramUrl: (restaurant as any).instagramUrl || '',
+        facebookUrl: (restaurant as any).facebookUrl || '',
+        tiktokUrl: (restaurant as any).tiktokUrl || '',
+        offersBannerUrl: (restaurant as any).offersBannerUrl || '',
+        offersBannerTitle: (restaurant as any).offersBannerTitle || '',
+        offersBannerSubtitle: (restaurant as any).offersBannerSubtitle || '',
+        offersBannerActive: (restaurant as any).offersBannerActive !== false,
       }
     : null;
 

@@ -14,37 +14,21 @@ export default function PricingPage() {
 
   const plans = isEn ? [
     {
-      id: 'starter',
-      name: 'Starter',
-      subtitle: 'For cafes, food trucks & small bistros',
-      monthlyPrice: 99,
-      yearlyPrice: 79,
-      popular: false,
-      features: [
-        'Unlimited digital menu items',
-        'Custom encrypted QR code per table',
-        'Real-time price & menu editing',
-        'Live stock & 86-item availability toggling',
-        'Priority technical support via WhatsApp'
-      ],
-      ctaText: 'Start with Starter',
-      ctaStyle: 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-    },
-    {
       id: 'pro',
       name: 'Pro Complete',
-      subtitle: 'Most popular for active busy dining rooms',
+      subtitle: 'Most popular for active busy restaurants & cafes',
       monthlyPrice: 250,
       yearlyPrice: 199,
       popular: true,
       badge: 'Most Popular 🔥',
       features: [
-        'Everything in Starter plan',
-        'Direct table ordering without waiting',
-        'Shared table dining & unified tabs',
+        'Unlimited digital QR menu items',
+        'Direct table ordering with live sync',
         'Smart AI upselling engine (+35% sales)',
         'Live Kitchen Display Screen (KDS)',
-        'Promotions, discounts & combo builder'
+        'Promotions, discounts & combo builder',
+        'Custom QR stand card designer & branding',
+        'Direct priority WhatsApp & phone support'
       ],
       ctaText: 'Start 14-Day Free Trial',
       ctaStyle: 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25'
@@ -52,54 +36,38 @@ export default function PricingPage() {
     {
       id: 'enterprise',
       name: 'Chains & Enterprise',
-      subtitle: 'For large venues and multi-branch brands',
+      subtitle: 'For multi-branch restaurants & hospitality groups',
       monthlyPrice: 399,
       yearlyPrice: 319,
       popular: false,
       features: [
         'Everything in Pro plan',
-        'Multi-branch management under one login',
+        'Multi-branch management under one account',
         'Cross-branch performance analytics',
-        'Custom branding, domain & color palette',
+        'Custom domain & dedicated restaurant branding',
         'Unlimited staff & manager logins',
         'Dedicated account manager & staff onboarding'
       ],
-      ctaText: 'Contact Sales',
+      ctaText: 'Contact Sales / Custom Setup',
       ctaStyle: 'bg-slate-900 hover:bg-slate-800 text-white'
     }
   ] : [
     {
-      id: 'starter',
-      name: 'الأساسية',
-      subtitle: 'للمقاهي وعربات الطعام',
-      monthlyPrice: 99,
-      yearlyPrice: 79,
-      popular: false,
-      features: [
-        'منيو QR رقمي غير محدود الأصناف',
-        'كود QR مخصص لكل طاولة',
-        'تعديل فوري للأسعار والأطباق',
-        'إدارة حالات التوفر ونفاد الكمية',
-        'دعم فني سريع عبر واتساب'
-      ],
-      ctaText: 'ابدأ بالأساسية',
-      ctaStyle: 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-    },
-    {
       id: 'pro',
       name: 'برو المتكاملة',
-      subtitle: 'الأكثر طلباً للمطاعم النشطة',
+      subtitle: 'الخطة الأكثر طلباً للمطاعم والكافيهات النشطة',
       monthlyPrice: 250,
       yearlyPrice: 199,
       popular: true,
       badge: 'الأكثر شعبية 🔥',
       features: [
-        'كل ما في الباقة الأساسية',
-        'طلب مباشر من الطاولة بدون انتظار',
-        'جلسات طاولة مشتركة وحساب موحد',
-        'نظام Upselling لزيادة متوسط الفاتورة',
-        'لوحة إدارة الطلبات الحية الفورية',
-        'نظام العروض والخصومات الخاصة'
+        'منيو QR رقمي غير محدود الأصناف والتعديل',
+        'طلب مباشر من الطاولة بدون انتظار نادل',
+        'نظام الذكاء الاصطناعي لزيادة المبيعات (+35%)',
+        'شاشة موظفي وتجهيز المطبخ الحية (KDS)',
+        'نظام العروض والخصومات والكومبو الخاص',
+        'استوديو تصميم خلفيات ستاند الطاولة المطبوع',
+        'دعم فني مباشر ومخصص عبر واتساب وهاتف'
       ],
       ctaText: 'ابدأ تجربة مجانية (14 يوم)',
       ctaStyle: 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25'
@@ -107,19 +75,19 @@ export default function PricingPage() {
     {
       id: 'enterprise',
       name: 'سلاسل وفروع',
-      subtitle: 'للمطاعم الكبيرة ومتعددة الفروع',
+      subtitle: 'للمطاعم الكبيرة متعددة الفروع والماركات',
       monthlyPrice: 399,
       yearlyPrice: 319,
       popular: false,
       features: [
-        'كل ما في باقة برو',
-        'إدارة فروع متعددة من حساب واحد',
+        'كل ما في باقة برو المتكاملة',
+        'إدارة فروع متعددة من حساب مركزي واحد',
         'تقارير أداء وتحليلات مقارنة الفروع',
-        'تخصيص كامل للهوية والشعار والألوان',
+        'تخصيص كامل للهوية والدومين الخاص',
         'حسابات غير محدودة للمشرفين والموظفين',
         'مدير حساب مخصص وتدريب للطاقم'
       ],
-      ctaText: 'تواصل مع المبيعات',
+      ctaText: 'تواصل مع المبيعات / تفعيل',
       ctaStyle: 'bg-slate-900 hover:bg-slate-800 text-white'
     }
   ];
@@ -127,10 +95,10 @@ export default function PricingPage() {
   return (
     <PublicLayout>
       <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] pt-10 sm:pt-20 pb-12 px-4 flex flex-col justify-center" dir={direction}>
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-5xl">
           
           {/* Header & Billing Toggle */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-8">
             <motion.h1 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -141,7 +109,7 @@ export default function PricingPage() {
             <p className="text-xs sm:text-base text-slate-600 mb-4 max-w-xl mx-auto">
               {isEn 
                 ? 'Choose the right plan for your restaurant and start your 14-day free trial immediately.' 
-                : 'اختر الخطة المناسبة لحجم مطعمك وابدأ فوراً بتجربة مجانية كاملة لمدة 14 يوم.'}
+                : 'اختر الخطة المناسبة لمطعمك وابدأ فوراً بتجربة مجانية كاملة لمدة 14 يوم.'}
             </p>
 
             {/* Toggle Billing */}
@@ -172,8 +140,8 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* 3 Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+          {/* 2 Executive Plans Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
             {plans.map((plan, idx) => {
               const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
 
