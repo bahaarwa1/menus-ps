@@ -92,6 +92,8 @@ export function printThermalReceipt(order: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type StandCardTheme =
+  | 'crystal_gold'
+  | 'imperial_obsidian'
   | 'modern_luxury'
   | 'clean_minimal'
   | 'burger_grill'
@@ -124,7 +126,7 @@ export function buildStandCardHtml(
   const cardsHtml = stands.map((stand, idx) => {
     const brandColor = stand.brandColor || defaultBrandColor || '#f2722b';
     const theme: StandCardTheme =
-      stand.cardTheme || globalOptions?.cardTheme || (stand.cardBgImage || globalOptions?.cardBgImage ? 'custom_bg' : 'modern_luxury');
+      stand.cardTheme || globalOptions?.cardTheme || (stand.cardBgImage || globalOptions?.cardBgImage ? 'custom_bg' : 'crystal_gold');
     const bgImage = stand.cardBgImage || globalOptions?.cardBgImage || '';
     const taglineText =
       stand.tagline ||
@@ -136,12 +138,17 @@ export function buildStandCardHtml(
         : 'قائمة الطعام';
 
     // Theme-specific inline style overrides
-    let themeWrapClass = 'theme-luxury';
-    if (theme === 'clean_minimal') themeWrapClass = 'theme-minimal';
+    let themeWrapClass = 'theme-crystal';
+    if (theme === 'crystal_gold') themeWrapClass = 'theme-crystal';
+    else if (theme === 'imperial_obsidian') themeWrapClass = 'theme-obsidian';
+    else if (theme === 'modern_luxury') themeWrapClass = 'theme-luxury';
+    else if (theme === 'clean_minimal') themeWrapClass = 'theme-minimal';
     else if (theme === 'burger_grill') themeWrapClass = 'theme-burger';
     else if (theme === 'cafe_warm') themeWrapClass = 'theme-cafe';
     else if (theme === 'oriental_heritage') themeWrapClass = 'theme-oriental';
-    else if (theme === 'custom_bg') themeWrapClass = 'theme-custom';
+    else if (theme === 'custom_bg') {
+      themeWrapClass = 'theme-crystal';
+    }
 
     const hasBgImage = Boolean(bgImage);
 
@@ -154,30 +161,46 @@ export function buildStandCardHtml(
           <div class="card-bg-overlay"></div>
         ` : ''}
 
-        <!-- Background Overlay / Inset Frame -->
-        <div class="card-frame-border"></div>
+        <!-- Royal Central Stand Plaque (لوح الطاولة الملكي الموحد والمزخرف) -->
+        <div class="stand-plaque">
+          
+          <!-- 4 Royal Corner Filigrees (زخارف الأركان الكلاسيكية الفاخرة) -->
+          <svg class="corner-filigree corner-tl" viewBox="0 0 32 32" fill="none">
+            <path d="M2 2h22M2 2v22M5 5h14M5 5v14M2 2l10 10M5 5l7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="15" cy="15" r="2.2" fill="currentColor"/>
+          </svg>
+          <svg class="corner-filigree corner-tr" viewBox="0 0 32 32" fill="none">
+            <path d="M30 2H8M30 2v22M27 5H13M27 5v14M30 2L20 12M27 5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="17" cy="15" r="2.2" fill="currentColor"/>
+          </svg>
+          <svg class="corner-filigree corner-bl" viewBox="0 0 32 32" fill="none">
+            <path d="M2 30h22M2 30V8M5 27h14M5 27V13M2 30l10-10M5 27l7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="15" cy="17" r="2.2" fill="currentColor"/>
+          </svg>
+          <svg class="corner-filigree corner-br" viewBox="0 0 32 32" fill="none">
+            <path d="M30 30H8M30 30V8M27 27H13M27 27V13M30 30L20 20M27 27l-7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="17" cy="17" r="2.2" fill="currentColor"/>
+          </svg>
 
-        <!-- Center Shield Container -->
-        <div class="center-shield">
+          <!-- Inner Hairline Border (الإطار الداخلي المذهب) -->
+          <div class="plaque-inset-frame"></div>
 
-          <!-- Top Brand Capsule (كبسولة أنيقة شفافة لحماية وضوح نصوص الهوية وشعار المطعم) -->
-          <div class="brand-capsule">
-            <!-- Top Welcome Ribbon -->
+          <!-- Top Brand & Identity Section -->
+          <div class="brand-section">
             <div class="welcome-ribbon">
-              <span class="welcome-star">✦</span>
-              <span class="welcome-text">أهلاً وسهلاً بكم</span>
-              <span class="welcome-star">✦</span>
+              <span class="ribbon-leaf">❖</span>
+              <span class="ribbon-text">أهلاً وسهلاً بكم</span>
+              <span class="ribbon-leaf">❖</span>
             </div>
 
-            <!-- Restaurant Brand Header -->
             <div class="brand-header">
               ${stand.logoUrl ? `
-                <div class="logo-ring" style="border-color: ${brandColor};">
+                <div class="logo-medallion">
                   <img src="${stand.logoUrl}" class="logo-img" alt="شعار المطعم" />
                 </div>
               ` : `
-                <div class="logo-ring default-icon" style="border-color: ${brandColor}; background: ${brandColor}15;">
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="${brandColor}">
+                <div class="logo-medallion default-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="#c5a059">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
                   </svg>
                 </div>
@@ -187,63 +210,58 @@ export function buildStandCardHtml(
               <p class="restaurant-tagline">${taglineText}</p>
             </div>
 
-            <!-- Table Badge: Correct Natural Arabic "طاولة [X]" -->
-            <div class="table-badge" style="border-color: ${brandColor};">
-              <div class="table-badge-icon" style="background: ${brandColor};">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="#ffffff">
-                  <rect x="5" y="8" width="14" height="2.5" rx="1"/>
-                  <rect x="11" y="10.5" width="2" height="7.5" rx="0.5"/>
-                  <rect x="8" y="17" width="8" height="2" rx="1"/>
-                  <rect x="2" y="5" width="2" height="13" rx="1"/>
-                  <rect x="2" y="11" width="4" height="2" rx="0.5"/>
-                  <rect x="20" y="5" width="2" height="13" rx="1"/>
-                  <rect x="18" y="11" width="4" height="2" rx="0.5"/>
-                </svg>
-              </div>
-              <span class="table-badge-label">طاولة</span>
-              <span class="table-badge-number">${stand.tableNumber}</span>
+            <!-- Royal Table Seal Badge (شارة الطاولة الملكية) -->
+            <div class="table-seal-badge">
+              <span class="seal-icon">👑</span>
+              <span class="seal-label">طاولة</span>
+              <span class="seal-num">${stand.tableNumber}</span>
             </div>
           </div>
 
-          <!-- High-Contrast Clean QR Code Box -->
-          <div class="qr-box" style="border-color: ${brandColor};">
-            <img class="qr-code-img" src="${stand.qrDataUrl}" alt="رمز QR طاولة ${stand.tableNumber}" />
-          </div>
-
-          <!-- Bottom Guide Capsule (كبسولة أنيقة لحماية وضوح تعليمات المسح وخطوات الطلب) -->
-          <div class="guide-capsule">
-            <!-- Scan Instruction Hint -->
-            <div class="scan-prompt">
-              <svg class="scan-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <!-- Centerpiece QR Code Hero (منصة باركود الـ QR المزخرفة) -->
+          <div class="qr-pedestal">
+            <div class="qr-prompt-banner">
+              <svg class="qr-camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="5" y="2" width="14" height="20" rx="3"/>
                 <line x1="12" y1="18" x2="12" y2="18.01" stroke-width="3" stroke-linecap="round"/>
               </svg>
-              <span class="scan-text">وجّه كاميرا هاتفك نحو الرمز للطلب الفوري</span>
+              <span>وجّه الكاميرا وامسح للطلب</span>
             </div>
 
-            <!-- 3 Easy Steps Guide -->
-            <div class="steps-row">
-              <div class="step-cell">
-                <span class="step-num">١</span>
-                <span class="step-text">تصفح المنيو</span>
+            <div class="qr-box-wrap">
+              <!-- 4 Viewfinder Corner Brackets -->
+              <span class="vf-bracket vf-tl"></span>
+              <span class="vf-bracket vf-tr"></span>
+              <span class="vf-bracket vf-bl"></span>
+              <span class="vf-bracket vf-br"></span>
+              
+              <img class="qr-code-img" src="${stand.qrDataUrl}" alt="رمز QR طاولة ${stand.tableNumber}" />
+            </div>
+          </div>
+
+          <!-- Bottom Steps & Hospitality Line -->
+          <div class="guide-section">
+            <div class="steps-flow">
+              <div class="step-badge">
+                <span class="step-coin">١</span>
+                <span class="step-label">تصفح القائمة</span>
               </div>
-              <div class="step-sep" style="background: ${brandColor}40;"></div>
-              <div class="step-cell">
-                <span class="step-num">٢</span>
-                <span class="step-text">اختر طلبك</span>
+              <span class="step-dot">•</span>
+              <div class="step-badge">
+                <span class="step-coin">٢</span>
+                <span class="step-label">اختر طلبك</span>
               </div>
-              <div class="step-sep" style="background: ${brandColor}40;"></div>
-              <div class="step-cell">
-                <span class="step-num">٣</span>
-                <span class="step-text">اطلب لطاولتك</span>
+              <span class="step-dot">•</span>
+              <div class="step-badge">
+                <span class="step-coin">٣</span>
+                <span class="step-label">يصلك لطاولتك</span>
               </div>
             </div>
 
-            <!-- Footer Courtesy -->
-            <div class="card-footer">
-              <span class="footer-dash" style="background: ${brandColor}60;"></span>
-              <span class="footer-text">نتمنى لكم وجبة شهية وتجربة مميزة</span>
-              <span class="footer-dash" style="background: ${brandColor}60;"></span>
+            <div class="courtesy-line">
+              <span class="flourish-dash"></span>
+              <span class="courtesy-text">نتمنى لكم وجبة شهية وتجربة استثنائية</span>
+              <span class="flourish-dash"></span>
             </div>
           </div>
 
@@ -317,128 +335,21 @@ export function buildStandCardHtml(
       padding: 14px;
     }
 
-    /* ─── THEME VARIATIONS ─── */
-    /* 1. Modern Luxury (Default Cream & Gold) */
-    .theme-luxury {
-      background: linear-gradient(150deg, #fdfbf7 0%, #f7f2e9 50%, #eee5d3 100%);
-      border: 2px solid #dfc79b;
-    }
-    .theme-luxury .card-frame-border {
-      position: absolute;
-      inset: 8px;
-      border: 1.5px solid #d4af37;
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .theme-luxury .restaurant-name { color: #11221b; }
-    .theme-luxury .restaurant-tagline { color: #5a6b63; }
-    .theme-luxury .table-badge { background: #11221b; color: #ffffff; }
-
-    /* 2. Clean Minimal (Pure White) */
-    .theme-minimal {
-      background: #ffffff;
-      border: 2px solid #e2e8f0;
-    }
-    .theme-minimal .card-frame-border {
-      position: absolute;
-      inset: 8px;
-      border: 1px dashed #cbd5e1;
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .theme-minimal .restaurant-name { color: #0f172a; }
-    .theme-minimal .restaurant-tagline { color: #64748b; }
-    .theme-minimal .table-badge { background: #0f172a; color: #ffffff; }
-
-    /* 3. Burger & Grill (Dark Charcoal & Flame) */
-    .theme-burger {
-      background: linear-gradient(160deg, #18181b 0%, #09090b 100%);
-      border: 2px solid #ea580c;
-    }
-    .theme-burger .card-frame-border {
-      position: absolute;
-      inset: 8px;
-      border: 1.5px solid rgba(234, 88, 12, 0.4);
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .theme-burger .center-shield {
-      background: rgba(24, 24, 27, 0.94);
-      border: 1px solid rgba(234, 88, 12, 0.3);
-    }
-    .theme-burger .restaurant-name { color: #ffffff; }
-    .theme-burger .restaurant-tagline { color: #fdba74; }
-    .theme-burger .table-badge { background: #ea580c; color: #ffffff; }
-    .theme-burger .welcome-text { color: #fed7aa; }
-    .theme-burger .welcome-star { color: #ea580c; }
-    .theme-burger .scan-prompt { color: #f4f4f5; }
-    .theme-burger .step-num { background: #27272a; color: #f97316; }
-    .theme-burger .step-text { color: #e4e4e7; }
-    .theme-burger .footer-text { color: #a1a1aa; }
-
-    /* 4. Warm Cafe & Bakery (Espresso & Latte) */
-    .theme-cafe {
-      background: linear-gradient(150deg, #fcf9f5 0%, #f3ece4 60%, #e8ddcf 100%);
-      border: 2px solid #bda28b;
-    }
-    .theme-cafe .card-frame-border {
-      position: absolute;
-      inset: 8px;
-      border: 1.5px solid #a68b75;
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .theme-cafe .restaurant-name { color: #2e1e14; }
-    .theme-cafe .restaurant-tagline { color: #6f5647; }
-    .theme-cafe .table-badge { background: #3e2723; color: #ffffff; }
-
-    /* 5. Oriental Heritage (Olive & Damascene) */
-    .theme-oriental {
-      background: linear-gradient(150deg, #f8f6f0 0%, #efebe0 60%, #e3dcce 100%);
-      border: 2px solid #1c3d2e;
-    }
-    .theme-oriental .card-frame-border {
-      position: absolute;
-      inset: 8px;
-      border: 1.5px solid #1c3d2e;
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .theme-oriental .restaurant-name { color: #132e22; }
-    .theme-oriental .restaurant-tagline { color: #4e6559; }
-    .theme-oriental .table-badge { background: #132e22; color: #ffffff; }
-
-    /* 6. Custom Background Uploaded */
-    .theme-custom {
-      background-color: #0f172a;
-    }
-    .theme-custom .card-frame-border {
-      display: none;
-    }
-
-    /* ─── Center Shield Container ─── */
-    .center-shield {
-      width: 100%;
-      height: 100%;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 16px;
+    /* ─── Card Container Base ─── */
+    .card-wrap {
+      width: 138mm;
+      height: 196mm;
+      border-radius: 26px;
       position: relative;
-      z-index: 10;
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-    .glass-shield {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
+      overflow: hidden;
+      box-shadow: 0 20px 48px rgba(0,0,0,0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
     }
 
-    /* ─── Real HTML Background Image & Overlay ─── */
+    /* ─── Background Photo & Vignette ─── */
     .card-bg-full {
       position: absolute;
       inset: 0;
@@ -452,338 +363,428 @@ export function buildStandCardHtml(
     .card-bg-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.08) 45%, rgba(15, 23, 42, 0.45) 100%);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.22) 0%, rgba(15, 23, 42, 0.02) 50%, rgba(15, 23, 42, 0.25) 100%);
       z-index: 2;
       border-radius: 26px;
       pointer-events: none;
     }
 
-    /* ─── Base Capsules ─── */
-    .brand-capsule {
+    /* ─── Unified Royal Stand Plaque (اللوح الملكي المتكامل) ─── */
+    .stand-plaque {
+      position: relative;
       width: 100%;
+      height: 100%;
+      border-radius: 22px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      position: relative;
-    }
-    .guide-capsule {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      position: relative;
-    }
-
-    /* ─── High-Contrast Frosted Glass Capsules When Background Photo is Present ─── */
-    .has-bg-img .brand-capsule {
-      background: rgba(15, 23, 42, 0.86) !important;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid rgba(251, 191, 36, 0.75) !important;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
-      border-radius: 20px !important;
-      padding: 10px 14px 12px !important;
-      width: 100% !important;
+      justify-content: space-between;
+      padding: 18px 16px 14px;
       z-index: 10;
+      border: 2px solid #c5a059;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
 
-    .has-bg-img .guide-capsule {
-      background: rgba(15, 23, 42, 0.86) !important;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid rgba(251, 191, 36, 0.65) !important;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
-      border-radius: 18px !important;
-      padding: 8px 12px 10px !important;
-      width: 100% !important;
-      gap: 6px !important;
-      z-index: 10;
-    }
-
-    .has-bg-img .card-frame-border {
+    /* Corner Filigrees (زخارف الأركان الملكية) */
+    .corner-filigree {
       position: absolute;
-      inset: 8px;
-      border: 1.5px solid rgba(251, 191, 36, 0.8);
-      border-radius: 20px;
-      z-index: 5;
+      width: 32px;
+      height: 32px;
+      z-index: 15;
       pointer-events: none;
     }
+    .corner-tl { top: 6px; left: 6px; }
+    .corner-tr { top: 6px; right: 6px; }
+    .corner-bl { bottom: 6px; left: 6px; }
+    .corner-br { bottom: 6px; right: 6px; }
 
-    .has-bg-img .restaurant-name {
-      color: #ffffff !important;
-      font-size: 23px !important;
-      font-weight: 900 !important;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
-      margin: 3px 0 1px !important;
-      letter-spacing: -0.3px;
-    }
-    .has-bg-img .restaurant-tagline {
-      color: #fef08a !important;
-      font-weight: 700 !important;
-      font-size: 11px !important;
-      margin-top: 2px !important;
-      margin-bottom: 6px !important;
-      text-shadow: none !important;
-      line-height: 1.35;
-    }
-    .has-bg-img .welcome-ribbon {
-      margin-bottom: 4px;
-    }
-    .has-bg-img .welcome-text {
-      color: #fef3c7 !important;
-      font-weight: 800 !important;
-      font-size: 11.5px !important;
-      text-shadow: none !important;
-      letter-spacing: 0.5px;
-    }
-    .has-bg-img .welcome-star {
-      color: #fbbf24 !important;
-      font-size: 12px;
-    }
-    .has-bg-img .table-badge {
-      background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%) !important;
-      border: 1.5px solid #fbbf24 !important;
-      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
-      margin: 2px 0 0 !important;
-      padding: 4px 16px !important;
-    }
-    .has-bg-img .table-badge-label {
-      color: #ffffff !important;
-      font-weight: 900 !important;
-      font-size: 13px !important;
-    }
-    .has-bg-img .table-badge-number {
-      color: #fef08a !important;
-      font-weight: 900 !important;
-      font-size: 19px !important;
-    }
-    .has-bg-img .qr-box {
-      border: 2.5px solid #fbbf24 !important;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45) !important;
-      margin: 6px 0 !important;
-      background: #ffffff !important;
-    }
-    .has-bg-img .scan-prompt {
-      color: #ffffff !important;
-      font-weight: 800 !important;
-      font-size: 11px !important;
-      text-shadow: none !important;
-      margin-top: 0 !important;
-    }
-    .has-bg-img .scan-phone-icon {
-      color: #34d399 !important;
-    }
-    .has-bg-img .step-num {
-      background: rgba(251, 191, 36, 0.22) !important;
-      color: #fbbf24 !important;
-      border: 1px solid rgba(251, 191, 36, 0.45) !important;
-      font-weight: 900 !important;
-    }
-    .has-bg-img .step-text {
-      color: #ffffff !important;
-      font-weight: 800 !important;
-      font-size: 10px !important;
-      text-shadow: none !important;
-    }
-    .has-bg-img .step-sep {
-      background: rgba(251, 191, 36, 0.35) !important;
-    }
-    .has-bg-img .footer-text {
-      color: #e2e8f0 !important;
-      font-weight: 700 !important;
-      font-size: 9.5px !important;
-      text-shadow: none !important;
-    }
-    .has-bg-img .footer-dash {
-      background: rgba(251, 191, 36, 0.5) !important;
+    /* Inset Hairline Frame */
+    .plaque-inset-frame {
+      position: absolute;
+      inset: 6px;
+      border-radius: 17px;
+      border: 1px solid rgba(197, 160, 89, 0.45);
+      pointer-events: none;
+      z-index: 11;
     }
 
-    /* ─── Top Welcome Ribbon ─── */
-    .welcome-ribbon {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-    .welcome-star {
-      color: #d4af37;
-      font-size: 14px;
-    }
-    .welcome-text {
-      color: #1e293b;
-    }
-
-    /* ─── Brand Header ─── */
-    .brand-header {
+    /* ─── Header: Brand, Ribbon & Table Badge ─── */
+    .brand-section {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-top: 2px;
-      margin-bottom: 2px;
+      z-index: 12;
     }
-    .logo-ring {
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      border: 3px solid #f2722b;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 6px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-      background: #ffffff;
-    }
-    .logo-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .restaurant-name {
-      font-size: 27px;
-      font-weight: 900;
-      line-height: 1.15;
-      letter-spacing: -0.5px;
-    }
-    .restaurant-tagline {
-      font-size: 11.5px;
-      font-weight: 700;
-      margin-top: 3px;
-      max-width: 105mm;
-      line-height: 1.3;
-    }
-
-    /* ─── Table Badge: طاولة [X] ─── */
-    .table-badge {
+    .welcome-ribbon {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 16px;
-      border-radius: 999px;
-      border: 1.5px solid transparent;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-      margin: 4px 0;
-    }
-    .table-badge-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .table-badge-label {
-      font-size: 14px;
+      font-size: 11.5px;
       font-weight: 800;
       letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
-    .table-badge-number {
-      font-size: 21px;
-      font-weight: 900;
-      line-height: 1;
-      color: #facc15;
+    .ribbon-leaf {
+      font-size: 12px;
     }
-
-    /* ─── QR Container ─── */
-    .qr-box {
+    .logo-medallion {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2.5px solid #c5a059;
+      padding: 2.5px;
+      margin-bottom: 4px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
       background: #ffffff;
-      border: 3.5px solid #f2722b;
-      border-radius: 22px;
-      padding: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      margin: 4px 0;
+      overflow: hidden;
     }
+    .logo-medallion img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .logo-medallion.default-icon {
+      background: #fdfbf7;
+    }
+    .restaurant-name {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.15;
+      margin: 2px 0 2px;
+      letter-spacing: -0.3px;
+    }
+    .restaurant-tagline {
+      font-size: 11px;
+      font-weight: 700;
+      max-width: 100mm;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .table-seal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 18px;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      margin-top: 2px;
+    }
+    .seal-icon {
+      font-size: 12px;
+    }
+    .seal-label {
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+    }
+    .seal-num {
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    /* ─── QR Code Centerpiece Pedestal ─── */
+    .qr-pedestal {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 4px 0;
+      z-index: 12;
+    }
+    .qr-prompt-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .qr-camera-icon {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.2;
+    }
+    .qr-box-wrap {
+      position: relative;
+      padding: 9px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+      border: 2px solid #c5a059;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .vf-bracket {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      pointer-events: none;
+    }
+    .vf-tl { top: 4px; left: 4px; border-top: 2.5px solid #c5a059; border-left: 2.5px solid #c5a059; border-top-left-radius: 5px; }
+    .vf-tr { top: 4px; right: 4px; border-top: 2.5px solid #c5a059; border-right: 2.5px solid #c5a059; border-top-right-radius: 5px; }
+    .vf-bl { bottom: 4px; left: 4px; border-bottom: 2.5px solid #c5a059; border-left: 2.5px solid #c5a059; border-bottom-left-radius: 5px; }
+    .vf-br { bottom: 4px; right: 4px; border-bottom: 2.5px solid #c5a059; border-right: 2.5px solid #c5a059; border-bottom-right-radius: 5px; }
     .qr-code-img {
-      width: 146px;
-      height: 146px;
+      width: 142px;
+      height: 142px;
       display: block;
       border-radius: 8px;
     }
 
-    /* ─── Scan Prompt ─── */
-    .scan-prompt {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #1e293b;
-      margin-top: 2px;
-    }
-    .scan-phone-icon {
-      width: 16px;
-      height: 16px;
-      color: #10b981;
-    }
-    .scan-text {
-      line-height: 1;
-    }
-
-    /* ─── 3 Steps Row ─── */
-    .steps-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
+    /* ─── Footer: Steps Flow & Courtesy Line ─── */
+    .guide-section {
       width: 100%;
-      margin: 4px 0;
-    }
-    .step-cell {
       display: flex;
+      flex-direction: column;
       align-items: center;
       gap: 5px;
+      z-index: 12;
     }
-    .step-num {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #f1f5f9;
-      color: #0f172a;
-      font-size: 11px;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .step-text {
-      font-size: 10.5px;
-      font-weight: 800;
-      color: #334155;
-      white-space: nowrap;
-    }
-    .step-sep {
-      width: 1px;
-      height: 14px;
-      background: #cbd5e1;
-    }
-
-    /* ─── Footer Courtesy ─── */
-    .card-footer {
+    .steps-flow {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       width: 100%;
     }
-    .footer-dash {
-      width: 32px;
+    .step-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+    .step-coin {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .step-dot {
+      font-size: 12px;
+      opacity: 0.5;
+    }
+    .courtesy-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .flourish-dash {
+      width: 28px;
       height: 1.5px;
-      background: #cbd5e1;
       border-radius: 99px;
     }
-    .footer-text {
-      font-size: 11px;
+    .courtesy-text {
+      font-size: 10px;
       font-weight: 700;
-      color: #64748b;
       white-space: nowrap;
     }
+
+    /* ─── THEME 1: CRYSTAL & GOLD (زجاج الكريستال والذهب - روعة الرخام والخلفيات الفاتحة) ─── */
+    .theme-crystal .stand-plaque,
+    .theme-custom .stand-plaque {
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.93) 0%, rgba(253, 251, 247, 0.89) 100%) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      border: 2px solid #c5a059 !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16) !important;
+    }
+    .theme-crystal .corner-filigree,
+    .theme-custom .corner-filigree { color: #c5a059 !important; }
+    .theme-crystal .plaque-inset-frame,
+    .theme-custom .plaque-inset-frame { border-color: rgba(197, 160, 89, 0.45) !important; }
+    .theme-crystal .welcome-ribbon,
+    .theme-custom .welcome-ribbon { color: #92400e !important; }
+    .theme-crystal .restaurant-name,
+    .theme-custom .restaurant-name { color: #0f172a !important; }
+    .theme-crystal .restaurant-tagline,
+    .theme-custom .restaurant-tagline { color: #475569 !important; }
+    .theme-crystal .table-seal-badge,
+    .theme-custom .table-seal-badge {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #c5a059 !important;
+    }
+    .theme-crystal .seal-num,
+    .theme-custom .seal-num { color: #fde047 !important; }
+    .theme-crystal .qr-prompt-banner,
+    .theme-custom .qr-prompt-banner { color: #0f172a !important; }
+    .theme-crystal .qr-camera-icon,
+    .theme-custom .qr-camera-icon { color: #059669 !important; }
+    .theme-crystal .qr-box-wrap,
+    .theme-custom .qr-box-wrap { border-color: #c5a059 !important; }
+    .theme-crystal .vf-bracket,
+    .theme-custom .vf-bracket { border-color: #c5a059 !important; }
+    .theme-crystal .step-coin,
+    .theme-custom .step-coin { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #d97706 !important; }
+    .theme-crystal .step-label,
+    .theme-custom .step-label { color: #1e293b !important; }
+    .theme-crystal .step-dot,
+    .theme-custom .step-dot { color: #c5a059 !important; }
+    .theme-crystal .courtesy-text,
+    .theme-custom .courtesy-text { color: #64748b !important; }
+    .theme-crystal .flourish-dash,
+    .theme-custom .flourish-dash { background: #c5a059 !important; }
+
+    /* ─── THEME 2: IMPERIAL OBSIDIAN & GOLD (الأسود والذهب الملكي الإمبراطوري) ─── */
+    .theme-obsidian .stand-plaque {
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.93) 0%, rgba(10, 14, 26, 0.96) 100%) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      border: 2px solid #d4af37 !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.48) !important;
+    }
+    .theme-obsidian .corner-filigree { color: #d4af37 !important; }
+    .theme-obsidian .plaque-inset-frame { border-color: rgba(212, 175, 55, 0.45) !important; }
+    .theme-obsidian .welcome-ribbon { color: #fef3c7 !important; }
+    .theme-obsidian .restaurant-name { color: #ffffff !important; text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important; }
+    .theme-obsidian .restaurant-tagline { color: #fde68a !important; }
+    .theme-obsidian .table-seal-badge {
+      background: linear-gradient(135deg, #ea580c 0%, #d97706 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #fbbf24 !important;
+    }
+    .theme-obsidian .seal-num { color: #fef08a !important; }
+    .theme-obsidian .qr-prompt-banner { color: #ffffff !important; }
+    .theme-obsidian .qr-camera-icon { color: #34d399 !important; }
+    .theme-obsidian .qr-box-wrap { border-color: #fbbf24 !important; }
+    .theme-obsidian .vf-bracket { border-color: #fbbf24 !important; }
+    .theme-obsidian .step-coin { background: rgba(251, 191, 36, 0.22) !important; color: #fbbf24 !important; border: 1px solid #fbbf24 !important; }
+    .theme-obsidian .step-label { color: #f8fafc !important; }
+    .theme-obsidian .step-dot { color: #d4af37 !important; }
+    .theme-obsidian .courtesy-text { color: #cbd5e1 !important; }
+    .theme-obsidian .flourish-dash { background: #d4af37 !important; }
+
+    /* ─── THEME 3: MODERN LUXURY (الذهبي الكلاسيكي) ─── */
+    .theme-luxury {
+      background: linear-gradient(150deg, #fdfbf7 0%, #f7f2e9 50%, #eee5d3 100%);
+    }
+    .theme-luxury .stand-plaque {
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid #dfc79b;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.1);
+    }
+    .theme-luxury .corner-filigree { color: #c5a059; }
+    .theme-luxury .plaque-inset-frame { border-color: rgba(223, 199, 155, 0.5); }
+    .theme-luxury .restaurant-name { color: #11221b; }
+    .theme-luxury .restaurant-tagline { color: #5a6b63; }
+    .theme-luxury .table-seal-badge { background: #11221b; color: #ffffff; border: 1.5px solid #c5a059; }
+    .theme-luxury .seal-num { color: #fde047; }
+    .theme-luxury .qr-box-wrap { border-color: #dfc79b; }
+    .theme-luxury .vf-bracket { border-color: #c5a059; }
+    .theme-luxury .step-coin { background: #fef3c7; color: #92400e; border: 1px solid #d97706; }
+    .theme-luxury .step-label { color: #334155; }
+    .theme-luxury .courtesy-text { color: #64748b; }
+    .theme-luxury .flourish-dash { background: #dfc79b; }
+
+    /* ─── THEME 4: BURGER & GRILL (برجر ومشاوي داكن) ─── */
+    .theme-burger {
+      background: linear-gradient(160deg, #18181b 0%, #09090b 100%);
+    }
+    .theme-burger .stand-plaque {
+      background: rgba(24, 24, 27, 0.95);
+      border: 2px solid #ea580c;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    }
+    .theme-burger .corner-filigree { color: #ea580c; }
+    .theme-burger .plaque-inset-frame { border-color: rgba(234, 88, 12, 0.4); }
+    .theme-burger .welcome-ribbon { color: #fed7aa; }
+    .theme-burger .restaurant-name { color: #ffffff; }
+    .theme-burger .restaurant-tagline { color: #fdba74; }
+    .theme-burger .table-seal-badge { background: #ea580c; color: #ffffff; border: 1px solid #fbbf24; }
+    .theme-burger .seal-num { color: #fef08a; }
+    .theme-burger .qr-prompt-banner { color: #f4f4f5; }
+    .theme-burger .qr-camera-icon { color: #f97316; }
+    .theme-burger .qr-box-wrap { border-color: #ea580c; }
+    .theme-burger .vf-bracket { border-color: #ea580c; }
+    .theme-burger .step-coin { background: #27272a; color: #f97316; border: 1px solid #ea580c; }
+    .theme-burger .step-label { color: #e4e4e7; }
+    .theme-burger .courtesy-text { color: #a1a1aa; }
+    .theme-burger .flourish-dash { background: #ea580c; }
+
+    /* ─── THEME 5: WARM CAFE & BAKERY (كافيه دافئ ومخبوزات) ─── */
+    .theme-cafe {
+      background: linear-gradient(150deg, #fcf9f5 0%, #f3ece4 60%, #e8ddcf 100%);
+    }
+    .theme-cafe .stand-plaque {
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px solid #bda28b;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.1);
+    }
+    .theme-cafe .corner-filigree { color: #a68b75; }
+    .theme-cafe .plaque-inset-frame { border-color: rgba(189, 162, 139, 0.4); }
+    .theme-cafe .welcome-ribbon { color: #6f5647; }
+    .theme-cafe .restaurant-name { color: #2e1e14; }
+    .theme-cafe .restaurant-tagline { color: #6f5647; }
+    .theme-cafe .table-seal-badge { background: #3e2723; color: #ffffff; border: 1px solid #bda28b; }
+    .theme-cafe .seal-num { color: #fde047; }
+    .theme-cafe .qr-box-wrap { border-color: #bda28b; }
+    .theme-cafe .vf-bracket { border-color: #a68b75; }
+    .theme-cafe .step-coin { background: #efebe6; color: #3e2723; border: 1px solid #bda28b; }
+    .theme-cafe .step-label { color: #4e342e; }
+    .theme-cafe .courtesy-text { color: #795548; }
+    .theme-cafe .flourish-dash { background: #bda28b; }
+
+    /* ─── THEME 6: CLEAN MINIMAL (أبيض مودرن ناصع) ─── */
+    .theme-minimal {
+      background: #ffffff;
+    }
+    .theme-minimal .stand-plaque {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.06);
+    }
+    .theme-minimal .corner-filigree { color: #94a3b8; }
+    .theme-minimal .plaque-inset-frame { border-color: #cbd5e1; }
+    .theme-minimal .welcome-ribbon { color: #64748b; }
+    .theme-minimal .restaurant-name { color: #0f172a; }
+    .theme-minimal .restaurant-tagline { color: #64748b; }
+    .theme-minimal .table-seal-badge { background: #0f172a; color: #ffffff; border: 1px solid #cbd5e1; }
+    .theme-minimal .seal-num { color: #ffffff; }
+    .theme-minimal .qr-box-wrap { border-color: #e2e8f0; }
+    .theme-minimal .vf-bracket { border-color: #94a3b8; }
+    .theme-minimal .step-coin { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+    .theme-minimal .step-label { color: #334155; }
+    .theme-minimal .courtesy-text { color: #64748b; }
+    .theme-minimal .flourish-dash { background: #cbd5e1; }
+
+    /* ─── THEME 7: ORIENTAL HERITAGE (تراث شرقي) ─── */
+    .theme-oriental {
+      background: linear-gradient(150deg, #f8f6f0 0%, #efebe0 60%, #e3dcce 100%);
+    }
+    .theme-oriental .stand-plaque {
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px solid #1c3d2e;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.1);
+    }
+    .theme-oriental .corner-filigree { color: #1c3d2e; }
+    .theme-oriental .plaque-inset-frame { border-color: rgba(28, 61, 46, 0.4); }
+    .theme-oriental .restaurant-name { color: #132e22; }
+    .theme-oriental .restaurant-tagline { color: #4e6559; }
+    .theme-oriental .table-seal-badge { background: #132e22; color: #ffffff; border: 1px solid #1c3d2e; }
+    .theme-oriental .seal-num { color: #fde047; }
+    .theme-oriental .qr-box-wrap { border-color: #1c3d2e; }
+    .theme-oriental .vf-bracket { border-color: #1c3d2e; }
+    .theme-oriental .step-coin { background: #e8ede9; color: #132e22; border: 1px solid #1c3d2e; }
+    .theme-oriental .step-label { color: #132e22; }
+    .theme-oriental .courtesy-text { color: #4e6559; }
+    .theme-oriental .flourish-dash { background: #1c3d2e; }
   </style>
 </head>
 <body>

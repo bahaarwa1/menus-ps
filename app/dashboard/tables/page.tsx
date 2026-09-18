@@ -690,13 +690,14 @@ export default function ProductionTablesPage() {
 
               {/* Ready Preset Themes */}
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-2">أو اختر قالب تصميم جاهز:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <label className="text-xs font-bold text-slate-700 block mb-2">أو اختر قالب تصميم جاهز وبلمسة جمالية فاخرة:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                   {[
-                    { id: 'modern_luxury', label: '✨ ذهبي فخم', desc: 'Modern Luxury' },
+                    { id: 'crystal_gold', label: '💎 زجاج الكريستال', desc: 'مثالي للرخام والخلفيات' },
+                    { id: 'imperial_obsidian', label: '👑 أسود ملكي مذهب', desc: 'Imperial Obsidian' },
+                    { id: 'modern_luxury', label: '✨ ذهبي عاجي فاخر', desc: 'Modern Luxury' },
                     { id: 'burger_grill', label: '🔥 برجر ومشاوي', desc: 'Dark Charcoal' },
                     { id: 'cafe_warm', label: '☕ كافيه ومخبوزات', desc: 'Warm Latte' },
-                    { id: 'oriental_heritage', label: '🌿 تراثي شرقي', desc: 'Olive Damascene' },
                     { id: 'clean_minimal', label: '⚪ أبيض ناصع', desc: 'Clean Minimal' },
                   ].map((th) => (
                     <button
@@ -704,13 +705,13 @@ export default function ProductionTablesPage() {
                       type="button"
                       onClick={() => handleThemeChange(th.id as any)}
                       className={`p-2.5 text-right rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col justify-between ${
-                        cardTheme === th.id && !cardBgImage
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        cardTheme === th.id
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-amber-400/40'
                           : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                       }`}
                     >
-                      <span className="font-black text-[11.5px]">{th.label}</span>
-                      <span className={`text-[10px] mt-0.5 ${cardTheme === th.id && !cardBgImage ? 'text-slate-300' : 'text-slate-500'}`}>
+                      <span className="font-black text-[11px]">{th.label}</span>
+                      <span className={`text-[9.5px] mt-0.5 ${cardTheme === th.id ? 'text-slate-300' : 'text-slate-500'}`}>
                         {th.desc}
                       </span>
                     </button>
@@ -1014,40 +1015,64 @@ export default function ProductionTablesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-150">
             
-            {/* Quick Background Controls in Modal */}
-            <div className="flex items-center justify-between gap-2 mb-3 bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-xs">
-              <span className="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
-                <span>🖼️ خلفية البطاقة:</span>
-                <span className={cardBgImage ? 'text-amber-700 font-black' : 'text-slate-500 font-medium'}>
-                  {cardBgImage ? 'صورة مخصصة' : 'قالب تلقائي'}
+            {/* Quick Background & Theme Controls in Modal */}
+            <div className="space-y-2 mb-3">
+              <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-xs">
+                <span className="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
+                  <span>🖼️ صورة الخلفية:</span>
+                  <span className={cardBgImage ? 'text-amber-700 font-black' : 'text-slate-500 font-medium'}>
+                    {cardBgImage ? 'صورة مخصصة' : 'قالب تلقائي'}
+                  </span>
                 </span>
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => fileInputBgRef.current?.click()}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <Upload size={11} />
-                  <span>{cardBgImage ? 'تغيير الصورة 🖼️' : 'رفع صورة خلفية 🖼️'}</span>
-                </button>
-                {cardBgImage && (
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={handleRemoveBgImage}
-                    className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] border border-rose-200 transition-colors cursor-pointer"
-                    title="إزالة صورة الخلفية والعودة للتصميم القياسي"
+                    onClick={() => fileInputBgRef.current?.click()}
+                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                   >
-                    <Trash2 size={11} />
-                    <span>إزالة</span>
+                    <Upload size={11} />
+                    <span>{cardBgImage ? 'تغيير الصورة 🖼️' : 'رفع صورة خلفية 🖼️'}</span>
                   </button>
-                )}
+                  {cardBgImage && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveBgImage}
+                      className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] border border-rose-200 transition-colors cursor-pointer"
+                      title="إزالة صورة الخلفية والعودة للتصميم القياسي"
+                    >
+                      <Trash2 size={11} />
+                      <span>إزالة</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Theme Switcher Pills */}
+              <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-0.5">
+                {[
+                  { id: 'crystal_gold', label: '💎 زجاج الكريستال' },
+                  { id: 'imperial_obsidian', label: '👑 أسود ملكي' },
+                  { id: 'modern_luxury', label: '✨ ذهبي عاجي' },
+                ].map((th) => (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => handleThemeChange(th.id as any)}
+                    className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold border transition-all cursor-pointer ${
+                      cardTheme === th.id
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    {th.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Printable Preview Frame (تظهر خلفية الصورة بالكامل بدون أي حجب مع كبسولات زجاجية واضحة 100%) */}
+            {/* Printable Preview Frame: Royal Stand Plaque */}
             <div 
-              className="rounded-3xl p-4 mb-4 relative shadow-xl text-center overflow-hidden border-2 border-amber-400/80 min-h-[420px] flex flex-col justify-between"
+              className="rounded-3xl p-2.5 mb-3 relative shadow-xl text-center overflow-hidden border-2 border-amber-400/80 min-h-[440px] flex items-center justify-center"
               style={{ background: cardBgImage ? `url(${cardBgImage}) center/cover no-repeat` : '#fdfbf7' }}
             >
               {cardBgImage && (
@@ -1055,73 +1080,112 @@ export default function ProductionTablesPage() {
                 <img src={cardBgImage} alt="خلفية البطاقة" className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" />
               )}
               {cardBgImage && (
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/10 to-slate-950/45 pointer-events-none z-2" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/25 via-transparent to-slate-950/25 pointer-events-none z-1" />
               )}
-              <div className="absolute inset-2 border-1.5 border-amber-400/70 rounded-2xl pointer-events-none z-5" />
 
-              {/* Top Brand Capsule */}
-              <div className={`relative z-10 ${cardBgImage ? 'bg-slate-950/85 backdrop-blur-md border border-amber-400/70 rounded-2xl p-3 shadow-lg' : 'bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-sm'}`}>
-                <div className="flex items-center justify-center gap-1.5 text-xs font-black mb-1">
-                  <span className="text-amber-400 text-xs">✦</span>
-                  <span className={cardBgImage ? 'text-amber-200 text-[11px]' : 'text-slate-600 text-[11px]'}>أهلاً وسهلاً بكم</span>
-                  <span className="text-amber-400 text-xs">✦</span>
-                </div>
+              {/* Central Royal Plaque */}
+              <div 
+                className={`relative z-10 w-full h-full rounded-2xl p-4 flex flex-col items-center justify-between border-2 transition-all ${
+                  cardTheme === 'imperial_obsidian'
+                    ? 'bg-slate-950/92 backdrop-blur-md border-amber-400 text-white shadow-2xl'
+                    : 'bg-white/93 backdrop-blur-md border-amber-600/80 text-slate-900 shadow-xl'
+                }`}
+              >
+                {/* 4 Ornate Corner Filigrees */}
+                <svg className="absolute top-1.5 left-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                  <path d="M2 2h22M2 2v22M5 5h14M5 5v14M2 2l10 10M5 5l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  <circle cx="15" cy="15" r="2.2" fill="currentColor"/>
+                </svg>
+                <svg className="absolute top-1.5 right-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                  <path d="M30 2H8M30 2v22M27 5H13M27 5v14M30 2L20 12M27 5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  <circle cx="17" cy="15" r="2.2" fill="currentColor"/>
+                </svg>
+                <svg className="absolute bottom-1.5 left-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                  <path d="M2 30h22M2 30V8M5 27h14M5 27V13M2 30l10-10M5 27l7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  <circle cx="15" cy="17" r="2.2" fill="currentColor"/>
+                </svg>
+                <svg className="absolute bottom-1.5 right-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                  <path d="M30 30H8M30 30V8M27 27H13M27 27V13M30 30L20 20M27 27l-7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  <circle cx="17" cy="17" r="2.2" fill="currentColor"/>
+                </svg>
 
-                {restaurantLogo && (
-                  <div className="flex justify-center mb-1">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={restaurantLogo}
-                      alt="Logo"
-                      className="w-11 h-11 rounded-full object-cover border-2 shadow-xs bg-white"
-                      style={{ borderColor: qrColor }}
-                    />
+                {/* Inner Hairline Frame */}
+                <div className="absolute inset-1.5 border border-amber-500/30 rounded-xl pointer-events-none" />
+
+                {/* Top Section */}
+                <div className="w-full flex flex-col items-center text-center z-10 pt-1">
+                  <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 mb-1">
+                    <span>❖</span>
+                    <span>أهلاً وسهلاً بكم</span>
+                    <span>❖</span>
                   </div>
-                )}
 
-                <h3 className={`text-base font-black leading-tight ${cardBgImage ? 'text-white' : 'text-slate-900'}`}>
-                  {restaurantName || 'أهلاً وسهلاً بكم'}
-                </h3>
-                <p className={`text-[10px] font-bold max-w-[200px] mx-auto mt-0.5 leading-snug ${cardBgImage ? 'text-amber-200' : 'text-slate-500'}`}>
-                  {cardTagline}
-                </p>
+                  {restaurantLogo && (
+                    <div className="w-12 h-12 rounded-full border-2 border-amber-500 p-0.5 shadow-sm bg-white mb-1 overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={restaurantLogo} alt="Logo" className="w-full h-full rounded-full object-cover" />
+                    </div>
+                  )}
 
-                {/* Table Badge */}
-                <div
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full text-white text-[11px] font-black mt-2 shadow-sm"
-                  style={{ background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', border: '1px solid #fbbf24' }}
-                >
-                  <span>طاولة</span>
-                  <span className="text-yellow-200 text-xs font-black">{selectedPrintTable.tableNumber}</span>
+                  <h3 className={`text-lg font-black leading-tight ${cardTheme === 'imperial_obsidian' ? 'text-white' : 'text-slate-900'}`}>
+                    {restaurantName || 'أهلاً وسهلاً بكم'}
+                  </h3>
+                  <p className={`text-[10px] font-bold max-w-[210px] mx-auto mt-0.5 leading-snug ${cardTheme === 'imperial_obsidian' ? 'text-amber-200' : 'text-slate-500'}`}>
+                    {cardTagline}
+                  </p>
+
+                  {/* Table Seal Badge */}
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-0.5 rounded-full text-white text-xs font-black mt-2 shadow-sm bg-gradient-to-r from-amber-600 to-orange-600 border border-amber-400">
+                    <span className="text-[11px]">👑 طاولة</span>
+                    <span className="text-yellow-200 text-sm font-black">{selectedPrintTable.tableNumber}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Center QR Box */}
-              <div className="relative z-10 w-44 h-44 bg-white p-2 rounded-2xl border-2 border-amber-400 mx-auto shadow-xl flex items-center justify-center my-2">
-                {selectedPrintTable.qrDataUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={selectedPrintTable.qrDataUrl}
-                    alt="QR"
-                    className="w-full h-full object-contain rounded-xl"
-                  />
-                ) : (
-                  <QrCode size={60} className="text-slate-300" />
-                )}
-              </div>
+                {/* QR Hero Pedestal */}
+                <div className="w-full flex flex-col items-center my-2 z-10">
+                  <span className={`text-[10.5px] font-bold mb-1 flex items-center gap-1 ${cardTheme === 'imperial_obsidian' ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <span>📷 وجّه الكاميرا وامسح للطلب</span>
+                  </span>
+                  <div className="relative p-2.5 bg-white rounded-2xl border-2 border-amber-500 shadow-md flex items-center justify-center">
+                    {/* Corner Brackets */}
+                    <span className="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-amber-600 rounded-tl-xs" />
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-amber-600 rounded-tr-xs" />
+                    <span className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-amber-600 rounded-bl-xs" />
+                    <span className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-amber-600 rounded-br-xs" />
 
-              {/* Bottom Guide Capsule */}
-              <div className={`relative z-10 ${cardBgImage ? 'bg-slate-950/85 backdrop-blur-md border border-amber-400/60 rounded-xl p-2 shadow-lg' : 'bg-white/90 border border-slate-200/80 rounded-xl p-2 shadow-sm'}`}>
-                <p className={`text-[10.5px] font-black mb-1 ${cardBgImage ? 'text-white' : 'text-slate-900'}`}>
-                  وجّه كاميرا هاتفك نحو الرمز للطلب الفوري 📲
-                </p>
-                <div className="flex items-center justify-center gap-1 text-[9.5px] font-bold">
-                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>١. تصفح</span>
-                  <span className={cardBgImage ? 'text-amber-400/60' : 'text-slate-300'}>•</span>
-                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>٢. اختر</span>
-                  <span className={cardBgImage ? 'text-amber-400/60' : 'text-slate-300'}>•</span>
-                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>٣. اطلب</span>
+                    {selectedPrintTable.qrDataUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={selectedPrintTable.qrDataUrl} alt="QR" className="w-36 h-36 object-contain rounded-lg" />
+                    ) : (
+                      <QrCode size={60} className="text-slate-300" />
+                    )}
+                  </div>
                 </div>
+
+                {/* Footer Section */}
+                <div className="w-full flex flex-col items-center gap-1.5 z-10 pb-1">
+                  <div className="flex items-center justify-center gap-2 text-[10px] font-extrabold">
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
+                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">١</span>
+                      <span>تصفح</span>
+                    </span>
+                    <span className="text-amber-500">•</span>
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
+                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">٢</span>
+                      <span>اختر</span>
+                    </span>
+                    <span className="text-amber-500">•</span>
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
+                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">٣</span>
+                      <span>اطلب</span>
+                    </span>
+                  </div>
+
+                  <p className={`text-[9.5px] font-bold ${cardTheme === 'imperial_obsidian' ? 'text-slate-300' : 'text-slate-500'}`}>
+                    نتمنى لكم وجبة شهية وتجربة استثنائية ✨
+                  </p>
+                </div>
+
               </div>
             </div>
 
