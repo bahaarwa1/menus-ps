@@ -107,8 +107,8 @@ export async function generateBrandedQRCode({
   }
 
   // =========================================================================
-  // MODE 0: ARTISTIC QR — دوائر + صورة المطعم خلف النقاط (KFC Style)
-  // Circular finder eyes, round data dots, brand photo shining through
+  // MODE 0: ARTISTIC QR — صورة اللوجو واضحة بالكامل + نقاط دائرية فوقها (KFC Style)
+  // The brand logo/photo fills the entire QR clearly, dots drawn with multiply blend
   // =========================================================================
   if (effectiveStyle === 'artistic') {
     try {
@@ -123,28 +123,31 @@ export async function generateBrandedQRCode({
       const margin = 2;
       const totalMods = modCount + margin * 2;
       const cellSize = size / totalMods;
-      const dotRadius = cellSize * 0.42; // circular dots
+      const dotRadius = cellSize * 0.44;
 
       // ── 1. White background ──
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
 
-      // ── 2. Draw brand photo as background (medium opacity so dots are clear) ──
-      if (logoImg && logoImg.width > 0) {
-        const imgAspect = logoImg.width / logoImg.height;
-        let drawW = size, drawH = size, drawX = 0, drawY = 0;
-        if (imgAspect > 1) { drawW = size * imgAspect; drawX = -(drawW - size) / 2; }
-        else { drawH = size / imgAspect; drawY = -(drawH - size) / 2; }
+      // helper: cover-fit the image
+      const coverDraw = (targetCtx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) => {
+        const aspect = img.width / img.height;
+        let dw = w, dh = h, dx = x, dy = y;
+        if (aspect > w / h) { dh = h; dw = h * aspect; dx = x - (dw - w) / 2; }
+        else                 { dw = w; dh = w / aspect; dy = y - (dh - h) / 2; }
+        targetCtx.drawImage(img, dx, dy, dw, dh);
+      };
 
+      // ── 2. Draw brand image at HIGH opacity so it's clearly visible ──
+      if (logoImg && logoImg.width > 0) {
         ctx.save();
-        ctx.globalAlpha = 0.45;
-        ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+        ctx.globalAlpha = 0.75; // prominent — like the Colonel's face in KFC
+        coverDraw(ctx, logoImg, 0, 0, size, size);
         ctx.globalAlpha = 1.0;
         ctx.restore();
       }
 
       // Finder pattern positions (top-left, top-right, bottom-left)
-      // Each finder = 7×7 modules starting at (0,0), (modCount-7,0), (0,modCount-7)
       const finderStarts: [number, number][] = [
         [0, 0],
         [modCount - 7, 0],
@@ -155,45 +158,67 @@ export async function generateBrandedQRCode({
           c >= fc && c < fc + 7 && r >= fr && r < fr + 7
         );
 
-      // ── 3. Draw round data dots (skip finder regions) ──
-      ctx.fillStyle = color || '#0f172a';
+      // ── 3. Draw data dots with MULTIPLY blend so image shows through them ──
+      // First pass on an offscreen canvas so we can composite onto main
+      const dotCanvas = document.createElement('canvas');
+      dotCanvas.width = size;
+      dotCanvas.height = size;
+      const dCtx = dotCanvas.getContext('2d')!;
+      dCtx.fillStyle = color || '#0f172a';
       for (let r = 0; r < modCount; r++) {
         for (let c = 0; c < modCount; c++) {
           if (!qr.modules.get(r, c)) continue;
-          if (isInFinder(r, c)) continue; // drawn separately
+          if (isInFinder(r, c)) continue;
           const cx = (c + margin + 0.5) * cellSize;
           const cy = (r + margin + 0.5) * cellSize;
-          ctx.beginPath();
-          ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
-          ctx.fill();
+          dCtx.beginPath();
+          dCtx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
+          dCtx.fill();
         }
       }
+      // Composite dots onto main with multiply — image color shows through
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(dotCanvas, 0, 0);
+      ctx.restore();
 
-      // ── 4. Draw circular finder eyes ──
+      // ── 4. Draw circular finder eyes (solid, on top) ──
       const drawFinderEye = (startCol: number, startRow: number) => {
         const cx = (startCol + margin + 3.5) * cellSize;
         const cy = (startRow + margin + 3.5) * cellSize;
         const outerR = cellSize * 3.5;
-        const midR = cellSize * 2.7;
-        const innerR = cellSize * 1.5;
+        const midR   = cellSize * 2.6;
+        const innerR = cellSize * 1.55;
 
-        // Outer black ring
+        // Clear the finder area first so it pops clean
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+
+        // White fill first to isolate eye from image
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR + cellSize * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fill();
+
+        // Outer ring
         ctx.beginPath();
         ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
         ctx.fillStyle = color || '#0f172a';
         ctx.fill();
 
-        // White ring
+        // White gap
         ctx.beginPath();
         ctx.arc(cx, cy, midR, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
         ctx.fill();
 
-        // Inner brand-color dot (matching color)
+        // Inner dot
         ctx.beginPath();
         ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
         ctx.fillStyle = color || '#0f172a';
         ctx.fill();
+
+        ctx.restore();
       };
 
       finderStarts.forEach(([fc, fr]) => drawFinderEye(fc, fr));
@@ -203,6 +228,7 @@ export async function generateBrandedQRCode({
       console.warn('Artistic QR failed, falling back:', err);
     }
   }
+
 
   // =========================================================================
   // MODE 1: PHOTO WATERMARK BACKGROUND (صورة المطعم واضحة بالكامل كخلفية مع تقليل الفراغات)
