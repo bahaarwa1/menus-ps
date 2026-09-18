@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles, Upload, Image as ImageIcon, Trash2, Layers, RefreshCw } from 'lucide-react';
+import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles, Upload, Image as ImageIcon, Trash2, Layers, RefreshCw, ChevronDown } from 'lucide-react';
 import { printTableStand, printAllTableStands, StandCardTheme } from '@/lib/print-utils';
 import { generateBrandedQRCode, QR_COLOR_PRESETS } from '@/lib/qr-generator';
 
@@ -24,6 +24,7 @@ export default function ProductionTablesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPrintingAll, setIsPrintingAll] = useState(false);
+  const [showCustomizer, setShowCustomizer] = useState(false);
 
   // QR Customization Studio States
   const [qrColor, setQrColor] = useState<string>('#0f172a');
@@ -522,6 +523,19 @@ export default function ProductionTablesPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCustomizer(!showCustomizer)}
+            className={`px-3.5 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              showCustomizer
+                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-xs'
+            }`}
+          >
+            <Palette size={15} className={showCustomizer ? 'text-orange-400' : 'text-slate-500'} />
+            <span>{showCustomizer ? 'إخفاء خيارات التصميم' : 'تخصيص الـ QR والستاند'}</span>
+          </button>
+
           {tables.length > 0 && (
             <button
               onClick={triggerPrintAll}
@@ -560,445 +574,247 @@ export default function ProductionTablesPage() {
         </div>
       </div>
 
-      {/* ============================================================
-          QR BRANDING & COLOR CUSTOMIZATION STUDIO PANEL
-      ============================================================ */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-sm shadow-orange-500/20">
-              <Palette size={20} />
+      {/* Sleek, Compact QR & Stand Customizer Toolbar */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:px-4 sm:py-3 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
+              <Palette size={16} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black text-slate-900">
-                  استوديو ألوان وتصميم باركود الـ QR
-                </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
-                  <Sparkles size={11} />
-                  <span>تحديث فوري</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-black text-slate-900">مظهر الـ QR والستاند:</span>
+              <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-600 font-bold">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: qrColor }} />
+                <span>
+                  {qrStyle === 'center_badge' ? 'شعار بالمنتصف' : qrStyle === 'photo_watermark' ? 'خلفية صورة المطعم' : qrStyle === 'solid' ? 'لون موحد' : 'تصميم فني'}
                 </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                اختر لون الهوية الخاص بمطعمك وفعّل لوجو المطعم داخل قلب الرمز لتصميم احترافي يطبع بدقة
-              </p>
+              </span>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <span className="text-slate-600 font-medium">
+                الستاند: <strong className="text-slate-900 font-bold">
+                  {cardTheme === 'modern_luxury' ? 'فخامة ملكية' : cardTheme === 'clean_minimal' ? 'مينيمال' : cardTheme === 'burger_grill' ? 'برجر وجريل' : cardTheme === 'cafe_warm' ? 'كافيه' : cardTheme === 'oriental_heritage' ? 'تراثي' : 'صورة خاصة'}
+                </strong>
+              </span>
             </div>
           </div>
 
-          {/* QR Design Modes */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-              <button
-                type="button"
-                onClick={() => handleStyleChange('artistic')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'artistic'
-                    ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-md shadow-red-500/20 ring-2 ring-red-500/30'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
-              >
-                <span>🎨</span>
-                <span>فني (دوائر + صورة) ✨</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStyleChange('photo_watermark')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'photo_watermark'
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 ring-2 ring-orange-500/30'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
-              >
-                <Sparkles size={14} />
-                <span>خلفية صورة كاملة</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStyleChange('center_badge')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'center_badge'
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
-              >
-                <span>شعار كبير بالمنتصف</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStyleChange('image_fill')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'image_fill'
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
-              >
-                <span>نقش على نقاط الرمز</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStyleChange('solid')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  qrStyle === 'solid'
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
-              >
-                <span>لون موحد</span>
-              </button>
-            </div>
-
-            {/* Image Thumbnail & Upload */}
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl">
-              {restaurantLogo ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={restaurantLogo}
-                  alt="QR Image"
-                  className="w-8 h-8 rounded-xl object-cover border border-slate-200 shadow-2xs"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-600 font-black text-xs flex items-center justify-center border border-orange-200">
-                  {restaurantName ? restaurantName.trim().charAt(0) : '🍽️'}
-                </div>
-              )}
-              <input
-                type="file"
-                ref={fileInputQrRef}
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleUploadQrImage(file);
-                }}
-              />
-              <button
-                type="button"
-                disabled={isUploadingQrImage}
-                onClick={() => fileInputQrRef.current?.click()}
-                className="text-xs text-orange-600 hover:text-orange-700 font-black hover:underline cursor-pointer flex items-center gap-1"
-              >
-                {isUploadingQrImage ? 'جاري الرفع...' : 'تغيير صورة الـ QR'}
-              </button>
-            </div>
-
-            {/* Reduce Gaps / Maximize Photo Clarity Toggle */}
-            <button
-              type="button"
-              onClick={() => handleToggleReduceGaps(!reduceGaps)}
-              className={`px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-2 border transition-all cursor-pointer shadow-2xs ${
-                reduceGaps
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 ring-2 ring-emerald-400/20'
-                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-              title="تقليل الفراغات البيضاء وإبراز صورة المطعم داخل الرمز لأقصى درجة وضوح"
-            >
-              <Sparkles size={14} className={reduceGaps ? 'text-emerald-600' : 'text-slate-400'} />
-              <span>{reduceGaps ? 'تقليل الفراغات وإبراز الصورة: مفعّل ✨' : 'تقليل الفراغات وإبراز الصورة'}</span>
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  reduceGaps ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
-                }`}
-              />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowCustomizer(!showCustomizer)}
+            className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span>{showCustomizer ? 'إخفاء لوحة التخصيص' : 'تعديل التصميم والألوان ⚙️'}</span>
+            <ChevronDown size={14} className={`transition-transform duration-200 ${showCustomizer ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
-        {/* Explain notice based on active style */}
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center gap-2 text-xs text-amber-900 font-medium">
-          <span className="text-base">
-            {qrStyle === 'photo_watermark' ? '🖼️' : qrStyle === 'center_badge' ? '🏷️' : qrStyle === 'image_fill' ? '✨' : '🎨'}
-          </span>
-          <span>
-            {qrStyle === 'photo_watermark' && (
-              <>
-                <strong>صورة المطعم كاملة بالخلفية:</strong> صورة وهوية مطعمك واضحة تماماً وبدقة عالية كخلفية فاخرة للـ QR، مع {reduceGaps ? 'تقليل الفراغات البيضاء وإبراز معالم الصورة' : 'فراغات قياسية'} ودقة مسح فورية بنسبة 100% بكافة الهواتف 📲
-              </>
-            )}
-            {qrStyle === 'center_badge' && (
-              <>
-                <strong>شعار المنتصف مفعّل:</strong> تظهر صورة وشعار المطعم كبيرة وواضحة جداً في قلب الرمز داخل إطار ذهبي راقي.
-              </>
-            )}
-            {qrStyle === 'image_fill' && (
-              <>
-                <strong>النقش الحي مفعّل:</strong> تتشكل نقاط الرمز من ألوان صورة المطعم مع خلفية متناسقة وتباين مريح للمسح.
-              </>
-            )}
-            {qrStyle === 'solid' && (
-              <>
-                <strong>اللون الموحد مفعّل:</strong> تصميم كلاسيكي نظيف بلون الهوية المختار.
-              </>
-            )}
-          </span>
-        </div>
-
-        {/* Color Presets & Custom Picker */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-xs font-black text-slate-700 ml-1">ألوان الـ QR المقترحة:</span>
-          {QR_COLOR_PRESETS.map((preset) => {
-            const isSelected = qrColor.toLowerCase() === preset.hex.toLowerCase();
-            return (
-              <button
-                key={preset.id}
-                onClick={() => handleColorChange(preset.hex)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/30'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80'
-                }`}
-              >
-                <span
-                  className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs shrink-0"
-                  style={{ backgroundColor: preset.hex }}
-                />
-                <span>{preset.name}</span>
-              </button>
-            );
-          })}
-
-          {/* Custom Color Input */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80">
-            <input
-              type="color"
-              value={qrColor}
-              onChange={(e) => handleColorChange(e.target.value)}
-              className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent p-0"
-              title="اختر لوناً مخصصاً"
-            />
-            <span className="text-[11px] font-mono text-slate-600 font-bold uppercase">{qrColor}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================
-          TABLE STAND BACKGROUND & DESIGNER STUDIO
-      ============================================================ */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-5">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-sm shadow-orange-500/20">
-              <Layers size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black text-slate-900">
-                  استوديو خلفية وتصميم ستاند الطاولة المطبوع
-                </h2>
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 font-black flex items-center gap-1">
-                  <span>✨ تحكّم كامل بالخلفية</span>
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                خصص خلفية الستاند الخاص بمطعمك: ارفع صورة خاصة بديكور مطعمك أو اختر من الأنماط الفاخرة المعتمدة
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (tables.length > 0) handlePrintSingle(tables[0]);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-            >
-              <Printer size={13} />
-              <span>طباعة تجريبية للستاند المختار</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Theme Presets Grid */}
-        <div className="space-y-2">
-          <label className="text-xs font-black text-slate-800 block">اختر نمط وخلفية الستاند:</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-            {[
-              {
-                id: 'modern_luxury',
-                title: 'فخامة ملكية',
-                sub: 'عاجي وذهبي',
-                color: 'from-amber-100 to-amber-200 border-amber-300',
-                badge: '🏆 الأكثر طلباً',
-              },
-              {
-                id: 'clean_minimal',
-                title: 'مينيمل نقي',
-                sub: 'أبيض واستوديو',
-                color: 'from-slate-50 to-slate-100 border-slate-300',
-                badge: 'عصري ونظيف',
-              },
-              {
-                id: 'burger_grill',
-                title: 'برجر وجريل',
-                sub: 'فحمي داكن ولهب',
-                color: 'from-zinc-800 to-zinc-950 border-orange-500 text-white',
-                badge: '🍔 مشاوي وبرجر',
-              },
-              {
-                id: 'cafe_warm',
-                title: 'كافيه ومقهى',
-                sub: 'إسبريسو وبيج',
-                color: 'from-amber-50 to-stone-200 border-amber-700/40',
-                badge: '☕ مقاهي وحلويات',
-              },
-              {
-                id: 'oriental_heritage',
-                title: 'تراثي وشامي',
-                sub: 'زيتوني وشرقي',
-                color: 'from-emerald-50 to-emerald-100 border-emerald-800/30',
-                badge: '🫒 مأكولات أصيلة',
-              },
-              {
-                id: 'custom_bg',
-                title: 'خلفية مخصصة',
-                sub: cardBgImage ? 'تم رفع صورتك' : 'رفع صورة مطعمك',
-                color: 'from-orange-50 to-rose-50 border-orange-300',
-                badge: '🖼️ صورة خاصة',
-              },
-            ].map((themeItem) => {
-              const isSelected = cardTheme === themeItem.id;
-              return (
+        {/* Collapsible Clean Settings Card */}
+        {showCustomizer && (
+          <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-5 animate-in fade-in slide-in-from-top-1 duration-150">
+            {/* Column 1: QR Code Branding */}
+            <div className="space-y-3 bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-lg bg-orange-500 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                  <span>تخصيص باركود الـ QR</span>
+                </h4>
                 <button
-                  key={themeItem.id}
                   type="button"
-                  onClick={() => handleThemeChange(themeItem.id as StandCardTheme)}
-                  className={`relative p-3 rounded-2xl border text-right transition-all cursor-pointer flex flex-col justify-between min-h-[96px] ${
-                    isSelected
-                      ? 'ring-2 ring-orange-500 border-orange-500 shadow-md bg-orange-50/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  onClick={() => handleToggleReduceGaps(!reduceGaps)}
+                  className={`text-[11px] px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                    reduceGaps ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-white text-slate-500 border-slate-200'
                   }`}
+                  title="تحسين وضوح الرمز ونقائه"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
-                        isSelected ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {themeItem.badge}
-                      </span>
-                      {isSelected && <Check size={14} className="text-orange-600 font-bold" />}
-                    </div>
-                    <div className="font-black text-xs text-slate-900 mt-1">{themeItem.title}</div>
-                    <div className="text-[10px] text-slate-500 font-semibold">{themeItem.sub}</div>
-                  </div>
-
-                  <div className={`h-2 rounded-full w-full mt-2 bg-gradient-to-r ${themeItem.color}`} />
+                  {reduceGaps ? 'إبراز الشعار: عالي ✨' : 'إبراز الشعار: عادي'}
                 </button>
-              );
-            })}
-          </div>
-        </div>
+              </div>
 
-        {/* Custom Background Uploader Bar */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {cardBgImage ? (
-              <div className="relative w-14 h-14 rounded-xl overflow-hidden border-2 border-orange-500 shadow-xs shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={cardBgImage} alt="خلفية المطعم" className="w-full h-full object-cover" />
+              {/* QR Style Select */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1.5">شكل الرمز والشعار:</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: 'center_badge', label: '🏷️ شعار بالمنتصف' },
+                    { id: 'photo_watermark', label: '🖼️ خلفية بالصورة' },
+                    { id: 'solid', label: '⬛ لون موحد' },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => handleStyleChange(st.id as any)}
+                      className={`py-1.5 px-2 text-center rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        qrStyle === st.id
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center shrink-0">
-                <ImageIcon size={24} />
+
+              {/* QR Colors */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1.5">لون الهوية والرمز:</label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {QR_COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleColorChange(preset.hex)}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        qrColor.toLowerCase() === preset.hex.toLowerCase()
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: preset.hex }} />
+                      <span>{preset.name}</span>
+                    </button>
+                  ))}
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-white border border-slate-200">
+                    <input
+                      type="color"
+                      value={qrColor}
+                      onChange={(e) => handleColorChange(e.target.value)}
+                      className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
+                      title="لون مخصص"
+                    />
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-600">{qrColor}</span>
+                  </div>
+                </div>
               </div>
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-900">
-                  {cardBgImage ? 'صورة الخلفية المخصصة للمطعم مفعّلة' : 'تخصيص خلفية خاصة بالمطعم'}
-                </span>
-                {cardBgImage && (
-                  <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full">
-                    نشطة
-                  </span>
+
+              {/* QR Logo Upload */}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
+                <div className="flex items-center gap-2">
+                  {restaurantLogo ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={restaurantLogo} alt="Logo" className="w-6 h-6 rounded-md object-cover border border-slate-200" />
+                  ) : null}
+                  <input
+                    type="file"
+                    ref={fileInputQrRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadQrImage(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isUploadingQrImage}
+                    onClick={() => fileInputQrRef.current?.click()}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-bold hover:underline cursor-pointer"
+                  >
+                    {isUploadingQrImage ? 'جاري الرفع...' : '📷 رفع / تغيير لوجو الـ QR'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Stand Card Design */}
+            <div className="space-y-3 bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-lg bg-orange-500 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                  <span>تصميم ستاند الطاولة المطبوع</span>
+                </h4>
+                {tables.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handlePrintSingle(tables[0])}
+                    className="text-[11px] font-bold text-slate-700 hover:text-black flex items-center gap-1 cursor-pointer bg-white border border-slate-200 px-2 py-0.5 rounded-lg"
+                  >
+                    <Printer size={11} />
+                    <span>تجربة طباعة</span>
+                  </button>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                ارفع صورة للديكور الداخلي لمطعمك، أو تصميم خاص، وستظهر كخلفية أنيقة تحيط بستاند الطاولة مع مركز زجاجي مصقول عالي الوضوح.
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-            <input
-              type="file"
-              ref={fileInputBgRef}
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUploadBgImage(file);
-              }}
-            />
-
-            <button
-              type="button"
-              disabled={isUploadingBg}
-              onClick={() => fileInputBgRef.current?.click()}
-              className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-            >
-              <Upload size={13} />
-              <span>{isUploadingBg ? 'جاري الرفع...' : cardBgImage ? 'تغيير صورة الخلفية' : 'رفع صورة خلفية جديدة'}</span>
-            </button>
-
-            {cardBgImage && (
-              <button
-                type="button"
-                onClick={handleRemoveBgImage}
-                className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer border border-rose-200"
-                title="إزالة الصورة المخصصة والعودة للأنماط الجاهزة"
-              >
-                <Trash2 size={13} />
-                <span>إزالة</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tagline Customizer Field */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label className="text-xs font-black text-slate-800 block mb-1">
-              العبارة الترحيبية / الوصف على الستاند:
-            </label>
-            <input
-              type="text"
-              value={cardTagline}
-              onChange={(e) => handleTaglineChange(e.target.value)}
-              placeholder="مثال: أشهى المأكولات والمشروبات بنكهات أصيلة"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-hidden focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
-            />
-            <span className="text-[10px] text-slate-400 mt-1 block">
-              تظهر هذه العبارة أسفل اسم المطعم في بطاقة ستاند الطاولة
-            </span>
-          </div>
-
-          <div>
-            <label className="text-xs font-black text-slate-800 block mb-1">
-              معاينة سريعة للستاند المطبوع:
-            </label>
-            <div className="bg-slate-100/80 rounded-xl p-2.5 border border-slate-200 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="font-bold text-slate-700">
-                  النمط المختار: {
-                    cardTheme === 'modern_luxury' ? 'فخامة ملكية (عاجي وذهبي)' :
-                    cardTheme === 'clean_minimal' ? 'مينيمل عصري (أبيض نقي)' :
-                    cardTheme === 'burger_grill' ? 'برجر آند جريل (فحمي داكن)' :
-                    cardTheme === 'cafe_warm' ? 'كافيه ومقهى (إسبريسو دافئ)' :
-                    cardTheme === 'oriental_heritage' ? 'تراثي وشامي (زيتوني أصيل)' :
-                    'خلفية مخصصة بصورة المطعم'
-                  }
-                </span>
+              {/* Stand Themes */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1.5">نمط وخلفية بطاقة الستاند:</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: 'modern_luxury', label: '👑 فخامة ملكية' },
+                    { id: 'clean_minimal', label: '✨ مينيمل نقي' },
+                    { id: 'burger_grill', label: '🍔 برجر وجريل' },
+                    { id: 'cafe_warm', label: '☕ كافيه ومقهى' },
+                    { id: 'oriental_heritage', label: '🫒 تراثي وشرقي' },
+                    { id: 'custom_bg', label: '🖼️ صورة خاصة' },
+                  ].map((themeItem) => (
+                    <button
+                      key={themeItem.id}
+                      type="button"
+                      onClick={() => handleThemeChange(themeItem.id as StandCardTheme)}
+                      className={`py-1.5 px-2 text-center rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        cardTheme === themeItem.id
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-xs'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {themeItem.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <span className="text-[11px] font-black text-orange-600">طاولة رقم ١</span>
+
+              {/* Tagline */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">العبارة الترحيبية على الستاند:</label>
+                <input
+                  type="text"
+                  value={cardTagline}
+                  onChange={(e) => handleTaglineChange(e.target.value)}
+                  placeholder="مثال: أشهى المأكولات والمشروبات بنكهات أصيلة"
+                  className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              {/* Custom BG upload if selected */}
+              {cardTheme === 'custom_bg' && (
+                <div className="flex items-center justify-between p-2 rounded-xl bg-orange-100/60 border border-orange-200 text-xs">
+                  <span className="font-bold text-orange-950 text-[11px]">
+                    {cardBgImage ? 'تم تفعيل صورة الخلفية المخصصة' : 'ارفع صورة ديكور مطعمك للستاند'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="file"
+                      ref={fileInputBgRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadBgImage(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isUploadingBg}
+                      onClick={() => fileInputBgRef.current?.click()}
+                      className="px-2 py-0.5 rounded-lg bg-orange-500 text-white font-bold text-[11px] cursor-pointer"
+                    >
+                      {isUploadingBg ? 'جاري...' : 'رفع صورة'}
+                    </button>
+                    {cardBgImage && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveBgImage}
+                        className="text-rose-600 font-bold text-[11px] hover:underline cursor-pointer"
+                      >
+                        إزالة
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
+        )}
       </div>
 
       {/* Tables Grid or Empty State */}

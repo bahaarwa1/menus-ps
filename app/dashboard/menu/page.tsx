@@ -1,11 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   Plus, Trash2, X, Search, Flame, Utensils, RefreshCw, 
   Edit3, Loader2, UploadCloud, Image as ImageIcon, Link as LinkIcon, 
-  Check, Sparkles, AlertCircle
+  Check, Sparkles, AlertCircle, Layers, ChefHat
 } from 'lucide-react';
+import { 
+  RICH_FOOD_PHOTOS, 
+  FOOD_PHOTO_CATEGORIES, 
+  POPULAR_DISH_TEMPLATES, 
+  DishTemplateItem, 
+  FoodPhotoItem 
+} from '@/lib/food-presets-catalog';
 
 interface MenuItemType {
   id: string;
@@ -18,21 +25,6 @@ interface MenuItemType {
   popular?: boolean;
   spicy?: boolean;
 }
-
-const FOOD_PRESETS = [
-  { name: 'برجر لحم فاخر', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
-  { name: 'بيتزا إيطالية', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80' },
-  { name: 'شاورما وساندوتش', url: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&auto=format&fit=crop&q=80' },
-  { name: 'دجاج مقرمش / كريسبي', url: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&auto=format&fit=crop&q=80' },
-  { name: 'ستيك ومشاوي', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80' },
-  { name: 'بطاطا مقلية مقرمشة', url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80' },
-  { name: 'سلطة خضراء طازجة', url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80' },
-  { name: 'باستا ومعكرونة', url: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80' },
-  { name: 'مشروبات باردة وعصائر', url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { name: 'قهوة ساخنة مميزة', url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80' },
-  { name: 'حلويات وكيك', url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80' },
-  { name: 'فطور شرقي منوع', url: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&auto=format&fit=crop&q=80' },
-];
 
 export default function ProductionMenuPage() {
   const [categories, setCategories] = useState<{ id: string; name: string; icon: string }[]>([
@@ -47,6 +39,13 @@ export default function ProductionMenuPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [dbStatus, setDbStatus] = useState<'ok' | 'error' | 'checking'>('checking');
+
+  // Dish Preset / Selection & Rich Photo Gallery States
+  const [addMethod, setAddMethod] = useState<'preset' | 'custom'>('preset');
+  const [presetSearch, setPresetSearch] = useState('');
+  const [presetCategory, setPresetCategory] = useState('all');
+  const [photoGalleryCategory, setPhotoGalleryCategory] = useState('all');
+  const [selectedTemplateNotice, setSelectedTemplateNotice] = useState('');
 
   // Form State for Adding New Item
   const [newName, setNewName] = useState('');
@@ -585,209 +584,426 @@ export default function ProductionMenuPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} className="space-y-4 text-xs">
-              
-              {/* IMAGE SELECTION & UPLOAD SECTION */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1.5">
-                  صورة الطبق (رفع من جهازك أو اختيار صورة جاهزة)
-                </label>
+            {/* Modal Subtitle / Mode Toggle */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl mb-4">
+              <button
+                type="button"
+                onClick={() => setAddMethod('preset')}
+                className={`py-2 px-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  addMethod === 'preset'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>اختيار صنف مقترح جاهز ⚡</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMethod('custom');
+                  setSelectedTemplateNotice('');
+                }}
+                className={`py-2 px-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  addMethod === 'custom'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <Plus size={14} />
+                <span>كتابة صنف مخصص يدوي ✍️</span>
+              </button>
+            </div>
 
-                {newImage ? (
-                  <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 mb-2 group">
-                    <img src={newImage} alt="معاينة" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputNewRef.current?.click()}
-                        className="px-3 py-1.5 bg-white text-slate-900 font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-slate-100"
-                      >
-                        تغيير الصورة
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewImage('')}
-                        className="px-3 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-rose-700"
-                      >
-                        إزالة
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-slate-200 hover:border-orange-400 rounded-2xl p-4 text-center bg-slate-50/50 transition-colors">
-                    {isUploadingNew ? (
-                      <div className="py-4 flex flex-col items-center gap-2 text-orange-600">
-                        <Loader2 size={24} className="animate-spin" />
-                        <span className="font-bold text-xs">جاري رفع الصورة إلى سحابة التخزين...</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => fileInputNewRef.current?.click()}
-                            className="px-4 py-2 bg-white border border-slate-300 hover:border-orange-500 hover:text-orange-600 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                          >
-                            <UploadCloud size={16} />
-                            <span>رفع صورة من جهازك</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setShowPresetsNew(!showPresetsNew)}
-                            className="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <Sparkles size={15} />
-                            <span>صور أطباق جاهزة</span>
-                          </button>
-                        </div>
-                        <p className="text-[11px] text-slate-400">يدعم صيغ JPG, PNG, WEBP حتى 6 ميغابايت</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Hidden File Input */}
-                <input
-                  ref={fileInputNewRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleUploadFile(file, setNewImage, setIsUploadingNew);
-                  }}
-                />
-
-                {/* Preset Picker Dropdown */}
-                {showPresetsNew && (
-                  <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                    <p className="text-[11px] font-bold text-slate-600">اختر صورة مناسبة لطبقك بنقرة واحدة:</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-                      {FOOD_PRESETS.map((preset, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setNewImage(preset.url);
-                            setShowPresetsNew(false);
-                          }}
-                          className="group relative rounded-xl overflow-hidden border border-slate-200 hover:border-orange-500 aspect-square cursor-pointer"
-                          title={preset.name}
-                        >
-                          <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] p-0.5 text-center truncate font-bold">
-                            {preset.name}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Direct URL input fallback */}
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="url"
-                    placeholder="أو الصق رابط صورة مباشر هنا (اختياري)..."
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                    className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-orange-500 font-mono text-left"
-                    dir="ltr"
-                  />
-                </div>
-              </div>
-
-              {/* Dish Name */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">اسم الصنف / الوجبة *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثال: شاورما عربي دبل، برجر كلاسيك"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">السعر (₪) *</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    required
-                    placeholder="25"
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">القسم</label>
+            {/* PRESET SELECTION VIEW (اختيار من الأطباق المقترحة) */}
+            {addMethod === 'preset' ? (
+              <div className="space-y-3 text-xs">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="مثال: الأطباق الرئيسية، سناك"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="ابحث بين الأصناف المقترحة (برجر، شاورما، كرسبي، بيتزا، ستيك...)"
+                    value={presetSearch}
+                    onChange={(e) => setPresetSearch(e.target.value)}
+                    className="w-full pr-8 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 focus:bg-white"
+                  />
+                </div>
+
+                {/* Category Filter Pills */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                  {FOOD_PHOTO_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setPresetCategory(cat.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                        presetCategory === cat.id
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Templates List */}
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  {POPULAR_DISH_TEMPLATES
+                    .filter((t) => {
+                      const matchesCat = presetCategory === 'all' || t.categoryGroup === presetCategory;
+                      const matchesSearch = !presetSearch || t.name.toLowerCase().includes(presetSearch.toLowerCase()) || t.description.toLowerCase().includes(presetSearch.toLowerCase());
+                      return matchesCat && matchesSearch;
+                    })
+                    .map((tpl) => (
+                      <div
+                        key={tpl.id}
+                        onClick={() => {
+                          setNewName(tpl.name);
+                          setNewCategory(tpl.category);
+                          setNewPrice(String(tpl.price));
+                          setNewDescription(tpl.description);
+                          setNewImage(tpl.image);
+                          setNewPopular(Boolean(tpl.popular));
+                          setNewSpicy(Boolean(tpl.spicy));
+                          setSelectedTemplateNotice(`تم ملء بيانات "${tpl.name}" وصورته بنجاح! يمكنك تعديل أي حقل قبل الحفظ.`);
+                          setAddMethod('custom');
+                        }}
+                        className="p-2.5 bg-slate-50 hover:bg-orange-50/60 border border-slate-200 hover:border-orange-300 rounded-2xl cursor-pointer transition-all flex items-center gap-3 group"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={tpl.image} 
+                          alt={tpl.name} 
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform" 
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="font-black text-xs text-slate-900 truncate group-hover:text-orange-600">
+                              {tpl.name}
+                            </span>
+                            <span className="text-xs font-black text-orange-600 shrink-0 font-mono">
+                              {tpl.price} ₪
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block mb-1">
+                            {tpl.category}
+                          </span>
+                          <p className="text-[10px] text-slate-500 line-clamp-1">
+                            {tpl.description}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="px-2.5 py-1.5 rounded-xl bg-orange-500 text-white font-bold text-[10px] shrink-0 shadow-2xs group-hover:bg-orange-600 transition-colors"
+                        >
+                          اختيار ✨
+                        </button>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Custom Add Callout */}
+                <div className="pt-3 text-center border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500">صنفك غير موجود في المقترحات؟</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddMethod('custom');
+                      setSelectedTemplateNotice('');
+                    }}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-black hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={13} />
+                    <span>كتابة صنف مخصص جديد</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* CUSTOM / PREFILLED FORM VIEW */
+              <form onSubmit={handleAddItem} className="space-y-4 text-xs">
+                {selectedTemplateNotice && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-1.5">
+                      <Check size={14} className="text-emerald-600 shrink-0" />
+                      <span>{selectedTemplateNotice}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAddMethod('preset')}
+                      className="text-[11px] text-emerald-700 hover:underline cursor-pointer shrink-0 mr-2"
+                    >
+                      تغيير الصنف
+                    </button>
+                  </div>
+                )}
+
+                {/* IMAGE SELECTION & UPLOAD SECTION */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold text-slate-700">
+                      صورة الطبق (رفع من جهازك أو اختيار صورة جاهزة)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPresetsNew(!showPresetsNew)}
+                      className="text-[11px] text-orange-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles size={11} />
+                      <span>{showPresetsNew ? 'إخفاء مكتبة الصور' : 'مكتبة الصور الغنية (60+ صورة)'}</span>
+                    </button>
+                  </div>
+
+                  {newImage ? (
+                    <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 mb-2 group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={newImage} alt="معاينة" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputNewRef.current?.click()}
+                          className="px-3 py-1.5 bg-white text-slate-900 font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-slate-100"
+                        >
+                          تغيير الصورة
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowPresetsNew(true)}
+                          className="px-3 py-1.5 bg-orange-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-orange-600"
+                        >
+                          من المكتبة
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewImage('')}
+                          className="px-3 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-rose-700"
+                        >
+                          إزالة
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-slate-200 hover:border-orange-400 rounded-2xl p-4 text-center bg-slate-50/50 transition-colors">
+                      {isUploadingNew ? (
+                        <div className="py-4 flex flex-col items-center gap-2 text-orange-600">
+                          <Loader2 size={24} className="animate-spin" />
+                          <span className="font-bold text-xs">جاري رفع الصورة إلى سحابة التخزين...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => fileInputNewRef.current?.click()}
+                              className="px-4 py-2 bg-white border border-slate-300 hover:border-orange-500 hover:text-orange-600 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                            >
+                              <UploadCloud size={16} />
+                              <span>رفع صورة من جهازك</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setShowPresetsNew(!showPresetsNew)}
+                              className="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Sparkles size={15} />
+                              <span>مكتبة الصور الغنية (60+ صورة)</span>
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-400">يدعم صيغ JPG, PNG, WEBP حتى 6 ميغابايت</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputNewRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadFile(file, setNewImage, setIsUploadingNew);
+                    }}
+                  />
+
+                  {/* Rich Categorized Photo Gallery Picker */}
+                  {showPresetsNew && (
+                    <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-slate-700">اختر صورة مناسبة لطبقك من المكتبة:</p>
+                        <button
+                          type="button"
+                          onClick={() => setShowPresetsNew(false)}
+                          className="text-[10px] text-slate-400 hover:text-slate-700 font-bold"
+                        >
+                          إغلاق المكتبة ✕
+                        </button>
+                      </div>
+
+                      {/* Photo Category Tabs */}
+                      <div className="flex gap-1 overflow-x-auto pb-1 hide-scrollbar">
+                        {FOOD_PHOTO_CATEGORIES.map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setPhotoGalleryCategory(cat.id)}
+                            className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                              photoGalleryCategory === cat.id
+                                ? 'bg-orange-500 text-white'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {cat.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Photos Grid */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-52 overflow-y-auto p-1">
+                        {RICH_FOOD_PHOTOS
+                          .filter((p) => photoGalleryCategory === 'all' || p.category === photoGalleryCategory)
+                          .map((photo, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setNewImage(photo.url);
+                                setShowPresetsNew(false);
+                              }}
+                              className="group relative rounded-xl overflow-hidden border border-slate-200 hover:border-orange-500 aspect-square cursor-pointer"
+                              title={photo.name}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={photo.url} alt={photo.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] p-0.5 text-center truncate font-bold">
+                                {photo.name}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Direct URL input fallback */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="url"
+                      placeholder="أو الصق رابط صورة مباشر هنا (اختياري)..."
+                      value={newImage}
+                      onChange={(e) => setNewImage(e.target.value)}
+                      className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-orange-500 font-mono text-left"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* Dish Name Field */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">اسم الصنف / الوجبة *</label>
+                    <button
+                      type="button"
+                      onClick={() => setAddMethod('preset')}
+                      className="text-[11px] text-orange-600 hover:text-orange-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles size={11} />
+                      <span>اختيار من الأصناف الجاهزة</span>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: شاورما عربي دبل، برجر كلاسيك، وجبة خاصة..."
+                    value={newName}
+                    onChange={(e) => {
+                      setNewName(e.target.value);
+                      setSelectedTemplateNotice('');
+                    }}
                     className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">الوصف والمكونات</label>
-                <textarea
-                  rows={2}
-                  placeholder="مكونات الوجبة، نوع اللحم، الصوصات الإضافية..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium resize-none"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">السعر (₪) *</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      placeholder="25"
+                      value={newPrice}
+                      onChange={(e) => setNewPrice(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium font-mono"
+                    />
+                  </div>
 
-              <div className="flex items-center gap-4 pt-1">
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={newPopular}
-                    onChange={(e) => setNewPopular(e.target.checked)}
-                    className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">القسم</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: الأطباق الرئيسية، سناك"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">الوصف والمكونات</label>
+                  <textarea
+                    rows={2}
+                    placeholder="مكونات الوجبة، نوع اللحم، الصوصات الإضافية..."
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium resize-none"
                   />
-                  <span>تمييز كـ (الأكثر طلباً)</span>
-                </label>
+                </div>
 
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={newSpicy}
-                    onChange={(e) => setNewSpicy(e.target.checked)}
-                    className="rounded border-slate-300 text-rose-500 focus:ring-rose-500"
-                  />
-                  <span>وجبة حارة 🌶️</span>
-                </label>
-              </div>
+                <div className="flex items-center gap-4 pt-1">
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={newPopular}
+                      onChange={(e) => setNewPopular(e.target.checked)}
+                      className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                    />
+                    <span>تمييز كـ (الأكثر طلباً)</span>
+                  </label>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 font-bold transition-colors cursor-pointer"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  {isSaving && <Loader2 size={14} className="animate-spin" />}
-                  <span>{isSaving ? 'جاري الحفظ...' : 'حفظ ونشر في المنيو'}</span>
-                </button>
-              </div>
-            </form>
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={newSpicy}
+                      onChange={(e) => setNewSpicy(e.target.checked)}
+                      className="rounded border-slate-300 text-rose-500 focus:ring-rose-500"
+                    />
+                    <span>وجبة حارة 🌶️</span>
+                  </label>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-50 font-bold transition-colors cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    {isSaving && <Loader2 size={14} className="animate-spin" />}
+                    <span>{isSaving ? 'جاري الحفظ...' : 'حفظ ونشر في المنيو'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -884,28 +1100,59 @@ export default function ProductionMenuPage() {
                   }}
                 />
 
-                {/* Preset Picker Dropdown */}
+                {/* Rich Photo Gallery Picker Dropdown */}
                 {showPresetsEdit && (
-                  <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                    <p className="text-[11px] font-bold text-slate-600">اختر صورة مناسبة لطبقك:</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-                      {FOOD_PRESETS.map((preset, idx) => (
+                  <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-bold text-slate-700">اختر صورة مناسبة لطبقك من المكتبة:</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowPresetsEdit(false)}
+                        className="text-[10px] text-slate-400 hover:text-slate-700 font-bold"
+                      >
+                        إغلاق المكتبة ✕
+                      </button>
+                    </div>
+
+                    {/* Photo Category Tabs */}
+                    <div className="flex gap-1 overflow-x-auto pb-1 hide-scrollbar">
+                      {FOOD_PHOTO_CATEGORIES.map((cat) => (
                         <button
-                          key={idx}
+                          key={cat.id}
                           type="button"
-                          onClick={() => {
-                            setEditImage(preset.url);
-                            setShowPresetsEdit(false);
-                          }}
-                          className="group relative rounded-xl overflow-hidden border border-slate-200 hover:border-orange-500 aspect-square cursor-pointer"
-                          title={preset.name}
+                          onClick={() => setPhotoGalleryCategory(cat.id)}
+                          className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                            photoGalleryCategory === cat.id
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
                         >
-                          <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] p-0.5 text-center truncate font-bold">
-                            {preset.name}
-                          </div>
+                          {cat.name}
                         </button>
                       ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-52 overflow-y-auto p-1">
+                      {RICH_FOOD_PHOTOS
+                        .filter((p) => photoGalleryCategory === 'all' || p.category === photoGalleryCategory)
+                        .map((photo, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setEditImage(photo.url);
+                              setShowPresetsEdit(false);
+                            }}
+                            className="group relative rounded-xl overflow-hidden border border-slate-200 hover:border-orange-500 aspect-square cursor-pointer"
+                            title={photo.name}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photo.url} alt={photo.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] p-0.5 text-center truncate font-bold">
+                              {photo.name}
+                            </div>
+                          </button>
+                        ))}
                     </div>
                   </div>
                 )}
