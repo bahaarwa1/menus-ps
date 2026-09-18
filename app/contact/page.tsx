@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import PublicLayout from '@/components/layout/PublicLayout';
-import { Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, CheckCircle, MessageCircle } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -149,8 +149,23 @@ export default function ContactPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="w-full lg:w-1/3 space-y-6"
+              className="w-full lg:w-1/3 space-y-4"
             >
+              <a
+                href="https://api.whatsapp.com/message/OOPIRMKVJC46J1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 rounded-2xl shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 flex items-center gap-4 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer block"
+              >
+                <div className="w-12 h-12 bg-white/20 text-white rounded-full flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-white text-base">محادثة واتساب فورية 💬</h4>
+                  <p className="text-emerald-100 text-xs font-medium mt-0.5">تواصل مباشرة مع فريق المبيعات والاستفسارات</p>
+                </div>
+              </a>
+
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                 <div className="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center shrink-0">
                   <Phone className="w-6 h-6" />

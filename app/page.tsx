@@ -7,7 +7,7 @@ import PublicLayout from '@/components/layout/PublicLayout';
 import { 
   QrCode, Smartphone, ChefHat, BarChart3, Sparkles, CheckCircle2, 
   ArrowLeft, ArrowRight, ExternalLink, ShieldCheck, Zap, TrendingUp, Clock, 
-  ArrowDown, Check
+  ArrowDown, Check, MessageCircle
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -186,6 +186,16 @@ export default function HomePage() {
                   >
                     {language === 'ar' ? 'طلب تجربة مجانية' : 'Start Free Trial'}
                   </Link>
+
+                  <a
+                    href="https://api.whatsapp.com/message/OOPIRMKVJC46J1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-4 py-3.5 bg-emerald-50 hover:bg-emerald-100/90 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-emerald-300 transition-all shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <MessageCircle size={16} className="text-emerald-600" />
+                    <span>{language === 'ar' ? 'تواصل واتساب 💬' : 'WhatsApp 💬'}</span>
+                  </a>
                 </div>
 
               </div>
@@ -1079,12 +1089,24 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link
-                href="/register"
-                className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-sm block shadow-md shadow-orange-500/25 transition-all"
-              >
-                {isRtl ? 'ابدأ تجربتك المجانية لمدة 14 يوم الآن 🚀' : 'Start 14-Day Free Trial Now 🚀'}
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/register"
+                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-black text-sm block shadow-md shadow-orange-500/25 transition-all"
+                >
+                  {isRtl ? 'ابدأ تجربتك المجانية لمدة 14 يوم الآن 🚀' : 'Start 14-Day Free Trial Now 🚀'}
+                </Link>
+
+                <a
+                  href="https://api.whatsapp.com/message/OOPIRMKVJC46J1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20 transition-all hover:scale-[1.01]"
+                >
+                  <MessageCircle size={15} />
+                  <span>{isRtl ? 'أو تواصل معنا مباشرة عبر واتساب 💬' : 'Or Contact Us on WhatsApp Directly 💬'}</span>
+                </a>
+              </div>
               <p className="text-[10px] text-slate-400 mt-2 font-bold">
                 {isRtl ? 'إلغاء بأي وقت • بدون بطاقة ائتمان' : 'Cancel anytime • No credit card required'}
               </p>

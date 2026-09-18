@@ -1,6 +1,7 @@
 'use client';
 
 import Navbar from '@/components/layout/Navbar';
+import FloatingWhatsApp from '@/components/common/FloatingWhatsApp';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function PublicLayout({
@@ -16,6 +17,7 @@ export default function PublicLayout({
       <main className="pt-14">
         {children}
       </main>
+      <FloatingWhatsApp />
     </div>
   );
 }

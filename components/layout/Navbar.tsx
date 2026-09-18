@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, MessageCircle } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -53,6 +53,18 @@ export default function Navbar() {
             {/* Language Switcher */}
             <LanguageSwitcher variant="pill" />
 
+            {/* WhatsApp Contact Direct Button */}
+            <a
+              href="https://api.whatsapp.com/message/OOPIRMKVJC46J1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 text-[14px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+              title="تواصل معنا عبر واتساب"
+            >
+              <MessageCircle size={16} className="text-emerald-600" />
+              <span>{direction === 'rtl' ? 'تواصل واتساب' : 'WhatsApp'}</span>
+            </a>
+
             <Link
               href="/login"
               className="px-4 py-2 text-[15px] font-bold text-slate-700 hover:text-orange-600 hover:bg-slate-100/70 rounded-xl transition-all"
@@ -99,6 +111,17 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-3 border-t border-slate-100 space-y-2">
+              <a
+                href="https://api.whatsapp.com/message/OOPIRMKVJC46J1"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 text-center text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 transition-colors shadow-2xs"
+              >
+                <MessageCircle size={17} className="text-emerald-600" />
+                <span>{direction === 'rtl' ? 'تواصل معنا عبر واتساب 💬' : 'Chat on WhatsApp 💬'}</span>
+              </a>
+
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
