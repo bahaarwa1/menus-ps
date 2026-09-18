@@ -75,7 +75,9 @@ export interface BranchData {
 // ---------- Menu Categories ----------
 export const categories = [
   { id: 'burgers', name: 'برغر', icon: '🍔' },
-  { id: 'wraps', name: 'رابز وتورتيلا', icon: '🌯' },
+  { id: 'crispy', name: 'دجاج كرسبي', icon: '🍗' },
+  { id: 'pizzas', name: 'بيتزا ومعجنات', icon: '🍕' },
+  { id: 'wraps', name: 'رابز وساندويش', icon: '🌯' },
   { id: 'sides', name: 'أطباق جانبية', icon: '🍟' },
   { id: 'drinks', name: 'مشروبات', icon: '🥤' },
   { id: 'desserts', name: 'حلويات', icon: '🍰' },
@@ -197,6 +199,50 @@ export const menuItems: MenuItem[] = [
     price: 30, image: '🍗',
     imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80',
     category: 'wraps', popular: true,
+  },
+  // Crispy & Fried Chicken
+  {
+    id: 'cr1', name: 'وجبة كرسبي دجاج سوبريم',
+    description: '٤ قطع صدر دجاج مقرمش ذهبي مع بطاطا ودجز وصوص باربكيو وثومية',
+    price: 35, image: '🍗',
+    imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=600&q=80',
+    category: 'crispy', popular: true,
+    extras: [
+      { id: 'e1', name: 'جبنة شيدر سائلة', price: 5 },
+      { id: 'e10', name: 'صوص رانش إضافي', price: 3 },
+    ],
+  },
+  {
+    id: 'cr2', name: 'ستربس دجاج مقرمش ٥ قطع',
+    description: 'أصابع فيليه دجاج مقرمشة بتتبيلة خاصة مع صوص الخردل والعسل',
+    price: 28, image: '🍗',
+    imageUrl: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=600&q=80',
+    category: 'crispy',
+    extras: [
+      { id: 'e8', name: 'صوص حار نار', price: 2 },
+    ],
+  },
+  // Pizzas
+  {
+    id: 'pz1', name: 'بيتزا مارغريتا إيطالية',
+    description: 'صلصة طماطم سان مارزانو الإيطالية مع جبنة موزاريلا طازجة وريحان بري',
+    price: 36, image: '🍕',
+    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+    category: 'pizzas', popular: true,
+    extras: [
+      { id: 'e4', name: 'موزاريلا إضافية', price: 6 },
+    ],
+  },
+  {
+    id: 'pz2', name: 'بيتزا بيبروني فاخرة',
+    description: 'شرائح بيبروني بقري مدخن مع جبنة موزاريلا وصوص طماطم إيطالي غني',
+    price: 44, image: '🍕',
+    imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=600&q=80',
+    category: 'pizzas', popular: true,
+    extras: [
+      { id: 'e6', name: 'هالابينو مكسيكي', price: 3 },
+      { id: 'e4', name: 'جبنة إضافية', price: 6 },
+    ],
   },
   // Sides
   {

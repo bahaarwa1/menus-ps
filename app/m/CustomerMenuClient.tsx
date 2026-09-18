@@ -245,6 +245,16 @@ export default function CustomerMenuClient({
   const [waiterCalled, setWaiterCalled] = useState(false);
   const [liveOrderStatus, setLiveOrderStatus] = useState<'new' | 'cooking' | 'ready' | 'completed'>('new');
 
+  // Auto-rotating Hero Ad Banner carousel state (يتبدل تلقائياً كل 4.5 ثانية لعرض العروض وإعلان التواصل والواتساب)
+  const [currentBannerSlide, setCurrentBannerSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBannerSlide((prev) => (prev + 1) % 3);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
   // Touch swipe between categories
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -425,12 +435,22 @@ export default function CustomerMenuClient({
     return p ? `tel:${p}` : '';
   }, [restaurantPhone, socialWhatsapp]);
 
-  // Featured / Top dishes for 2-row section
-  const featuredItems = useMemo(() => {
-    const popular = dbMenuItems.filter(i => i.popular);
-    if (popular.length >= 2) return popular.slice(0, 4);
-    return dbMenuItems.slice(0, 4);
-  }, [dbMenuItems]);
+  // Pre-formatted categories with "All" for the 2-row category grid (4 on top, 4 below)
+  const categoryItems = useMemo(() => {
+    const allItem = {
+      id: 'all',
+      name: language === 'ar' ? 'الكل' : 'All',
+      icon: '🍽️',
+      count: dbMenuItems.length,
+    };
+    const cats = dbCategories.map((cat) => ({
+      id: cat.id,
+      name: language === 'en' ? translateCategoryName(cat.name, 'en') : cat.name,
+      icon: cat.icon || '🍴',
+      count: dbMenuItems.filter((m) => m.category === cat.id).length,
+    }));
+    return [allItem, ...cats];
+  }, [dbCategories, dbMenuItems, language]);
 
   // Synchronize state when SSR props update
   useEffect(() => {
@@ -954,74 +974,6 @@ export default function CustomerMenuClient({
             </div>
           </div>
 
-          {/* Social Media & Contact Quick Bar */}
-          {(cleanWhatsappUrl || cleanInstagramUrl || cleanFacebookUrl || cleanTiktokUrl || cleanPhoneUrl) && (
-            <div className="px-3 pb-2 pt-0.5 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
-              <span className="text-[10px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
-                <Share2 size={10} className="text-orange-500" />
-                <span>{language === 'ar' ? 'تابعنا:' : 'Social:'}</span>
-              </span>
-              {cleanWhatsappUrl && (
-                <a
-                  href={cleanWhatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                  title="WhatsApp"
-                >
-                  <MessageCircle size={10} className="text-emerald-600" />
-                  <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>
-                </a>
-              )}
-              {cleanInstagramUrl && (
-                <a
-                  href={cleanInstagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-0.5 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                  title="Instagram"
-                >
-                  <span className="text-[10px]">📸</span>
-                  <span>{language === 'ar' ? 'إنستغرام' : 'Instagram'}</span>
-                </a>
-              )}
-              {cleanFacebookUrl && (
-                <a
-                  href={cleanFacebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                  title="Facebook"
-                >
-                  <span className="text-[10px]">📘</span>
-                  <span>{language === 'ar' ? 'فيسبوك' : 'Facebook'}</span>
-                </a>
-              )}
-              {cleanTiktokUrl && (
-                <a
-                  href={cleanTiktokUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-0.5 rounded-full bg-slate-900 hover:bg-black text-white text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                  title="TikTok"
-                >
-                  <span className="text-[10px]">🎵</span>
-                  <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
-                </a>
-              )}
-              {cleanPhoneUrl && (
-                <a
-                  href={cleanPhoneUrl}
-                  className="px-2.5 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200/80 text-[10px] font-black flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                  title="Call"
-                >
-                  <PhoneCall size={10} className="text-orange-600" />
-                  <span>{language === 'ar' ? 'اتصال' : 'Call'}</span>
-                </a>
-              )}
-            </div>
-          )}
-
           {/* Search Input Bar */}
           <div className="px-3 pb-2">
             <div className="relative">
@@ -1044,71 +996,45 @@ export default function CustomerMenuClient({
             </div>
           </div>
 
-          {/* Categories Pill Slider */}
-          {dbCategories.length > 0 ? (
-            <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-auto hide-scrollbar">
-              {/* All Items Button */}
-              <button
-                key="all"
-                id="cat-btn-all"
-                onClick={() => {
-                  setActiveCategory('all');
-                  setSearchQuery('');
-                }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-                  (activeCategory === 'all' || !activeCategory) && !searchQuery
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-2 ring-orange-500/20'
-                    : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
-                }`}
+          {/* Categories 2-Row Grid (التصنيفات سطرين: 4 بالأعلى و4 بالأسفل) */}
+          {categoryItems.length > 0 ? (
+            <div className="px-2.5 sm:px-3 py-2 bg-white/95 border-t border-slate-100">
+              <div 
+                className={
+                  categoryItems.length <= 8
+                    ? "grid grid-cols-4 gap-1.5 sm:gap-2"
+                    : "grid grid-rows-2 grid-flow-col auto-cols-[calc((100%-18px)/4)] gap-1.5 overflow-x-auto hide-scrollbar pb-0.5"
+                }
               >
-                <span>🍽️</span>
-                <span>{language === 'ar' ? 'الكل' : 'All'}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  (activeCategory === 'all' || !activeCategory) && !searchQuery ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
-                }`}>
-                  {dbMenuItems.length}
-                </span>
-              </button>
-
-              {dbCategories.map((cat) => {
-                const isActive = activeCategory === cat.id && !searchQuery;
-                const catName = language === 'en' 
-                  ? translateCategoryName(cat.name, 'en')
-                  : cat.name;
-                const catCount = dbMenuItems.filter(m => m.category === cat.id).length;
-                return (
-                  <button
-                    key={cat.id}
-                    id={`cat-btn-${cat.id}`}
-                    onClick={() => {
-                      setActiveCategory(cat.id);
-                      setSearchQuery('');
-                    }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-2 ring-orange-500/20'
-                        : 'bg-slate-100/90 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
-                    }`}
-                  >
-                    <span>{cat.icon || '🍴'}</span>
-                    <span>{catName}</span>
-                    {catCount > 0 && (
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
-                      }`}>
-                        {catCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                {categoryItems.map((cat) => {
+                  const isActive = (activeCategory === cat.id || (cat.id === 'all' && (!activeCategory || activeCategory === 'all'))) && !searchQuery;
+                  return (
+                    <button
+                      key={cat.id}
+                      id={`cat-btn-${cat.id}`}
+                      onClick={() => {
+                        setActiveCategory(cat.id);
+                        setSearchQuery('');
+                      }}
+                      className={`h-9 sm:h-10 px-1 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 active:scale-95 cursor-pointer min-w-0 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs shadow-orange-500/25 ring-2 ring-orange-500/20'
+                          : 'bg-slate-100/90 text-slate-700 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
+                      }`}
+                      title={cat.name}
+                    >
+                      <span className="text-sm shrink-0">{cat.icon}</span>
+                      <span className="truncate max-w-[55px] sm:max-w-[70px] leading-tight text-center">{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ) : menuLoading ? (
-            <div className="px-3 py-2 bg-white/95 border-t border-slate-100 flex gap-1.5 overflow-x-hidden animate-pulse">
-              <div className="h-7 w-20 rounded-full bg-orange-200/60 shrink-0" />
-              <div className="h-7 w-16 rounded-full bg-slate-200/80 shrink-0" />
-              <div className="h-7 w-24 rounded-full bg-slate-200/80 shrink-0" />
-              <div className="h-7 w-16 rounded-full bg-slate-200/80 shrink-0" />
+            <div className="px-3 py-2 bg-white/95 border-t border-slate-100 grid grid-cols-4 gap-1.5 animate-pulse">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="h-9 rounded-xl bg-slate-100" />
+              ))}
             </div>
           ) : null}
 
@@ -1214,126 +1140,230 @@ export default function CustomerMenuClient({
             </div>
           ) : (
             <div className="space-y-4">
-              {/* 1. Large Hero Promotional Offers Banner (صورة كبيرة وعروض ترويجية قابلة للتبديل) */}
-              {!searchQuery && offersBannerActive && offersBannerUrl && (
-                <div className="relative rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 aspect-[21/9] sm:aspect-[24/9] bg-slate-900 group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={offersBannerUrl} 
-                    alt={offersBannerTitle || "Special Offers"} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex flex-col justify-end p-3.5 sm:p-4.5">
-                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                      <span className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
-                        <Sparkles size={11} />
-                        <span>{language === 'ar' ? 'عرض حصري' : 'Special Deal'}</span>
-                      </span>
-                      <span className="bg-black/50 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
-                        🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Offer'}
-                      </span>
-                    </div>
-                    <h2 className="text-white font-black text-sm sm:text-lg leading-tight mb-0.5 drop-shadow-md">
-                      {language === 'en' ? translateFoodName(offersBannerTitle, 'en') : offersBannerTitle}
-                    </h2>
-                    <p className="text-slate-200 text-[11px] sm:text-xs font-medium line-clamp-1 drop-shadow-sm">
-                      {language === 'en' ? translateFoodDescription(offersBannerSubtitle, 'en') : offersBannerSubtitle}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* 1. Large Auto-Rotating Hero Ad Banner (صورة كبيرة وعروض ترويجية وإعلان تواصل وسوشال ميديا يتبدل تلقائياً) */}
+              {!searchQuery && (
+                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 aspect-[16/9] sm:aspect-[21/9] bg-slate-950 group select-none">
+                  <AnimatePresence mode="wait">
+                    {currentBannerSlide === 0 && (
+                      <motion.div
+                        key="banner-slide-0"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute inset-0"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={offersBannerUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80'} 
+                          alt="Special Offers" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent flex flex-col justify-end p-3.5 sm:p-4">
+                          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                            <span className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                              <Sparkles size={11} />
+                              <span>{language === 'ar' ? 'عرض حصري' : 'Special Deal'}</span>
+                            </span>
+                            <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
+                              🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Offer'}
+                            </span>
+                          </div>
+                          <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
+                            {offersBannerTitle 
+                              ? (language === 'en' ? translateFoodName(offersBannerTitle, 'en') : offersBannerTitle) 
+                              : (language === 'ar' ? 'عروض وتوفير على أشهى وجبات اليوم' : 'Special Deals & Daily Offers')}
+                          </h2>
+                          <p className="text-slate-200 text-[10px] sm:text-xs font-medium line-clamp-1 drop-shadow-sm">
+                            {offersBannerSubtitle 
+                              ? (language === 'en' ? translateFoodDescription(offersBannerSubtitle, 'en') : offersBannerSubtitle) 
+                              : (language === 'ar' ? 'اطلب وجبتك المفضلة فوراً واستمتع بأشهى النكهات الطازجة' : 'Order your favorites now and enjoy fresh delicious flavors')}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
 
-              {/* 2. Top / Featured Items in 2 Rows (الأصناف سطرين تحت صورة العروض) */}
-              {!searchQuery && (activeCategory === 'all' || !activeCategory) && featuredItems.length > 0 && (
-                <div className="space-y-2.5 pt-1">
-                  <div className="flex items-center justify-between px-1">
-                    <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
-                      <Flame size={15} className="text-orange-500 fill-orange-500" />
-                      <span>{language === 'ar' ? 'الأكثر طلباً والعروض المميزة' : 'Top Specials & Best Sellers'}</span>
-                    </h3>
-                    <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200/60">
-                      {language === 'ar' ? 'موصى بها 🔥' : 'Recommended 🔥'}
-                    </span>
-                  </div>
-
-                  {/* 2-Row Grid for Top Items (سطرين للأصناف المميزة) */}
-                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                    {featuredItems.slice(0, 4).map((item) => {
-                      const qty = cartQuantities[item.id] || 0;
-                      const foodImg = getSmartFoodImage(item);
-                      const translatedTitle = language === 'en' ? translateFoodName(item.name, 'en') : item.name;
-                      const translatedDesc = language === 'en' ? translateFoodDescription(item.description, 'en') : item.description;
-
-                      return (
-                        <div
-                          key={`featured-${item.id}`}
-                          onClick={() => openProductModal(item)}
-                          className={`bg-white rounded-2xl p-2.5 border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer relative group ${
-                            qty > 0 ? 'border-orange-500 ring-2 ring-orange-500/15 bg-orange-50/10' : 'border-slate-200/80 hover:border-orange-200'
-                          }`}
-                        >
-                          {/* Top Food Photo with Badge */}
-                          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 mb-2 shadow-2xs">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={foodImg}
-                              alt={item.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              loading="lazy"
-                            />
-                            <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-amber-300/30">
-                              <Flame size={9} className="text-orange-400 fill-orange-400" />
-                              <span>{language === 'ar' ? 'الأكثر طلباً' : 'Popular'}</span>
-                            </div>
+                    {currentBannerSlide === 1 && (
+                      <motion.div
+                        key="banner-slide-1"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute inset-0"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80" 
+                          alt="Social Media and WhatsApp Contact Ad" 
+                          className="w-full h-full object-cover" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/80 to-black/55 backdrop-blur-2xs flex flex-col justify-end p-3 sm:p-4">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                              <MessageCircle size={11} className="fill-white" />
+                              <span>{language === 'ar' ? 'إعلان التواصل والطلبات' : 'Direct Orders & Connect'}</span>
+                            </span>
+                            <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
+                              📢 {language === 'ar' ? 'خدمة فورية' : 'Instant Reply'}
+                            </span>
                           </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate mb-0.5 group-hover:text-orange-600 transition-colors">
-                              {translatedTitle}
-                            </h4>
-                            <p className="text-[10px] text-slate-500 line-clamp-1 mb-2">
-                              {translatedDesc}
-                            </p>
-                          </div>
+                          <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
+                            {language === 'ar' ? 'تابعنا على مواقع التواصل واطلب عبر واتساب' : 'Follow Us on Social & Order via WhatsApp'}
+                          </h2>
+                          <p className="text-slate-300 text-[10px] sm:text-xs font-medium line-clamp-1 mb-2">
+                            {language === 'ar' ? 'استفسارات، عروض يومية، واستقبال طلباتكم مباشرة' : 'Inquiries, daily deals, and direct orders on official channels'}
+                          </p>
 
-                          {/* Bottom Row: Price + Add Button */}
-                          <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                            <div className="flex items-baseline gap-0.5">
-                              <span className="font-black text-xs sm:text-sm text-slate-900">{item.price}</span>
-                              <span className="text-[10px] text-orange-600 font-bold">₪</span>
-                            </div>
-
-                            {qty === 0 ? (
-                              <button
-                                onClick={(e) => addOne(item.id, e)}
-                                className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                          {/* Direct Clickable Action Badges embedded inside the Ad Banner */}
+                          <div className="flex items-center gap-1.5 flex-wrap z-10">
+                            {(cleanWhatsappUrl || restaurantPhone) && (
+                              <a
+                                href={cleanWhatsappUrl || `https://wa.me/?text=${encodeURIComponent(activeRestaurantName || 'Menus.ps')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md shadow-emerald-950/50 transition-all border border-emerald-400/30 shrink-0"
+                                title="WhatsApp"
                               >
-                                <Plus size={11} strokeWidth={3} />
-                                <span>{language === 'ar' ? 'أضف' : 'Add'}</span>
-                              </button>
-                            ) : (
-                              <div className="flex items-center gap-1 bg-orange-500 text-white px-1 py-0.5 rounded-lg shadow-2xs">
-                                <button
-                                  onClick={(e) => removeOne(item.id, e)}
-                                  className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
-                                >
-                                  <Minus size={10} strokeWidth={3} />
-                                </button>
-                                <span className="font-bold text-[10px] sm:text-xs min-w-[14px] text-center">{qty}</span>
-                                <button
-                                  onClick={(e) => addOne(item.id, e)}
-                                  className="w-5 h-5 bg-white/20 hover:bg-white/30 rounded flex items-center justify-center active:scale-90 cursor-pointer"
-                                >
-                                  <Plus size={10} strokeWidth={3} />
-                                </button>
-                              </div>
+                                <MessageCircle size={12} className="fill-white" />
+                                <span>{language === 'ar' ? 'واتساب للطلب' : 'WhatsApp'}</span>
+                              </a>
+                            )}
+
+                            {(cleanInstagramUrl || isExplicitDemo) && (
+                              <a
+                                href={cleanInstagramUrl || 'https://instagram.com'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90 active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md shadow-pink-950/50 transition-all border border-pink-400/30 shrink-0"
+                                title="Instagram"
+                              >
+                                <span className="text-[11px]">📸</span>
+                                <span>{language === 'ar' ? 'إنستغرام' : 'Instagram'}</span>
+                              </a>
+                            )}
+
+                            {(cleanFacebookUrl || isExplicitDemo) && (
+                              <a
+                                href={cleanFacebookUrl || 'https://facebook.com'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-[#1877F2] hover:bg-blue-600 active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md shadow-blue-950/50 transition-all border border-blue-400/30 shrink-0"
+                                title="Facebook"
+                              >
+                                <span className="text-[11px]">📘</span>
+                                <span>{language === 'ar' ? 'فيسبوك' : 'Facebook'}</span>
+                              </a>
+                            )}
+
+                            {(cleanTiktokUrl || isExplicitDemo) && (
+                              <a
+                                href={cleanTiktokUrl || 'https://tiktok.com'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-black/90 hover:bg-black active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md border border-white/20 transition-all shrink-0"
+                                title="TikTok"
+                              >
+                                <span className="text-[11px]">🎵</span>
+                                <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
+                              </a>
+                            )}
+
+                            {(cleanPhoneUrl || restaurantPhone) && (
+                              <a
+                                href={cleanPhoneUrl || `tel:${restaurantPhone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md shadow-amber-950/50 transition-all border border-amber-400/30 shrink-0"
+                                title="Call"
+                              >
+                                <PhoneCall size={11} />
+                                <span>{language === 'ar' ? 'اتصال مباشر' : 'Call'}</span>
+                              </a>
                             )}
                           </div>
                         </div>
-                      );
-                    })}
+                      </motion.div>
+                    )}
+
+                    {currentBannerSlide === 2 && (
+                      <motion.div
+                        key="banner-slide-2"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute inset-0"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80" 
+                          alt="Fresh Ingredients Ad" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent flex flex-col justify-end p-3.5 sm:p-4">
+                          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                            <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                              <ChefHat size={11} />
+                              <span>{language === 'ar' ? 'شيف المطعم' : "Chef's Touch"}</span>
+                            </span>
+                            <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
+                              ⭐ {language === 'ar' ? 'طازج ١٠٠٪ يومياً' : '100% Fresh Daily'}
+                            </span>
+                          </div>
+                          <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
+                            {language === 'ar' ? 'لحوم طازجة ١٠٠٪ ومكونات منتقاة بعناية' : '100% Fresh Meats & Artisan Quality'}
+                          </h2>
+                          <p className="text-slate-200 text-[10px] sm:text-xs font-medium line-clamp-1 drop-shadow-sm">
+                            {language === 'ar' ? 'نحضر وجبتك فور طلبها لنضمن لك أشهى مذاق وجودة تليق بذوقك' : 'Cooked to perfection upon order for highest satisfaction'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Carousel Slide Indicators */}
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/40 backdrop-blur-xs px-2 py-1 rounded-full border border-white/10">
+                    {[0, 1, 2].map((idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentBannerSlide(idx);
+                        }}
+                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          currentBannerSlide === idx ? 'w-5 bg-orange-500 shadow-xs' : 'w-1.5 bg-white/60 hover:bg-white'
+                        }`}
+                        aria-label={`Slide ${idx + 1}`}
+                      />
+                    ))}
                   </div>
+
+                  {/* Side Navigation Arrows */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentBannerSlide((prev) => (prev - 1 + 3) % 3);
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-xs text-white flex items-center justify-center transition-all z-20 cursor-pointer active:scale-90"
+                    aria-label="Previous Slide"
+                  >
+                    <ArrowLeft size={12} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentBannerSlide((prev) => (prev + 1) % 3);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-xs text-white flex items-center justify-center transition-all z-20 cursor-pointer active:scale-90"
+                    aria-label="Next Slide"
+                  >
+                    <ArrowRight size={12} />
+                  </button>
                 </div>
               )}
 
