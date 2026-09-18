@@ -34,7 +34,7 @@ export default function ProductionTablesPage() {
   const fileInputQrRef = React.useRef<HTMLInputElement>(null);
 
   // Table Stand Card Background & Theme Customization States
-  const [cardTheme, setCardTheme] = useState<StandCardTheme>('modern_luxury');
+  const [cardTheme, setCardTheme] = useState<StandCardTheme>('crystal_gold');
   const [cardBgImage, setCardBgImage] = useState<string>('');
   const [cardTagline, setCardTagline] = useState<string>('امسح الرمز لتصفح قائمة الطعام والطلب مباشرة إلى طاولتك');
   const [isUploadingBg, setIsUploadingBg] = useState<boolean>(false);

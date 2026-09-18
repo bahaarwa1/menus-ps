@@ -855,9 +855,88 @@ export function buildStandCardHtml(
     .theme-oriental .qr-box-wrap { border-color: #1c3d2e; }
     .theme-oriental .vf-bracket { border-color: #1c3d2e; }
     .theme-oriental .step-coin { background: #e8ede9; color: #132e22; border: 1px solid #1c3d2e; }
-    .theme-oriental .step-label { color: #132e22; }
-    .theme-oriental .courtesy-text { color: #4e6559; }
-    .theme-oriental .flourish-dash { background: #1c3d2e; }
+    /* ─── DEFINITIVE OVERRIDES FOR CUSTOM BACKGROUND IMAGE (خلفية صورة مخصصة) ─── */
+    /* ضمان تطبيق الزجاج المدخن والخطوط البيضاء الصافية مهما كان القالب المختار */
+    .card-wrap.has-bg-img .stand-plaque {
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.84) 100%) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border: 2.5px solid #fbbf24 !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55) !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .card-wrap.has-bg-img .corner-filigree { color: #fbbf24 !important; }
+    .card-wrap.has-bg-img .plaque-inset-frame { border-color: rgba(251, 191, 36, 0.5) !important; }
+    .card-wrap.has-bg-img .welcome-ribbon { color: #fde047 !important; }
+    
+    .card-wrap.has-bg-img .brand-header {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      margin: 0 auto 6px auto !important;
+    }
+    .card-wrap.has-bg-img .logo-medallion {
+      width: 72px !important;
+      height: 72px !important;
+      margin: 0 auto 6px auto !important;
+      border: 3px solid #fbbf24 !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+    }
+    .card-wrap.has-bg-img .restaurant-name { 
+      color: #ffffff !important; 
+      font-size: 34px !important;
+      font-weight: 900 !important;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.85) !important;
+      text-align: center !important;
+    }
+    .card-wrap.has-bg-img .restaurant-tagline { 
+      color: #f8fafc !important; 
+      font-size: 13.5px !important;
+      font-weight: 700 !important;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.8) !important;
+      text-align: center !important;
+    }
+    .card-wrap.has-bg-img .table-seal-badge {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #fde047 !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
+    }
+    .card-wrap.has-bg-img .seal-label { color: #ffffff !important; }
+    .card-wrap.has-bg-img .seal-num { color: #fef08a !important; }
+    .card-wrap.has-bg-img .qr-prompt-banner { 
+      color: #ffffff !important; 
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8) !important;
+    }
+    .card-wrap.has-bg-img .qr-camera-icon { color: #34d399 !important; }
+    .card-wrap.has-bg-img .qr-box-wrap { 
+      border-color: #fbbf24 !important; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45) !important;
+    }
+    .card-wrap.has-bg-img .qr-code-img {
+      width: 205px !important;
+      height: 205px !important;
+    }
+    .card-wrap.has-bg-img .vf-bracket { border-color: #fbbf24 !important; }
+    .card-wrap.has-bg-img .step-coin { 
+      background: rgba(251, 191, 36, 0.25) !important; 
+      color: #fde047 !important; 
+      border: 1px solid #fbbf24 !important; 
+    }
+    .card-wrap.has-bg-img .step-label { 
+      color: #ffffff !important; 
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8) !important; 
+    }
+    .card-wrap.has-bg-img .step-dot { color: #fbbf24 !important; }
+    .card-wrap.has-bg-img .courtesy-text { 
+      color: #e2e8f0 !important; 
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8) !important; 
+    }
+    .card-wrap.has-bg-img .flourish-dash { background: #fbbf24 !important; }
   </style>
 </head>
 <body>
