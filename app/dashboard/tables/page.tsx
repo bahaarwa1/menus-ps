@@ -358,6 +358,7 @@ export default function ProductionTablesPage() {
       targetUrl,
       qrDataUrl,
       logoUrl: qrStyle !== 'solid' ? restaurantLogo : undefined,
+      brandColor: qrColor,
     });
   };
 
