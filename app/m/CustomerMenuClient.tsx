@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
   Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2,
-  Store, Home, Lock, MessageCircle, Share2, PhoneCall, ArrowDown
+  Store, Home, Lock, MessageCircle, Share2, PhoneCall, Phone, ArrowDown
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -376,7 +376,7 @@ export default function CustomerMenuClient({
   const [activeBranchId, setActiveBranchId] = useState<string>(initialSettings?.branchId || '');
 
   // Social media links
-  const [socialWhatsapp, setSocialWhatsapp] = useState<string>(initialSettings?.whatsappNumber || initialSettings?.phone || '');
+  const [socialWhatsapp, setSocialWhatsapp] = useState<string>(initialSettings?.whatsappNumber || '');
   const [socialInstagram, setSocialInstagram] = useState<string>(initialSettings?.instagramUrl || '');
   const [socialFacebook, setSocialFacebook] = useState<string>(initialSettings?.facebookUrl || '');
   const [socialTiktok, setSocialTiktok] = useState<string>(initialSettings?.tiktokUrl || '');
@@ -422,10 +422,16 @@ export default function CustomerMenuClient({
   }, [resolvedSlug, activeRestaurantSlug]);
 
   const cleanWhatsappUrl = useMemo(() => {
-    const num = (socialWhatsapp || restaurantPhone || '').replace(/\D/g, '');
+    if (!socialWhatsapp || !socialWhatsapp.trim()) return '';
+    let num = socialWhatsapp.trim().replace(/\D/g, '');
     if (!num) return '';
+    if (num.startsWith('05')) {
+      num = '970' + num.slice(1);
+    } else if (num.startsWith('00')) {
+      num = num.slice(2);
+    }
     return `https://wa.me/${num}`;
-  }, [socialWhatsapp, restaurantPhone]);
+  }, [socialWhatsapp]);
 
   const cleanInstagramUrl = useMemo(() => {
     if (!socialInstagram) return '';
@@ -448,9 +454,9 @@ export default function CustomerMenuClient({
   }, [socialTiktok]);
 
   const cleanPhoneUrl = useMemo(() => {
-    const p = (restaurantPhone || socialWhatsapp || '').trim();
+    const p = (restaurantPhone || '').trim();
     return p ? `tel:${p}` : '';
-  }, [restaurantPhone, socialWhatsapp]);
+  }, [restaurantPhone]);
 
   // Pre-formatted categories with "All" for the 2-row category grid (4 on top, 4 below)
   const categoryItems = useMemo(() => {
@@ -1092,7 +1098,11 @@ export default function CustomerMenuClient({
                   tabIndex={0}
                   title={
                     currentBannerSlide === 1
-                      ? (language === 'ar' ? 'اضغط للتواصل أو الطلب عبر واتساب' : 'Click to contact or order via WhatsApp')
+                      ? (cleanWhatsappUrl
+                          ? (language === 'ar' ? 'اضغط للتواصل أو الطلب عبر واتساب' : 'Click to order via WhatsApp')
+                          : (cleanPhoneUrl
+                              ? (language === 'ar' ? 'اضغط للاتصال المباشر' : 'Click to call')
+                              : (language === 'ar' ? 'اضغط لمتابعة حساباتنا' : 'Click to connect with us')))
                       : (language === 'ar' ? 'اضغط لتصفح الأطباق والعروض' : 'Click to explore dishes')
                   }
                 >
@@ -1108,33 +1118,29 @@ export default function CustomerMenuClient({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
-                          src={offersBannerUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80'} 
-                          alt="Special Offers" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                          src={offersBannerUrl || 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&auto=format&fit=crop&q=80'} 
+                          alt="Today Special Offers and Discounts" 
+                          className="w-full h-full object-cover" 
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent flex flex-col justify-end p-3.5 sm:p-4">
-                          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                            <span className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
-                              <Sparkles size={11} />
-                              <span>{language === 'ar' ? 'عرض حصري' : 'Special Deal'}</span>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/35 backdrop-blur-2xs flex flex-col justify-end p-3 sm:p-4">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                              <Sparkles size={11} className="fill-white" />
+                              <span>{language === 'ar' ? 'عروض حصرية اليوم' : 'Daily Exclusive Deals'}</span>
                             </span>
-                            <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
-                              🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Offer'}
+                            <span className="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
+                              🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Time'}
                             </span>
-                            <span className="bg-white/20 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto flex items-center gap-0.5">
-                              <span>{language === 'ar' ? 'اضغط للتصفح' : 'Tap to browse'}</span>
-                              <ArrowDown size={10} />
+                            <span className="bg-black/50 backdrop-blur-md text-slate-200 text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto border border-white/10">
+                              {language === 'ar' ? 'اضغط للتصفح السريع ⬇️' : 'Tap to Browse ⬇️'}
                             </span>
                           </div>
+
                           <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
-                            {offersBannerTitle 
-                              ? (language === 'en' ? translateFoodName(offersBannerTitle, 'en') : offersBannerTitle) 
-                              : (language === 'ar' ? 'عروض وتوفير على أشهى وجبات اليوم' : 'Special Deals & Daily Offers')}
+                            {offersBannerTitle || (language === 'ar' ? 'عروض وخصومات اليوم 🔥' : "Today's Deals 🔥")}
                           </h2>
-                          <p className="text-slate-200 text-[10px] sm:text-xs font-medium line-clamp-1 drop-shadow-sm">
-                            {offersBannerSubtitle 
-                              ? (language === 'en' ? translateFoodDescription(offersBannerSubtitle, 'en') : offersBannerSubtitle) 
-                              : (language === 'ar' ? 'اطلب وجبتك المفضلة فوراً واستمتع بأشهى النكهات الطازجة' : 'Order your favorites now and enjoy fresh delicious flavors')}
+                          <p className="text-slate-200 text-[10px] sm:text-xs font-medium line-clamp-1">
+                            {offersBannerSubtitle || (language === 'ar' ? 'خصم 20% على الوجبات المميزة - جربها الآن واستمتع' : 'Special discounts on featured dishes - Try it now')}
                           </p>
                         </div>
                       </motion.div>
@@ -1165,12 +1171,18 @@ export default function CustomerMenuClient({
                               📢 {language === 'ar' ? 'خدمة فورية' : 'Instant Reply'}
                             </span>
                             <span className="bg-[#25D366]/30 text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto border border-emerald-400/30">
-                              {language === 'ar' ? 'اضغط للدردشة واتساب 💬' : 'Tap for WhatsApp 💬'}
+                              {cleanWhatsappUrl 
+                                ? (language === 'ar' ? 'اضغط للدردشة واتساب 💬' : 'Tap for WhatsApp 💬')
+                                : (cleanPhoneUrl
+                                    ? (language === 'ar' ? 'اضغط للاتصال المباشر 📞' : 'Tap to Call 📞')
+                                    : (language === 'ar' ? 'تواصل معنا 🌟' : 'Connect With Us 🌟'))}
                             </span>
                           </div>
 
                           <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
-                            {language === 'ar' ? 'تابعنا على مواقع التواصل واطلب عبر واتساب' : 'Follow Us on Social & Order via WhatsApp'}
+                            {cleanWhatsappUrl
+                              ? (language === 'ar' ? 'تابعنا على مواقع التواصل واطلب عبر واتساب' : 'Follow Us on Social & Order via WhatsApp')
+                              : (language === 'ar' ? 'تابعنا على مواقع التواصل وتواصل معنا' : 'Follow Us on Social & Connect With Us')}
                           </h2>
                           <p className="text-slate-300 text-[10px] sm:text-xs font-medium line-clamp-1 mb-2">
                             {language === 'ar' ? 'استفسارات، عروض يومية، واستقبال طلباتكم مباشرة' : 'Inquiries, daily deals, and direct orders on official channels'}
@@ -1178,9 +1190,9 @@ export default function CustomerMenuClient({
 
                           {/* Direct Clickable Action Badges embedded inside the Ad Banner */}
                           <div className="flex items-center gap-1.5 flex-wrap z-10" onClick={(e) => e.stopPropagation()}>
-                            {(cleanWhatsappUrl || restaurantPhone) && (
+                            {cleanWhatsappUrl && (
                               <a
-                                href={cleanWhatsappUrl || `https://wa.me/?text=${encodeURIComponent(activeRestaurantName || 'Menus.ps')}`}
+                                href={cleanWhatsappUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
@@ -1189,6 +1201,18 @@ export default function CustomerMenuClient({
                               >
                                 <MessageCircle size={12} className="fill-white" />
                                 <span>{language === 'ar' ? 'واتساب للطلب' : 'WhatsApp'}</span>
+                              </a>
+                            )}
+
+                            {cleanPhoneUrl && !cleanWhatsappUrl && (
+                              <a
+                                href={cleanPhoneUrl}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 sm:py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-md shadow-amber-950/50 transition-all border border-amber-400/30 shrink-0"
+                                title="Call"
+                              >
+                                <Phone size={12} />
+                                <span>{language === 'ar' ? 'اتصال هاتفي' : 'Call'}</span>
                               </a>
                             )}
 

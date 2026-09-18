@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { hashPassword, hashPin, generateSecureToken, sanitizeInput } from '@/lib/security/crypto';
 import { appCache } from '@/lib/cache/lru-cache';
-import { parseSubscriptionFromAddress, SubscriptionInfo } from '@/lib/subscription/subscription.service';
+import { parseSubscriptionFromAddress, serializeSubscriptionAddress, SubscriptionInfo } from '@/lib/subscription/subscription.service';
 
 export interface RegisterRestaurantInput {
   name: string;
@@ -12,6 +12,7 @@ export interface RegisterRestaurantInput {
   ownerEmail: string;
   password?: string;
   tablesCount?: number;
+  whatsappNumber?: string;
 }
 
 export interface RegisteredRestaurantResult {
@@ -177,6 +178,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
 
   const cleanName = sanitizeInput(input.name, 100);
   const cleanPhone = sanitizeInput(input.phone, 30);
+  const cleanWhatsapp = input.whatsappNumber ? sanitizeInput(input.whatsappNumber, 30) : undefined;
   const cleanCity = sanitizeInput(input.city || 'نابلس', 50);
   const cleanEmail = input.ownerEmail ? sanitizeInput(input.ownerEmail, 150).toLowerCase() : undefined;
 
@@ -185,6 +187,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
     name: cleanName,
     slug,
     phone: cleanPhone,
+    whatsappNumber: cleanWhatsapp,
     city: cleanCity,
     currency: '₪',
     subdomainUrl: `https://${slug}.menus.cool`,
@@ -222,6 +225,13 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
         const dbRestId = (restData as { id: string }).id;
         registeredRecord.id = dbRestId;
 
+        const initialBranchAddress = serializeSubscriptionAddress(
+          '',
+          'trial',
+          new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          cleanWhatsapp ? { whatsappNumber: cleanWhatsapp } : undefined
+        );
+
         // Insert primary branch
         const { data: branchData } = await supabase
           .from('branches')
@@ -229,6 +239,7 @@ export async function registerNewRestaurant(input: RegisterRestaurantInput): Pro
             restaurant_id: dbRestId,
             name: 'الفرع الرئيسي',
             city: registeredRecord.city,
+            address: initialBranchAddress,
             tables_count: tablesCount,
             is_active: true,
           } as never)
@@ -379,7 +390,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
             const branchId = (branchData as any)?.id || restData.id;
             const branchName = (branchData as any)?.name || `${restData.name} — الفرع الرئيسي`;
             const rawBranchAddress = (branchData as any)?.address || '';
-            const { cleanAddress, subscription } = parseSubscriptionFromAddress(rawBranchAddress, restData.created_at);
+            const { cleanAddress, subscription, extraMeta } = parseSubscriptionFromAddress(rawBranchAddress, restData.created_at);
             const isActive = (branchData as any)?.is_active !== false;
 
             const { data: tablesData } = await supabase
@@ -402,6 +413,8 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
                   qrUrl: `${BASE_APP_URL}/m?t=qr_${restData.slug}_t${i + 1}&restaurant=${restData.slug}`,
                 }));
 
+            const memRecord = global.__menusRestaurantsStore?.get(cleanSlug);
+
             const result: RegisteredRestaurantResult = {
               id: restData.id,
               name: restData.name,
@@ -418,6 +431,14 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               tables,
               isActive,
               subscription,
+              whatsappNumber: extraMeta?.whatsappNumber || memRecord?.whatsappNumber || '',
+              instagramUrl: extraMeta?.instagramUrl || memRecord?.instagramUrl || '',
+              facebookUrl: extraMeta?.facebookUrl || memRecord?.facebookUrl || '',
+              tiktokUrl: extraMeta?.tiktokUrl || memRecord?.tiktokUrl || '',
+              offersBannerUrl: memRecord?.offersBannerUrl || '',
+              offersBannerTitle: memRecord?.offersBannerTitle || '',
+              offersBannerSubtitle: memRecord?.offersBannerSubtitle || '',
+              offersBannerActive: memRecord?.offersBannerActive !== false,
               createdAt: restData.created_at,
             };
 
@@ -511,18 +532,49 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
           .eq('slug', cleanSlug);
       }
 
-      // Update primary branch city/name/address if changed
-      if (input.city || input.name || input.address !== undefined) {
+      // Update primary branch city/name/address/social if changed
+      if (
+        input.city ||
+        input.name ||
+        input.address !== undefined ||
+        input.whatsappNumber !== undefined ||
+        input.instagramUrl !== undefined ||
+        input.facebookUrl !== undefined ||
+        input.tiktokUrl !== undefined
+      ) {
         const { data: rest } = await (supabase as any)
           .from('restaurants')
-          .select('id')
+          .select('id, created_at')
           .eq('slug', cleanSlug)
           .maybeSingle();
 
         if (rest) {
+          const { data: curBranch } = await (supabase as any)
+            .from('branches')
+            .select('id, address')
+            .eq('restaurant_id', rest.id)
+            .limit(1)
+            .maybeSingle();
+
           const branchUpdates: any = {};
           if (input.city) branchUpdates.city = input.city.trim();
-          if (input.address !== undefined) branchUpdates.address = input.address.trim();
+
+          const rawAddr = curBranch?.address || '';
+          const parsed = parseSubscriptionFromAddress(rawAddr, rest.created_at);
+          const nextMeta = {
+            whatsappNumber: input.whatsappNumber !== undefined ? input.whatsappNumber.trim() : (parsed.extraMeta?.whatsappNumber || existing?.whatsappNumber),
+            instagramUrl: input.instagramUrl !== undefined ? input.instagramUrl.trim() : (parsed.extraMeta?.instagramUrl || existing?.instagramUrl),
+            facebookUrl: input.facebookUrl !== undefined ? input.facebookUrl.trim() : (parsed.extraMeta?.facebookUrl || existing?.facebookUrl),
+            tiktokUrl: input.tiktokUrl !== undefined ? input.tiktokUrl.trim() : (parsed.extraMeta?.tiktokUrl || existing?.tiktokUrl),
+          };
+          const nextAddress = input.address !== undefined ? input.address.trim() : parsed.cleanAddress;
+          branchUpdates.address = serializeSubscriptionAddress(
+            nextAddress,
+            parsed.subscription.plan,
+            parsed.subscription.expiresAt,
+            nextMeta
+          );
+
           await (supabase as any)
             .from('branches')
             .update(branchUpdates)
@@ -534,7 +586,7 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
             await (supabase as any)
               .from('staff_users')
               .update({ pin_hash: pinHash })
-              .eq('branch_id', existing?.branchId || rest.id);
+              .eq('branch_id', existing?.branchId || curBranch?.id || rest.id);
           }
         }
       }

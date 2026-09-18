@@ -11,6 +11,13 @@ export interface SubscriptionInfo {
 
 const META_PREFIX = 'SUB_META:';
 
+export interface RestaurantExtraMeta {
+  whatsappNumber?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+}
+
 /**
  * Safely parses subscription plan and expiration from branch address metadata.
  * Non-destructive and resilient with zero database migrations.
@@ -21,6 +28,7 @@ export function parseSubscriptionFromAddress(
 ): {
   cleanAddress: string;
   subscription: SubscriptionInfo;
+  extraMeta?: RestaurantExtraMeta;
 } {
   let plan: SubscriptionPlan = 'trial';
   
@@ -28,6 +36,7 @@ export function parseSubscriptionFromAddress(
   const baseDate = createdAt ? new Date(createdAt) : new Date();
   let expiresAt = new Date(baseDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
   let cleanAddress = (address || '').trim();
+  let extraMeta: RestaurantExtraMeta | undefined;
 
   if (cleanAddress.includes(META_PREFIX)) {
     const parts = cleanAddress.split(META_PREFIX);
@@ -40,6 +49,12 @@ export function parseSubscriptionFromAddress(
       if (meta.expiresAt) {
         expiresAt = meta.expiresAt;
       }
+      extraMeta = {
+        whatsappNumber: meta.whatsappNumber || undefined,
+        instagramUrl: meta.instagramUrl || undefined,
+        facebookUrl: meta.facebookUrl || undefined,
+        tiktokUrl: meta.tiktokUrl || undefined,
+      };
     } catch {}
   }
 
@@ -68,6 +83,7 @@ export function parseSubscriptionFromAddress(
       isExpired,
       status,
     },
+    extraMeta,
   };
 }
 
@@ -77,9 +93,17 @@ export function parseSubscriptionFromAddress(
 export function serializeSubscriptionAddress(
   address: string | undefined | null,
   plan: SubscriptionPlan,
-  expiresAt: string
+  expiresAt: string,
+  extraMeta?: RestaurantExtraMeta
 ): string {
   const clean = (address || '').split(META_PREFIX)[0].replace(/\|\|\s*$/, '').trim();
-  const metaJson = JSON.stringify({ plan, expiresAt });
+  const metaObj: any = { plan, expiresAt };
+  if (extraMeta) {
+    if (extraMeta.whatsappNumber) metaObj.whatsappNumber = extraMeta.whatsappNumber;
+    if (extraMeta.instagramUrl) metaObj.instagramUrl = extraMeta.instagramUrl;
+    if (extraMeta.facebookUrl) metaObj.facebookUrl = extraMeta.facebookUrl;
+    if (extraMeta.tiktokUrl) metaObj.tiktokUrl = extraMeta.tiktokUrl;
+  }
+  const metaJson = JSON.stringify(metaObj);
   return clean ? `${clean} || ${META_PREFIX}${metaJson}` : `${META_PREFIX}${metaJson}`;
 }

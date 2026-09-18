@@ -169,7 +169,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
         branchName: restaurant.branchName || '',
         isActive: !isSuspended,
         phone: restaurant.phone || '',
-        whatsappNumber: (restaurant as any).whatsappNumber || restaurant.phone || '',
+        whatsappNumber: (restaurant as any).whatsappNumber || '',
         instagramUrl: (restaurant as any).instagramUrl || '',
         facebookUrl: (restaurant as any).facebookUrl || '',
         tiktokUrl: (restaurant as any).tiktokUrl || '',

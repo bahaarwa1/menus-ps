@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Store, Globe, CheckCircle2, XCircle, Loader2, Phone, 
+  Store, Globe, CheckCircle2, XCircle, Loader2, Phone, MessageCircle,
   MapPin, Lock, Mail, Sparkles, QrCode, 
   ExternalLink, Copy, Check, ChefHat, BarChart3, Eye, EyeOff, AlertTriangle, Lightbulb
 } from 'lucide-react';
@@ -22,13 +22,24 @@ function validateEmail(email: string): string {
 }
 
 function validatePhone(phone: string): string {
-  if (!phone) return 'رقم الهاتف مطلوب';
+  if (!phone) return 'رقم هاتف التسجيل والإدارة مطلوب';
   const cleaned = phone.replace(/[\s\-()]/g, '');
   const palLocal = /^05[0-9]{8}$/;
   const palIntl = /^\+9725[0-9]{8}$/;
   const palIntl2 = /^00972[0-9]{9}$/;
-  if (!palLocal.test(cleaned) && !palIntl.test(cleaned) && !palIntl2.test(cleaned)) {
-    return 'رقم الهاتف غير صحيح. صيغ مقبولة: 0599000000 أو +972599000000';
+  const palIntl3 = /^\+9705[0-9]{8}$/;
+  const palIntl4 = /^00970[0-9]{9}$/;
+  if (!palLocal.test(cleaned) && !palIntl.test(cleaned) && !palIntl2.test(cleaned) && !palIntl3.test(cleaned) && !palIntl4.test(cleaned)) {
+    return 'رقم الهاتف غير صحيح. صيغ مقبولة: 0599000000 أو +970599000000 أو +972599000000';
+  }
+  return '';
+}
+
+function validateOptionalWhatsapp(val: string): string {
+  if (!val || !val.trim()) return '';
+  const cleaned = val.replace(/[\s\-()]/g, '');
+  if (cleaned.length < 8 || cleaned.length > 16) {
+    return 'رقم الواتساب غير صالح (مثال: 0599000000 أو 970599000000)';
   }
   return '';
 }
@@ -198,6 +209,7 @@ export default function RegisterPage() {
   const [slug, setSlug] = useState('');
   const [slugManualEdit, setSlugManualEdit] = useState(false);
   const [phone, setPhone] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [city, setCity] = useState('نابلس');
   const [ownerEmail, setOwnerEmail] = useState(initialGoogleEmail);
   const [isGoogleSignup, setIsGoogleSignup] = useState(Boolean(initialGoogleEmail));
@@ -222,6 +234,7 @@ export default function RegisterPage() {
 
   // Inline field errors
   const [phoneError, setPhoneError] = useState('');
+  const [whatsappError, setWhatsappError] = useState('');
   const [emailError, setEmailError] = useState('');
   const pwdStrength = checkPasswordStrength(password);
 
@@ -323,6 +336,13 @@ export default function RegisterPage() {
       return;
     }
 
+    const whatsappErr = validateOptionalWhatsapp(whatsappNumber);
+    if (whatsappErr) {
+      setFormError(whatsappErr);
+      setWhatsappError(whatsappErr);
+      return;
+    }
+
     const emailErr = validateEmail(ownerEmail.trim());
     if (emailErr) {
       setFormError(emailErr);
@@ -357,6 +377,7 @@ export default function RegisterPage() {
       name: restaurantName.trim(),
       slug: slug.trim(),
       phone: phone.trim(),
+      whatsappNumber: whatsappNumber.trim() || undefined,
       city,
       ownerEmail: ownerEmail.trim().toLowerCase(),
       password: finalPassword,
@@ -718,92 +739,171 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* 3. Phone & (Password only if non-Google) */}
+                {/* 3. Phone & WhatsApp & (Password only if non-Google) */}
                 {isGoogleSignup ? (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                      <Phone size={14} className="text-orange-500" />
-                      <span>رقم الهاتف للتواصل *</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="0599000000"
-                      value={phone}
-                      onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
-                      onBlur={() => setPhoneError(validatePhone(phone))}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
-                        phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
-                      }`}
-                    />
-                    {phoneError && (
-                      <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
-                        <AlertTriangle size={10} /> {phoneError}
-                      </p>
-                    )}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Phone size={14} className="text-orange-500" />
+                            <span>رقم هاتف التسجيل والإدارة *</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-normal">خاص بالحساب</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="0599000000"
+                          value={phone}
+                          onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                          onBlur={() => setPhoneError(validatePhone(phone))}
+                          className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                            phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
+                          }`}
+                        />
+                        {phoneError ? (
+                          <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
+                            <AlertTriangle size={10} /> {phoneError}
+                          </p>
+                        ) : (
+                          <p className="text-slate-400 text-[10px] mt-1">
+                            خاص بإدارة حسابك ولن يُعرض كواتساب للزبائن
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200/70">
+                        <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <MessageCircle size={14} className="text-emerald-600" />
+                            <span>واتساب الطلبات للزبائن (اختياري)</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                            مستقل
+                          </span>
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="0599000000 أو اتركه فارغاً"
+                          value={whatsappNumber}
+                          onChange={(e) => { setWhatsappNumber(e.target.value); setWhatsappError(''); }}
+                          onBlur={() => setWhatsappError(validateOptionalWhatsapp(whatsappNumber))}
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-emerald-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono shadow-2xs"
+                        />
+                        {whatsappError ? (
+                          <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
+                            <AlertTriangle size={10} /> {whatsappError}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                            رقم واتساب المخصص للزبائن في المنيو
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                        <Phone size={14} className="text-orange-500" />
-                        <span>رقم الهاتف للتواصل *</span>
+                  <div className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Phone size={14} className="text-orange-500" />
+                            <span>رقم هاتف التسجيل والإدارة *</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-normal">خاص بالحساب</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="0599000000"
+                          value={phone}
+                          onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                          onBlur={() => setPhoneError(validatePhone(phone))}
+                          className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
+                            phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
+                          }`}
+                        />
+                        {phoneError ? (
+                          <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
+                            <AlertTriangle size={10} /> {phoneError}
+                          </p>
+                        ) : (
+                          <p className="text-slate-400 text-[10px] mt-1">
+                            خاص بإدارة حسابك ولن يُعرض كواتساب للزبائن
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                          <Lock size={14} className="text-orange-500" />
+                          <span>كلمة المرور للوحة التحكم *</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            required
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-mono shadow-2xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
+
+                        {/* Compact Password Strength Indicator */}
+                        {password.length > 0 && (
+                          <div className="mt-1.5">
+                            <div className="flex gap-1 mb-1">
+                              {[0, 1, 2, 3].map(i => (
+                                <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                                  i < pwdStrength.score ? pwdStrength.color : 'bg-slate-200'
+                                }`} />
+                              ))}
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500">
+                              قوة كلمة المرور: <span className="text-slate-800">{pwdStrength.label}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dedicated WhatsApp number for customer ordering */}
+                    <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200/70">
+                      <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <MessageCircle size={14} className="text-emerald-600" />
+                          <span>رقم واتساب الطلبات للزبائن (اختياري - إن كان مختلفاً عن رقم التسجيل)</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                          مستقل عن رقم التسجيل
+                        </span>
                       </label>
                       <input
                         type="tel"
-                        required
-                        placeholder="0599000000"
-                        value={phone}
-                        onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
-                        onBlur={() => setPhoneError(validatePhone(phone))}
-                        className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:ring-4 transition-all font-mono shadow-2xs ${
-                          phoneError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/10'
-                        }`}
+                        placeholder="0599000000 أو اتركه فارغاً"
+                        value={whatsappNumber}
+                        onChange={(e) => { setWhatsappNumber(e.target.value); setWhatsappError(''); }}
+                        onBlur={() => setWhatsappError(validateOptionalWhatsapp(whatsappNumber))}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-emerald-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono shadow-2xs"
                       />
-                      {phoneError && (
+                      {whatsappError ? (
                         <p className="text-rose-600 text-[10px] font-bold mt-1 flex items-center gap-1">
-                          <AlertTriangle size={10} /> {phoneError}
+                          <AlertTriangle size={10} /> {whatsappError}
                         </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                        <Lock size={14} className="text-orange-500" />
-                        <span>كلمة المرور للوحة التحكم *</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full px-3.5 py-2.5 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-bold focus:bg-white focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-mono shadow-2xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(v => !v)}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-
-                      {/* Compact Password Strength Indicator */}
-                      {password.length > 0 && (
-                        <div className="mt-1.5">
-                          <div className="flex gap-1 mb-1">
-                            {[0, 1, 2, 3].map(i => (
-                              <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                                i < pwdStrength.score ? pwdStrength.color : 'bg-slate-200'
-                              }`} />
-                            ))}
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-500">
-                            قوة كلمة المرور: <span className="text-slate-800">{pwdStrength.label}</span>
-                          </span>
-                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                          الرقم الذي يستقبل رسائل وطلبات الزبائن عبر واتساب في المنيو (إن كان مختلفاً عن رقمك الشخصي). يمكن تحديده لاحقاً من الإعدادات.
+                        </p>
                       )}
                     </div>
                   </div>

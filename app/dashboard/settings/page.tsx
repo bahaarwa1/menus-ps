@@ -508,9 +508,12 @@ export default function ProductionSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
-                <Phone size={12} className="text-orange-500" />
-                <span>رقم الهاتف / الواتساب للتواصل</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Phone size={12} className="text-orange-500" />
+                  <span>رقم الهاتف الرئيسي للمطعم والإدارة</span>
+                </span>
+                <span className="text-[10px] text-slate-400">للاتصال الهاتفي المباشر</span>
               </label>
               <input
                 type="text"
@@ -519,6 +522,7 @@ export default function ProductionSettingsPage() {
                 placeholder="+970 59 000 0000"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 font-mono"
               />
+              <span className="text-[10px] text-slate-400 mt-1 block">رقم الاتصال الهاتفي (مستقل عن رقم واتساب الزبائن)</span>
             </div>
 
             <div className="sm:col-span-2">
@@ -552,18 +556,23 @@ export default function ProductionSettingsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <MessageCircle size={14} className="text-emerald-500" />
-                <span>رقم الواتساب المباشر للزبائن (WhatsApp)</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <MessageCircle size={14} className="text-emerald-500" />
+                  <span>رقم الواتساب المعتمد لطلبات الزبائن (WhatsApp)</span>
+                </span>
+                <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
+                  يظهر في المنيو
+                </span>
               </label>
               <input
                 type="text"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="مثال: 970599000000 أو 0599000000"
+                placeholder="مثال: 0599000000 أو 970599000000"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 font-mono"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">يفتح محادثة واتساب فورية بكبسة زر</span>
+              <span className="text-[10px] text-slate-400 mt-1 block">يفتح محادثة واتساب فورية للزبون مع هذا الرقم دون كشف رقم التسجيل الشخصي</span>
             </div>
 
             <div>
