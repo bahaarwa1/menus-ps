@@ -887,64 +887,78 @@ export default function ProductionTablesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-150">
             
-            {/* Printable Preview Frame (Clean, crisp, no frosted transparent veil) */}
-            <div className="rounded-3xl p-5 mb-4 relative shadow-lg text-center bg-white border-2 border-slate-200">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-black mb-1.5">
-                {restaurantLogo ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={restaurantLogo}
-                    alt="Logo"
-                    className="w-12 h-12 rounded-2xl object-cover border-2 shadow-xs mb-1"
-                    style={{ borderColor: qrColor }}
-                  />
-                ) : (
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <span>✦</span>
-                    <span className="text-base">🍽️</span>
-                    <span>✦</span>
-                  </div>
-                )}
-              </div>
+            {/* Printable Preview Frame (تظهر خلفية الصورة بالكامل بدون أي طبقة بيضاء) */}
+            <div 
+              className="rounded-3xl p-5 mb-4 relative shadow-lg text-center overflow-hidden border-2 border-slate-200"
+              style={{ background: cardBgImage ? `url(${cardBgImage}) center/cover no-repeat` : '#ffffff' }}
+            >
+              {cardBgImage && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={cardBgImage} alt="خلفية البطاقة" className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" />
+              )}
+              {cardBgImage && (
+                <div className="absolute inset-2 border-1.5 border-amber-400/80 rounded-2xl pointer-events-none z-5" />
+              )}
+              <div className="relative z-10">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-black mb-1.5">
+                  {restaurantLogo ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={restaurantLogo}
+                      alt="Logo"
+                      className="w-12 h-12 rounded-2xl object-cover border-2 shadow-xs mb-1 bg-white"
+                      style={{ borderColor: qrColor }}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1 text-amber-500">
+                      <span>✦</span>
+                      <span className="text-base">🍽️</span>
+                      <span>✦</span>
+                    </div>
+                  )}
+                </div>
 
-              <h3 className="text-lg font-black text-slate-900 mb-0.5">
-                {restaurantName || 'أهلاً وسهلاً بكم'}
-              </h3>
-              <p className="text-[10.5px] font-bold text-slate-500 max-w-[220px] mx-auto mb-2.5 leading-snug">
-                قائمة الطعام الرقمية والطلب المباشر إلى طاولتك
-              </p>
+                <h3 className={`text-lg font-black mb-0.5 ${cardBgImage ? 'text-slate-900 drop-shadow-md' : 'text-slate-900'}`} style={cardBgImage ? { textShadow: '0 1px 3px rgba(255,255,255,0.95), 0 0 10px rgba(255,255,255,0.9)' } : {}}>
+                  {restaurantName || 'أهلاً وسهلاً بكم'}
+                </h3>
+                <p className={`text-[10.5px] font-bold max-w-[220px] mx-auto mb-2.5 leading-snug ${cardBgImage ? 'text-slate-800' : 'text-slate-500'}`} style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
+                  قائمة الطعام الرقمية والطلب المباشر إلى طاولتك
+                </p>
 
-              {/* Proper Arabic badge */}
-              <div
-                className="inline-flex items-center justify-center gap-2 px-4 py-1 rounded-full text-white text-xs font-black mb-3 shadow-sm"
-                style={{ backgroundColor: qrColor }}
-              >
-                <span>طاولة رقم</span>
-                <span className="text-yellow-300 text-sm font-black">{selectedPrintTable.tableNumber}</span>
-              </div>
+                {/* Proper Arabic badge */}
+                <div
+                  className="inline-flex items-center justify-center gap-2 px-4 py-1 rounded-full text-white text-xs font-black mb-3 shadow-sm"
+                  style={{ backgroundColor: qrColor }}
+                >
+                  <span>طاولة رقم</span>
+                  <span className="text-yellow-300 text-sm font-black">{selectedPrintTable.tableNumber}</span>
+                </div>
 
-              <div className="w-48 h-48 bg-white p-3 rounded-2xl border-2 mx-auto shadow-md mb-3 flex items-center justify-center" style={{ borderColor: qrColor }}>
-                {selectedPrintTable.qrDataUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={selectedPrintTable.qrDataUrl}
-                    alt="QR"
-                    className="w-full h-full object-contain rounded-xl"
-                  />
-                ) : (
-                  <QrCode size={60} className="text-slate-300" />
-                )}
-              </div>
+                <div className="w-48 h-48 bg-white p-3 rounded-2xl border-2 mx-auto shadow-md mb-3 flex items-center justify-center" style={{ borderColor: qrColor }}>
+                  {selectedPrintTable.qrDataUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={selectedPrintTable.qrDataUrl}
+                      alt="QR"
+                      className="w-full h-full object-contain rounded-xl"
+                    />
+                  ) : (
+                    <QrCode size={60} className="text-slate-300" />
+                  )}
+                </div>
 
-              <p className="text-xs font-black text-slate-900 mb-0.5">امسح الرمز لطلب طعامك مباشرة 📲</p>
-              <p className="text-[10px] text-slate-500 font-medium max-w-[200px] mx-auto mb-2.5">
-                وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك
-              </p>
+                <p className="text-xs font-black text-slate-900 mb-0.5" style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
+                  امسح الرمز لطلب طعامك مباشرة 📲
+                </p>
+                <p className={`text-[10px] font-medium max-w-[200px] mx-auto mb-2.5 ${cardBgImage ? 'text-slate-800' : 'text-slate-500'}`} style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
+                  وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك
+                </p>
 
-              <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-100 text-[10px] font-extrabold text-slate-700">
-                <span className="bg-slate-100 px-2 py-0.5 rounded-md">📷 ١. الكاميرا</span>
-                <span className="bg-slate-100 px-2 py-0.5 rounded-md">🍔 ٢. طلبك</span>
-                <span className="bg-slate-100 px-2 py-0.5 rounded-md">⚡ ٣. لطاولتك</span>
+                <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-200/60 text-[10px] font-extrabold text-slate-800">
+                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">📷 ١. الكاميرا</span>
+                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">🍔 ٢. طلبك</span>
+                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">⚡ ٣. لطاولتك</span>
+                </div>
               </div>
             </div>
 

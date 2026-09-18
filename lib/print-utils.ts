@@ -147,13 +147,15 @@ export function buildStandCardHtml(
 
     return `
     <div class="page ${idx < stands.length - 1 ? 'page-break' : ''}">
-      <div class="card-wrap ${themeWrapClass}" style="${hasBgImage ? `background-image: url('${bgImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;` : ''}">
+      <div class="card-wrap ${themeWrapClass} ${hasBgImage ? 'has-bg-img' : ''}" style="${hasBgImage ? `background-image: url('${bgImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;` : ''}">
         
+        ${hasBgImage ? `<img src="${bgImage}" class="card-bg-full" alt="خلفية البطاقة" />` : ''}
+
         <!-- Background Overlay / Inset Frame -->
         <div class="card-frame-border"></div>
 
-        <!-- Center Shield Container (Frosted glass on custom backgrounds or rich dark themes) -->
-        <div class="center-shield ${hasBgImage ? 'glass-shield' : ''}">
+        <!-- Center Shield Container (شفاف تماماً بدون أي طبقة بيضاء تحجب صورة الخلفية) -->
+        <div class="center-shield">
 
           <!-- Top Welcome Ribbon -->
           <div class="welcome-ribbon">
@@ -415,18 +417,66 @@ export function buildStandCardHtml(
       padding: 18px 16px;
       position: relative;
       z-index: 10;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
     .glass-shield {
-      background: #ffffff !important;
-      border: 1.5px solid #e2e8f0;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
-    .glass-shield .restaurant-name { color: #0f172a !important; }
-    .glass-shield .restaurant-tagline { color: #475569 !important; }
-    .glass-shield .scan-prompt { color: #1e293b !important; }
-    .glass-shield .step-text { color: #1e293b !important; }
-    .glass-shield .footer-text { color: #64748b !important; }
-    .glass-shield .welcome-text { color: #0f172a !important; }
+
+    /* ─── Real HTML Background Image ─── */
+    .card-bg-full {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      border-radius: 26px;
+      pointer-events: none;
+    }
+
+    /* ─── Text & Border Styling When Background Photo is Present ─── */
+    .has-bg-img .card-frame-border {
+      position: absolute;
+      inset: 8px;
+      border: 1.5px solid rgba(212, 175, 55, 0.85);
+      border-radius: 20px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .has-bg-img .restaurant-name {
+      color: #0f172a !important;
+      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 10px rgba(255, 255, 255, 0.9) !important;
+    }
+    .has-bg-img .restaurant-tagline {
+      color: #1e293b !important;
+      font-weight: 800 !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    }
+    .has-bg-img .welcome-text {
+      color: #0f172a !important;
+      font-weight: 800 !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    }
+    .has-bg-img .scan-prompt {
+      color: #0f172a !important;
+      font-weight: 800 !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    }
+    .has-bg-img .step-text {
+      color: #0f172a !important;
+      font-weight: 800 !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    }
+    .has-bg-img .footer-text {
+      color: #1e293b !important;
+      font-weight: 800 !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    }
 
     /* ─── Top Welcome Ribbon ─── */
     .welcome-ribbon {
