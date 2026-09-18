@@ -1083,105 +1083,102 @@ export default function ProductionTablesPage() {
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-950/25 via-transparent to-slate-950/25 pointer-events-none z-1" />
               )}
 
-              {/* Central Royal Plaque */}
+              {/* Central Royal Plaque: Smoked Luxury Glass & Pure White Fonts */}
               <div 
-                className={`relative z-10 w-full h-full rounded-2xl p-4 flex flex-col items-center justify-between border-2 transition-all ${
-                  cardTheme === 'imperial_obsidian'
-                    ? 'bg-slate-950/92 backdrop-blur-md border-amber-400 text-white shadow-2xl'
-                    : 'bg-white/93 backdrop-blur-md border-amber-600/80 text-slate-900 shadow-xl'
-                }`}
+                className="relative z-10 w-full h-full rounded-2xl p-4 flex flex-col items-center justify-between border-2 border-amber-400/90 bg-slate-950/78 backdrop-blur-md text-white shadow-2xl transition-all"
               >
                 {/* 4 Ornate Corner Filigrees */}
-                <svg className="absolute top-1.5 left-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                <svg className="absolute top-1.5 left-1.5 w-6 h-6 text-amber-400 pointer-events-none" viewBox="0 0 32 32" fill="none">
                   <path d="M2 2h22M2 2v22M5 5h14M5 5v14M2 2l10 10M5 5l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                   <circle cx="15" cy="15" r="2.2" fill="currentColor"/>
                 </svg>
-                <svg className="absolute top-1.5 right-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                <svg className="absolute top-1.5 right-1.5 w-6 h-6 text-amber-400 pointer-events-none" viewBox="0 0 32 32" fill="none">
                   <path d="M30 2H8M30 2v22M27 5H13M27 5v14M30 2L20 12M27 5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                   <circle cx="17" cy="15" r="2.2" fill="currentColor"/>
                 </svg>
-                <svg className="absolute bottom-1.5 left-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                <svg className="absolute bottom-1.5 left-1.5 w-6 h-6 text-amber-400 pointer-events-none" viewBox="0 0 32 32" fill="none">
                   <path d="M2 30h22M2 30V8M5 27h14M5 27V13M2 30l10-10M5 27l7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                   <circle cx="15" cy="17" r="2.2" fill="currentColor"/>
                 </svg>
-                <svg className="absolute bottom-1.5 right-1.5 w-6 h-6 text-amber-500 pointer-events-none" viewBox="0 0 32 32" fill="none">
+                <svg className="absolute bottom-1.5 right-1.5 w-6 h-6 text-amber-400 pointer-events-none" viewBox="0 0 32 32" fill="none">
                   <path d="M30 30H8M30 30V8M27 27H13M27 27V13M30 30L20 20M27 27l-7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                   <circle cx="17" cy="17" r="2.2" fill="currentColor"/>
                 </svg>
 
                 {/* Inner Hairline Frame */}
-                <div className="absolute inset-1.5 border border-amber-500/30 rounded-xl pointer-events-none" />
+                <div className="absolute inset-1.5 border border-amber-400/40 rounded-xl pointer-events-none" />
 
                 {/* Top Section */}
-                <div className="w-full flex flex-col items-center text-center z-10 pt-1">
-                  <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 mb-1">
+                <div className="w-full flex flex-col items-center justify-center text-center z-10 pt-1">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300 mb-1.5">
                     <span>❖</span>
                     <span>أهلاً وسهلاً بكم</span>
                     <span>❖</span>
                   </div>
 
                   {restaurantLogo && (
-                    <div className="w-12 h-12 rounded-full border-2 border-amber-500 p-0.5 shadow-sm bg-white mb-1 overflow-hidden">
+                    <div className="w-14 h-14 rounded-full border-2 border-amber-400 p-0.5 shadow-md bg-white mb-2 overflow-hidden mx-auto flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={restaurantLogo} alt="Logo" className="w-full h-full rounded-full object-cover" />
                     </div>
                   )}
 
-                  <h3 className={`text-lg font-black leading-tight ${cardTheme === 'imperial_obsidian' ? 'text-white' : 'text-slate-900'}`}>
+                  <h3 className="text-2xl font-black text-white leading-tight drop-shadow-md">
                     {restaurantName || 'أهلاً وسهلاً بكم'}
                   </h3>
-                  <p className={`text-[10px] font-bold max-w-[210px] mx-auto mt-0.5 leading-snug ${cardTheme === 'imperial_obsidian' ? 'text-amber-200' : 'text-slate-500'}`}>
+                  <p className="text-xs font-bold text-slate-200 max-w-[240px] mx-auto mt-1 leading-snug drop-shadow-xs">
                     {cardTagline}
                   </p>
 
                   {/* Table Seal Badge */}
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-0.5 rounded-full text-white text-xs font-black mt-2 shadow-sm bg-gradient-to-r from-amber-600 to-orange-600 border border-amber-400">
-                    <span className="text-[11px]">👑 طاولة</span>
+                  <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full text-white text-xs font-black mt-2.5 shadow-md bg-gradient-to-r from-amber-600 to-amber-700 border border-yellow-300">
+                    <span className="text-xs">👑 طاولة</span>
                     <span className="text-yellow-200 text-sm font-black">{selectedPrintTable.tableNumber}</span>
                   </div>
                 </div>
 
-                {/* QR Hero Pedestal */}
-                <div className="w-full flex flex-col items-center my-2 z-10">
-                  <span className={`text-[10.5px] font-bold mb-1 flex items-center gap-1 ${cardTheme === 'imperial_obsidian' ? 'text-slate-200' : 'text-slate-700'}`}>
-                    <span>📷 وجّه الكاميرا وامسح للطلب</span>
+                {/* QR Hero Pedestal (Enlarged QR Code) */}
+                <div className="w-full flex flex-col items-center my-3 z-10">
+                  <span className="text-xs font-bold text-white mb-1.5 flex items-center gap-1.5 drop-shadow-xs">
+                    <span className="text-emerald-400">📷</span>
+                    <span>وجّه الكاميرا وامسح للطلب</span>
                   </span>
-                  <div className="relative p-2.5 bg-white rounded-2xl border-2 border-amber-500 shadow-md flex items-center justify-center">
+                  <div className="relative p-2.5 bg-white rounded-2xl border-2 border-amber-400 shadow-xl flex items-center justify-center">
                     {/* Corner Brackets */}
-                    <span className="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-amber-600 rounded-tl-xs" />
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-amber-600 rounded-tr-xs" />
-                    <span className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-amber-600 rounded-bl-xs" />
-                    <span className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-amber-600 rounded-br-xs" />
+                    <span className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-amber-500 rounded-tl-xs" />
+                    <span className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-amber-500 rounded-tr-xs" />
+                    <span className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-amber-500 rounded-bl-xs" />
+                    <span className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-amber-500 rounded-br-xs" />
 
                     {selectedPrintTable.qrDataUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={selectedPrintTable.qrDataUrl} alt="QR" className="w-36 h-36 object-contain rounded-lg" />
+                      <img src={selectedPrintTable.qrDataUrl} alt="QR" className="w-48 h-48 object-contain rounded-lg" />
                     ) : (
-                      <QrCode size={60} className="text-slate-300" />
+                      <QrCode size={70} className="text-slate-300" />
                     )}
                   </div>
                 </div>
 
                 {/* Footer Section */}
-                <div className="w-full flex flex-col items-center gap-1.5 z-10 pb-1">
-                  <div className="flex items-center justify-center gap-2 text-[10px] font-extrabold">
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
-                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">١</span>
+                <div className="w-full flex flex-col items-center gap-2 z-10 pb-1">
+                  <div className="flex items-center justify-center gap-2 text-[11px] font-extrabold text-white">
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/10 shadow-2xs">
+                      <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">١</span>
                       <span>تصفح</span>
                     </span>
-                    <span className="text-amber-500">•</span>
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
-                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">٢</span>
+                    <span className="text-amber-400">•</span>
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/10 shadow-2xs">
+                      <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">٢</span>
                       <span>اختر</span>
                     </span>
-                    <span className="text-amber-500">•</span>
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${cardTheme === 'imperial_obsidian' ? 'bg-white/10 text-slate-100' : 'bg-amber-50 text-slate-800'}`}>
-                      <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px]">٣</span>
+                    <span className="text-amber-400">•</span>
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/10 shadow-2xs">
+                      <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">٣</span>
                       <span>اطلب</span>
                     </span>
                   </div>
 
-                  <p className={`text-[9.5px] font-bold ${cardTheme === 'imperial_obsidian' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <p className="text-[10.5px] font-bold text-slate-200 drop-shadow-xs">
                     نتمنى لكم وجبة شهية وتجربة استثنائية ✨
                   </p>
                 </div>

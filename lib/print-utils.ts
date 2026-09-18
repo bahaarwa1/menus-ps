@@ -416,29 +416,40 @@ export function buildStandCardHtml(
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       text-align: center;
       z-index: 12;
     }
     .welcome-ribbon {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      font-size: 11.5px;
+      font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
     .ribbon-leaf {
-      font-size: 12px;
+      font-size: 13px;
+    }
+    .brand-header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: 0 auto;
     }
     .logo-medallion {
-      width: 60px;
-      height: 60px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
-      border: 2.5px solid #c5a059;
-      padding: 2.5px;
-      margin-bottom: 4px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+      border: 3px solid #fbbf24;
+      padding: 3px;
+      margin: 0 auto 6px auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
       background: #ffffff;
       display: flex;
       align-items: center;
@@ -450,43 +461,44 @@ export function buildStandCardHtml(
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
+      display: block;
     }
     .logo-medallion.default-icon {
-      background: #fdfbf7;
+      background: #0f172a;
     }
     .restaurant-name {
-      font-size: 26px;
+      font-size: 34px;
       font-weight: 900;
-      line-height: 1.15;
-      margin: 2px 0 2px;
+      line-height: 1.2;
+      margin: 3px 0 2px;
       letter-spacing: -0.3px;
     }
     .restaurant-tagline {
-      font-size: 11px;
+      font-size: 13.5px;
       font-weight: 700;
-      max-width: 100mm;
-      line-height: 1.35;
-      margin-bottom: 6px;
+      max-width: 110mm;
+      line-height: 1.4;
+      margin: 0 auto 8px auto;
     }
     .table-seal-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 18px;
+      gap: 8px;
+      padding: 5px 22px;
       border-radius: 999px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
       margin-top: 2px;
     }
     .seal-icon {
-      font-size: 12px;
+      font-size: 14px;
     }
     .seal-label {
-      font-size: 12.5px;
+      font-size: 13.5px;
       font-weight: 900;
       letter-spacing: 0.3px;
     }
     .seal-num {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 900;
       line-height: 1;
     }
@@ -502,42 +514,42 @@ export function buildStandCardHtml(
     .qr-prompt-banner {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 11px;
+      gap: 7px;
+      font-size: 13px;
       font-weight: 800;
-      margin-bottom: 6px;
+      margin-bottom: 7px;
     }
     .qr-camera-icon {
-      width: 14px;
-      height: 14px;
-      stroke-width: 2.2;
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.3;
     }
     .qr-box-wrap {
       position: relative;
-      padding: 9px;
+      padding: 10px;
       background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.2);
-      border: 2px solid #c5a059;
+      border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+      border: 2.5px solid #fbbf24;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .vf-bracket {
       position: absolute;
-      width: 11px;
-      height: 11px;
+      width: 14px;
+      height: 14px;
       pointer-events: none;
     }
-    .vf-tl { top: 4px; left: 4px; border-top: 2.5px solid #c5a059; border-left: 2.5px solid #c5a059; border-top-left-radius: 5px; }
-    .vf-tr { top: 4px; right: 4px; border-top: 2.5px solid #c5a059; border-right: 2.5px solid #c5a059; border-top-right-radius: 5px; }
-    .vf-bl { bottom: 4px; left: 4px; border-bottom: 2.5px solid #c5a059; border-left: 2.5px solid #c5a059; border-bottom-left-radius: 5px; }
-    .vf-br { bottom: 4px; right: 4px; border-bottom: 2.5px solid #c5a059; border-right: 2.5px solid #c5a059; border-bottom-right-radius: 5px; }
+    .vf-tl { top: 5px; left: 5px; border-top: 3px solid #fbbf24; border-left: 3px solid #fbbf24; border-top-left-radius: 6px; }
+    .vf-tr { top: 5px; right: 5px; border-top: 3px solid #fbbf24; border-right: 3px solid #fbbf24; border-top-right-radius: 6px; }
+    .vf-bl { bottom: 5px; left: 5px; border-bottom: 3px solid #fbbf24; border-left: 3px solid #fbbf24; border-bottom-left-radius: 6px; }
+    .vf-br { bottom: 5px; right: 5px; border-bottom: 3px solid #fbbf24; border-right: 3px solid #fbbf24; border-bottom-right-radius: 6px; }
     .qr-code-img {
-      width: 142px;
-      height: 142px;
+      width: 205px;
+      height: 205px;
       display: block;
-      border-radius: 8px;
+      border-radius: 10px;
     }
 
     /* ─── Footer: Steps Flow & Courtesy Line ─── */
@@ -546,101 +558,162 @@ export function buildStandCardHtml(
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       z-index: 12;
     }
     .steps-flow {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
     }
     .step-badge {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 10.5px;
+      gap: 6px;
+      font-size: 12px;
       font-weight: 800;
     }
     .step-coin {
-      width: 19px;
-      height: 19px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 900;
+      line-height: 1;
+    }
+    .step-label {
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
     }
     .step-dot {
-      font-size: 12px;
-      opacity: 0.5;
+      font-size: 14px;
+      opacity: 0.85;
     }
+    .courtesy-divider,
     .courtesy-line {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       width: 100%;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .flourish-dash {
-      width: 28px;
       height: 1.5px;
-      border-radius: 99px;
+      width: 32px;
+      border-radius: 2px;
+      opacity: 0.8;
     }
     .courtesy-text {
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
     }
 
-    /* ─── THEME 1: CRYSTAL & GOLD (زجاج الكريستال والذهب - روعة الرخام والخلفيات الفاتحة) ─── */
+    /* ─── THEME 1: SMOKED LUXURY GLASS & PURE WHITE FONTS (زجاج فاخر مدخن بخط أبيض ناصع) ─── */
     .theme-crystal .stand-plaque,
-    .theme-custom .stand-plaque {
-      background: linear-gradient(165deg, rgba(255, 255, 255, 0.93) 0%, rgba(253, 251, 247, 0.89) 100%) !important;
-      backdrop-filter: blur(14px) !important;
-      -webkit-backdrop-filter: blur(14px) !important;
-      border: 2px solid #c5a059 !important;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16) !important;
+    .theme-custom .stand-plaque,
+    .has-bg-img .stand-plaque {
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.76) 0%, rgba(2, 6, 23, 0.82) 100%) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border: 2px solid #fbbf24 !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     .theme-crystal .corner-filigree,
-    .theme-custom .corner-filigree { color: #c5a059 !important; }
+    .theme-custom .corner-filigree,
+    .has-bg-img .corner-filigree { color: #fbbf24 !important; }
+
     .theme-crystal .plaque-inset-frame,
-    .theme-custom .plaque-inset-frame { border-color: rgba(197, 160, 89, 0.45) !important; }
+    .theme-custom .plaque-inset-frame,
+    .has-bg-img .plaque-inset-frame { border-color: rgba(251, 191, 36, 0.45) !important; }
+
     .theme-crystal .welcome-ribbon,
-    .theme-custom .welcome-ribbon { color: #92400e !important; }
+    .theme-custom .welcome-ribbon,
+    .has-bg-img .welcome-ribbon { color: #fde047 !important; }
+
+    /* ALL FONTS IN PURE WHITE */
     .theme-crystal .restaurant-name,
-    .theme-custom .restaurant-name { color: #0f172a !important; }
-    .theme-crystal .restaurant-tagline,
-    .theme-custom .restaurant-tagline { color: #475569 !important; }
-    .theme-crystal .table-seal-badge,
-    .theme-custom .table-seal-badge {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #c5a059 !important;
+    .theme-custom .restaurant-name,
+    .has-bg-img .restaurant-name { 
+      color: #ffffff !important; 
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7) !important;
     }
+
+    .theme-crystal .restaurant-tagline,
+    .theme-custom .restaurant-tagline,
+    .has-bg-img .restaurant-tagline { 
+      color: #f1f5f9 !important; 
+      text-shadow: 0 1px 6px rgba(0,0,0,0.6) !important;
+    }
+
+    .theme-crystal .table-seal-badge,
+    .theme-custom .table-seal-badge,
+    .has-bg-img .table-seal-badge {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #fde047 !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4) !important;
+    }
+    .theme-crystal .seal-label,
+    .theme-custom .seal-label,
+    .has-bg-img .seal-label { color: #ffffff !important; }
     .theme-crystal .seal-num,
-    .theme-custom .seal-num { color: #fde047 !important; }
+    .theme-custom .seal-num,
+    .has-bg-img .seal-num { color: #fef08a !important; }
+
     .theme-crystal .qr-prompt-banner,
-    .theme-custom .qr-prompt-banner { color: #0f172a !important; }
+    .theme-custom .qr-prompt-banner,
+    .has-bg-img .qr-prompt-banner { 
+      color: #ffffff !important; 
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6) !important;
+    }
     .theme-crystal .qr-camera-icon,
-    .theme-custom .qr-camera-icon { color: #059669 !important; }
+    .theme-custom .qr-camera-icon,
+    .has-bg-img .qr-camera-icon { color: #34d399 !important; }
+
     .theme-crystal .qr-box-wrap,
-    .theme-custom .qr-box-wrap { border-color: #c5a059 !important; }
+    .theme-custom .qr-box-wrap,
+    .has-bg-img .qr-box-wrap { 
+      border-color: #fbbf24 !important; 
+      box-shadow: 0 10px 28px rgba(0,0,0,0.4) !important;
+    }
     .theme-crystal .vf-bracket,
-    .theme-custom .vf-bracket { border-color: #c5a059 !important; }
+    .theme-custom .vf-bracket,
+    .has-bg-img .vf-bracket { border-color: #fbbf24 !important; }
     .theme-crystal .step-coin,
-    .theme-custom .step-coin { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #d97706 !important; }
+    .theme-custom .step-coin,
+    .has-bg-img .step-coin { 
+      background: rgba(251, 191, 36, 0.25) !important; 
+      color: #fde047 !important; 
+      border: 1px solid #fbbf24 !important; 
+    }
     .theme-crystal .step-label,
-    .theme-custom .step-label { color: #1e293b !important; }
+    .theme-custom .step-label,
+    .has-bg-img .step-label { 
+      color: #ffffff !important; 
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6) !important; 
+    }
     .theme-crystal .step-dot,
-    .theme-custom .step-dot { color: #c5a059 !important; }
+    .theme-custom .step-dot,
+    .has-bg-img .step-dot { color: #fbbf24 !important; }
     .theme-crystal .courtesy-text,
-    .theme-custom .courtesy-text { color: #64748b !important; }
+    .theme-custom .courtesy-text,
+    .has-bg-img .courtesy-text { 
+      color: #e2e8f0 !important; 
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6) !important; 
+    }
     .theme-crystal .flourish-dash,
-    .theme-custom .flourish-dash { background: #c5a059 !important; }
+    .theme-custom .flourish-dash,
+    .has-bg-img .flourish-dash { background: #fbbf24 !important; }
 
     /* ─── THEME 2: IMPERIAL OBSIDIAN & GOLD (الأسود والذهب الملكي الإمبراطوري) ─── */
     .theme-obsidian .stand-plaque {
