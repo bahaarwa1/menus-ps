@@ -1,4 +1,4 @@
-import { CARD_TEMPLATE_WEBP } from './stand-card-template';
+import { HUMMUS_BASE64, SKILLET_BASE64 } from './food-assets';
 
 /**
  * Isolated single-page printing utility.
@@ -87,10 +87,20 @@ export function printThermalReceipt(order: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildStandCardHtml — 100% faithful to the user's reference design
-// Features: Real hummus plate corner, skillet tomatoes corner, dark green waves,
-// botanical leaf watermark, welcome text with orange swoosh, table badge,
-// orange rounded QR frame, phone icon with scan text, 3 action steps, and footer.
+// buildStandCardHtml — 100% Coded From Scratch Vector & High-Res Food Design
+// Matches the exact reference design:
+// - Real corner food 1 (Hummus + olive oil + paprika) top-left with orange arc
+// - Real corner food 2 (Skillet roasted tomatoes + herbs) bottom-right with orange arc
+// - Top-right deep forest green wave + "أهلاً وسهلاً بكم" + orange curved swoosh
+// - Bottom-left deep forest green wave
+// - Delicate botanical leaf watermarks on left and right
+// - Center logo badge: circle with orange border, white fork & spoon + leaf accent
+// - "المنيو" / Restaurant name in large bold Arabic calligraphy font
+// - Dark pill table badge with orange table & chairs icon + table number
+// - QR code in rounded orange border frame
+// - Scan prompt with smartphone icon
+// - 3 steps: تصفح المنيو | اختر طلبك | أرسل الطلب with orange vertical dividers
+// - Footer: ─── نتمنى لك وجبة شهية ───
 // ─────────────────────────────────────────────────────────────────────────────
 function buildStandCardHtml(
   stands: Array<{
@@ -101,39 +111,163 @@ function buildStandCardHtml(
     logoUrl?: string;
     branchName?: string;
   }>,
-  brandColor: string = '#f37324'
+  brandColor: string = '#f2722b'
 ) {
   const cardsHtml = stands.map((stand, idx) => {
-    const customName = stand.restaurantName && stand.restaurantName.trim() !== '' && stand.restaurantName !== 'المطعم' && stand.restaurantName !== 'المنيو' ? stand.restaurantName : null;
+    const titleText = stand.restaurantName && stand.restaurantName.trim() !== '' && stand.restaurantName !== 'المطعم'
+      ? stand.restaurantName
+      : 'المنيو';
 
     return `
     <div class="page ${idx < stands.length - 1 ? 'page-break' : ''}">
-      <div class="card">
-        <!-- Exact reference design template with real food photography corners, leaves, welcome text & footer -->
-        <img class="template-bg" src="${CARD_TEMPLATE_WEBP}" alt="Stand Card Background" />
+      <div class="card-wrap">
+        <!-- Inset Dark Line Frame -->
+        <div class="card-frame"></div>
 
-        <!-- Optional custom logo overlay (inside top circle) -->
-        ${stand.logoUrl ? `
-          <div class="logo-overlay">
-            <img src="${stand.logoUrl}" alt="Logo" />
-          </div>
-        ` : ''}
-
-        <!-- Optional custom restaurant name overlay -->
-        ${customName ? `
-          <div class="custom-name-overlay">
-            <div class="name-text">${customName}</div>
-          </div>
-        ` : ''}
-
-        <!-- Dynamic Table Number in the table badge -->
-        <div class="table-num-overlay">
-          ${stand.tableNumber}
+        <!-- Top-Left Corner: Hummus Dish with Orange Arc -->
+        <div class="corner-tl">
+          <img src="${HUMMUS_BASE64}" alt="Hummus" />
         </div>
 
-        <!-- Dynamic QR Code inside the orange rounded frame -->
-        <div class="qr-overlay">
-          <img src="${stand.qrDataUrl}" alt="QR" />
+        <!-- Bottom-Right Corner: Skillet Tomatoes with Orange Arc -->
+        <div class="corner-br">
+          <img src="${SKILLET_BASE64}" alt="Skillet Tomatoes" />
+        </div>
+
+        <!-- Top-Right Deep Forest Green Wave -->
+        <svg class="corner-tr-wave" viewBox="0 0 135 120" fill="none" preserveAspectRatio="none">
+          <path d="M135 0 H0 C48 10 95 42 110 85 C118 102 125 112 135 120 V0 Z" fill="#122722"/>
+        </svg>
+
+        <!-- Bottom-Left Deep Forest Green Wave -->
+        <svg class="corner-bl-wave" viewBox="0 0 135 120" fill="none" preserveAspectRatio="none">
+          <path d="M0 120 H135 C88 110 40 78 25 35 C18 18 10 8 0 0 V120 Z" fill="#122722"/>
+        </svg>
+
+        <!-- Welcome Box + Hand-drawn Orange Swoosh Underline -->
+        <div class="welcome-box">
+          <span class="welcome-text">أهلاً وسهلاً</span>
+          <span class="welcome-text">بكم</span>
+          <svg class="welcome-swoosh" viewBox="0 0 60 12" fill="none">
+            <path d="M2 9 C 20 2, 45 4, 58 7" stroke="${brandColor}" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <!-- Botanical Leaf Watermarks (Left & Right) -->
+        <svg class="leaf-watermark-left" viewBox="0 0 70 140" fill="none">
+          <path d="M10 135 Q 25 70 45 10" stroke="#bda995" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M20 105 Q 40 95 48 80 C 40 85 30 88 20 105 Z" fill="#bda995"/>
+          <path d="M28 75 Q 52 65 60 48 C 50 55 38 60 28 75 Z" fill="#bda995"/>
+          <path d="M38 45 Q 60 35 66 18 C 58 26 48 30 38 45 Z" fill="#bda995"/>
+          <path d="M15 118 Q -2 108 -6 95 C 2 98 10 105 15 118 Z" fill="#bda995"/>
+          <path d="M23 88 Q 5 78 0 65 C 8 68 18 75 23 88 Z" fill="#bda995"/>
+        </svg>
+
+        <svg class="leaf-watermark-right" viewBox="0 0 70 140" fill="none">
+          <path d="M10 135 Q 25 70 45 10" stroke="#bda995" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M20 105 Q 40 95 48 80 C 40 85 30 88 20 105 Z" fill="#bda995"/>
+          <path d="M28 75 Q 52 65 60 48 C 50 55 38 60 28 75 Z" fill="#bda995"/>
+          <path d="M38 45 Q 60 35 66 18 C 58 26 48 30 38 45 Z" fill="#bda995"/>
+          <path d="M15 118 Q -2 108 -6 95 C 2 98 10 105 15 118 Z" fill="#bda995"/>
+          <path d="M23 88 Q 5 78 0 65 C 8 68 18 75 23 88 Z" fill="#bda995"/>
+        </svg>
+
+        <!-- Center Content Stack -->
+        <div class="center-content">
+          <!-- Logo Circle Badge -->
+          <div class="logo-ring">
+            ${stand.logoUrl ? `
+              <img src="${stand.logoUrl}" class="logo-img" alt="Logo" />
+            ` : `
+              <svg viewBox="0 0 24 24" width="38" height="38" fill="white">
+                <path d="M7 2v5c0 1.1.9 2 2 2v11a1 1 0 0 0 2 0V9c1.1 0 2-.9 2-2V2h-1.5v4h-1V2H9.5v4h-1V2H7z"/>
+                <path d="M15 2c-1.66 0-3 1.79-3 4 0 1.48.61 2.76 1.5 3.42V20a1 1 0 0 0 2 0V9.42C16.39 8.76 17 7.48 17 6c0-2.21-1.34-4-3-4z"/>
+              </svg>
+            `}
+            <svg class="logo-leaf" viewBox="0 0 24 24" fill="${brandColor}">
+              <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66l.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.75C12 8.5 15 8 17 8z"/>
+            </svg>
+          </div>
+
+          <!-- Restaurant / Menu Title -->
+          <h1 class="title-main">${titleText}</h1>
+          <div class="title-sub">أطباقنا .. بنكهات أصيلة</div>
+
+          <!-- Dark Pill Table Badge -->
+          <div class="table-badge">
+            <div class="table-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="${brandColor}">
+                <rect x="5" y="8" width="14" height="2.5" rx="1"/>
+                <rect x="11" y="10.5" width="2" height="7.5" rx="0.5"/>
+                <rect x="8" y="17" width="8" height="2" rx="1"/>
+                <rect x="2" y="5" width="2" height="13" rx="1"/>
+                <rect x="2" y="11" width="4" height="2" rx="0.5"/>
+                <rect x="20" y="5" width="2" height="13" rx="1"/>
+                <rect x="18" y="11" width="4" height="2" rx="0.5"/>
+              </svg>
+            </div>
+            <span class="table-num">${stand.tableNumber}</span>
+            <span class="table-label">الطاولة</span>
+          </div>
+
+          <!-- QR Code Box with Rounded Orange Frame -->
+          <div class="qr-container">
+            <img class="qr-img" src="${stand.qrDataUrl}" alt="QR" />
+          </div>
+
+          <!-- Scan Hint Row -->
+          <div class="scan-hint">
+            <svg class="scan-phone-icon" viewBox="0 0 20 28" fill="none">
+              <rect x="1.5" y="1.5" width="17" height="25" rx="3.5" stroke="#122722" stroke-width="2"/>
+              <circle cx="10" cy="22" r="1.5" fill="#122722"/>
+              <line x1="7" y1="5" x2="13" y2="5" stroke="#122722" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div class="scan-text-box">
+              <div class="scan-text-main">امسح الرمز لعرض منيو المطعم</div>
+              <div class="scan-text-sub">واطلب ما تشتهيه</div>
+            </div>
+          </div>
+
+          <!-- 3 Steps Row -->
+          <div class="steps-row">
+            <div class="step-item">
+              <div class="step-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#122722">
+                  <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H6V4h12v16zM8 7h8v2H8V7zm0 4h8v2H8v-2zm0 4h5v2H8v-2z"/>
+                </svg>
+              </div>
+              <span class="step-label">تصفح المنيو</span>
+            </div>
+
+            <div class="step-divider"></div>
+
+            <div class="step-item">
+              <div class="step-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#122722">
+                  <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>
+                </svg>
+              </div>
+              <span class="step-label">اختر طلبك</span>
+            </div>
+
+            <div class="step-divider"></div>
+
+            <div class="step-item">
+              <div class="step-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#122722">
+                  <path d="M12 2a5 5 0 0 0-4.9 4.08A4.5 4.5 0 0 0 4 10.5C4 12.44 5.23 14.1 7 14.72V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-4.28c1.77-.62 3-2.28 3-4.22a4.5 4.5 0 0 0-3.1-4.42A5 5 0 0 0 12 2zm3 17H9v-3h6v3z"/>
+                </svg>
+              </div>
+              <span class="step-label">أرسل الطلب</span>
+            </div>
+          </div>
+
+          <!-- Footer Bar -->
+          <div class="footer-bar">
+            <div class="footer-dash"></div>
+            <span class="footer-msg">نتمنى لك وجبة شهية</span>
+            <div class="footer-dash"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -146,7 +280,7 @@ function buildStandCardHtml(
   <meta charset="utf-8">
   <title>بطاقات الطاولات</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A5 portrait;
@@ -164,7 +298,7 @@ function buildStandCardHtml(
         page-break-after: always;
         break-after: page;
       }
-      .card {
+      .card-wrap {
         box-shadow: none !important;
       }
     }
@@ -186,102 +320,323 @@ function buildStandCardHtml(
       justify-content: center;
       margin: 0 auto;
     }
-    .card {
-      position: relative;
+    .card-wrap {
       width: 140mm;
-      height: 153.06mm;
-      background: #f8f4ef;
-      border-radius: 12px;
+      height: 154mm;
+      background: #faf7f2;
+      border-radius: 18px;
+      position: relative;
       overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
     }
-    .template-bg {
+    .card-frame {
+      position: absolute;
+      inset: 9px;
+      border: 1.5px solid #162a24;
+      border-radius: 13px;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    /* ─── Top-Left Corner Food: Hummus ─── */
+    .corner-tl {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-      z-index: 1;
-    }
-    .logo-overlay {
-      position: absolute;
-      top: 8.5%;
-      left: 43.7%;
-      width: 11.2%;
-      aspect-ratio: 1;
-      border-radius: 50%;
+      width: 155px;
+      height: 155px;
+      z-index: 5;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
-      z-index: 10;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      border-bottom-right-radius: 125px;
+      border-right: 4.5px solid ${brandColor};
+      border-bottom: 4.5px solid ${brandColor};
     }
-    .logo-overlay img {
+    .corner-tl img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
-    .custom-name-overlay {
+
+    /* ─── Bottom-Right Corner Food: Skillet Tomatoes ─── */
+    .corner-br {
       position: absolute;
-      top: 19.8%;
-      left: 20%;
-      width: 60%;
-      height: 8.5%;
-      background: #f8f4ef;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    .name-text {
-      font-family: 'Cairo', sans-serif;
-      font-size: 24px;
-      font-weight: 900;
-      color: #12211c;
-      text-align: center;
-      white-space: nowrap;
+      bottom: 0;
+      right: 0;
+      width: 155px;
+      height: 155px;
+      z-index: 5;
       overflow: hidden;
-      text-overflow: ellipsis;
+      border-top-left-radius: 125px;
+      border-left: 4.5px solid ${brandColor};
+      border-top: 4.5px solid ${brandColor};
     }
-    .table-num-overlay {
+    .corner-br img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ─── Top-Right Deep Teal Wave ─── */
+    .corner-tr-wave {
       position: absolute;
-      top: 35.2%;
-      left: 42.5%;
-      width: 9%;
-      height: 5.8%;
+      top: 0;
+      right: 0;
+      width: 130px;
+      height: 115px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ─── Bottom-Left Deep Teal Wave ─── */
+    .corner-bl-wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 130px;
+      height: 115px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ─── Welcome text (Top-Right) ─── */
+    .welcome-box {
+      position: absolute;
+      top: 22px;
+      right: 26px;
+      z-index: 10;
+      text-align: center;
+      line-height: 1.15;
+    }
+    .welcome-text {
+      font-size: 14px;
+      font-weight: 800;
+      color: #122722;
+      display: block;
+    }
+    .welcome-swoosh {
+      width: 56px;
+      height: 11px;
+      margin-top: 3px;
+      display: block;
+    }
+
+    /* ─── Botanical Leaf Watermarks ─── */
+    .leaf-watermark-left {
+      position: absolute;
+      left: 6px;
+      top: 32%;
+      width: 65px;
+      height: 150px;
+      opacity: 0.35;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .leaf-watermark-right {
+      position: absolute;
+      right: 6px;
+      top: 35%;
+      width: 65px;
+      height: 150px;
+      opacity: 0.35;
+      z-index: 3;
+      pointer-events: none;
+      transform: scaleX(-1);
+    }
+
+    /* ─── Center Content ─── */
+    .center-content {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    /* Logo Ring */
+    .logo-ring {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 3.5px solid ${brandColor};
+      background: #122722;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 6px;
+      box-shadow: 0 4px 12px rgba(18, 39, 34, 0.2);
+    }
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .logo-leaf {
+      position: absolute;
+      right: -8px;
+      bottom: 2px;
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Title */
+    .title-main {
+      font-size: 38px;
+      font-weight: 900;
+      color: #122722;
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+    }
+    .title-sub {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #63726c;
+      margin-top: 2px;
+      margin-bottom: 9px;
+    }
+
+    /* Table Badge */
+    .table-badge {
+      background: #122722;
+      border-radius: 999px;
+      padding: 5px 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 9px;
+      box-shadow: 0 4px 12px rgba(18, 39, 34, 0.25);
+    }
+    .table-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .table-num {
       color: #ffffff;
-      font-family: 'Cairo', sans-serif;
       font-size: 20px;
       font-weight: 900;
       line-height: 1;
-      z-index: 10;
-      text-align: center;
-      direction: ltr;
     }
-    .qr-overlay {
-      position: absolute;
-      top: 45.8%;
-      left: 30.6%;
-      width: 32.2%;
-      height: 28.0%;
+    .table-label {
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    /* QR Box */
+    .qr-container {
+      background: #ffffff;
+      border: 3.5px solid ${brandColor};
+      border-radius: 22px;
+      padding: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 16px rgba(242, 114, 43, 0.15);
     }
-    .qr-overlay img {
-      width: 92%;
-      height: 92%;
-      object-fit: contain;
+    .qr-img {
+      width: 142px;
+      height: 142px;
       display: block;
       border-radius: 6px;
+    }
+
+    /* Scan Hint */
+    .scan-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .scan-phone-icon {
+      width: 18px;
+      height: 24px;
+    }
+    .scan-text-box {
+      text-align: right;
+      line-height: 1.25;
+    }
+    .scan-text-main {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #122722;
+    }
+    .scan-text-sub {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #71807b;
+    }
+
+    /* 3 Steps Row */
+    .steps-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      padding: 0 10px;
+      margin-bottom: 6px;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .step-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #122722;
+      white-space: nowrap;
+    }
+    .step-divider {
+      width: 1.5px;
+      height: 20px;
+      background: ${brandColor};
+      opacity: 0.8;
+      border-radius: 2px;
+    }
+
+    /* Footer Bar */
+    .footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 2px;
+    }
+    .footer-dash {
+      width: 40px;
+      height: 2px;
+      background: ${brandColor};
+      border-radius: 99px;
+    }
+    .footer-msg {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #122722;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -312,7 +667,7 @@ export function printTableStand(stand: {
   const doc = iframe.contentWindow?.document;
   if (!doc) return;
 
-  const html = buildStandCardHtml([stand], stand.brandColor || '#f37324');
+  const html = buildStandCardHtml([stand], stand.brandColor || '#f2722b');
 
   doc.open(); doc.write(html); doc.close();
 
@@ -353,7 +708,7 @@ export function printAllTableStands(stands: Array<{
   const doc = iframe.contentWindow?.document;
   if (!doc) return;
 
-  const brand = stands[0]?.brandColor || '#f37324';
+  const brand = stands[0]?.brandColor || '#f2722b';
   const html  = buildStandCardHtml(stands, brand);
 
   doc.open(); doc.write(html); doc.close();
