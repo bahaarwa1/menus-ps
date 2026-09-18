@@ -8,7 +8,7 @@ export interface BrandedQROptions {
   logoUrl?: string; // Image or logo URL
   restaurantName?: string;
   tableNumber?: number | string;
-  style?: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid';
+  style?: 'artistic' | 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid';
   reduceGaps?: boolean; // When true, shrinks white gaps and fills them with photo for maximum clarity
 }
 
@@ -94,7 +94,8 @@ export async function generateBrandedQRCode({
     });
   }
 
-  const effectiveStyle = !logoUrl && style !== 'solid' ? 'solid' : style;
+  // For artistic mode: works with or without a photo. Other image modes fall back to solid if no logo.
+  const effectiveStyle = (!logoUrl && style !== 'solid' && style !== 'artistic') ? 'solid' : style;
 
   let logoImg: HTMLImageElement | null = null;
   if (logoUrl && effectiveStyle !== 'solid') {
@@ -102,6 +103,104 @@ export async function generateBrandedQRCode({
       logoImg = await loadImage(logoUrl);
     } catch {
       logoImg = null;
+    }
+  }
+
+  // =========================================================================
+  // MODE 0: ARTISTIC QR — دوائر + صورة المطعم خلف النقاط (KFC Style)
+  // Circular finder eyes, round data dots, brand photo shining through
+  // =========================================================================
+  if (effectiveStyle === 'artistic') {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('no ctx');
+
+      const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
+      const modCount = qr.modules.size;
+      const margin = 2;
+      const totalMods = modCount + margin * 2;
+      const cellSize = size / totalMods;
+      const dotRadius = cellSize * 0.42; // circular dots
+
+      // ── 1. White background ──
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      // ── 2. Draw brand photo as background (medium opacity so dots are clear) ──
+      if (logoImg && logoImg.width > 0) {
+        const imgAspect = logoImg.width / logoImg.height;
+        let drawW = size, drawH = size, drawX = 0, drawY = 0;
+        if (imgAspect > 1) { drawW = size * imgAspect; drawX = -(drawW - size) / 2; }
+        else { drawH = size / imgAspect; drawY = -(drawH - size) / 2; }
+
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
+      }
+
+      // Finder pattern positions (top-left, top-right, bottom-left)
+      // Each finder = 7×7 modules starting at (0,0), (modCount-7,0), (0,modCount-7)
+      const finderStarts: [number, number][] = [
+        [0, 0],
+        [modCount - 7, 0],
+        [0, modCount - 7],
+      ];
+      const isInFinder = (r: number, c: number) =>
+        finderStarts.some(([fc, fr]) =>
+          c >= fc && c < fc + 7 && r >= fr && r < fr + 7
+        );
+
+      // ── 3. Draw round data dots (skip finder regions) ──
+      ctx.fillStyle = color || '#0f172a';
+      for (let r = 0; r < modCount; r++) {
+        for (let c = 0; c < modCount; c++) {
+          if (!qr.modules.get(r, c)) continue;
+          if (isInFinder(r, c)) continue; // drawn separately
+          const cx = (c + margin + 0.5) * cellSize;
+          const cy = (r + margin + 0.5) * cellSize;
+          ctx.beginPath();
+          ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ── 4. Draw circular finder eyes ──
+      const drawFinderEye = (startCol: number, startRow: number) => {
+        const cx = (startCol + margin + 3.5) * cellSize;
+        const cy = (startRow + margin + 3.5) * cellSize;
+        const outerR = cellSize * 3.5;
+        const midR = cellSize * 2.7;
+        const innerR = cellSize * 1.5;
+
+        // Outer black ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        ctx.fillStyle = color || '#0f172a';
+        ctx.fill();
+
+        // White ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, midR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Inner brand-color dot (matching color)
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+        ctx.fillStyle = color || '#0f172a';
+        ctx.fill();
+      };
+
+      finderStarts.forEach(([fc, fr]) => drawFinderEye(fc, fr));
+
+      return canvas.toDataURL('image/png');
+    } catch (err) {
+      console.warn('Artistic QR failed, falling back:', err);
     }
   }
 

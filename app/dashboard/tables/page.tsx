@@ -27,7 +27,7 @@ export default function ProductionTablesPage() {
 
   // QR Customization Studio States
   const [qrColor, setQrColor] = useState<string>('#0f172a');
-  const [qrStyle, setQrStyle] = useState<'photo_watermark' | 'image_fill' | 'center_badge' | 'solid'>('photo_watermark');
+  const [qrStyle, setQrStyle] = useState<'artistic' | 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid'>('artistic');
   const [reduceGaps, setReduceGaps] = useState<boolean>(true);
   const [isUploadingQrImage, setIsUploadingQrImage] = useState<boolean>(false);
   const fileInputQrRef = React.useRef<HTMLInputElement>(null);
@@ -36,7 +36,7 @@ export default function ProductionTablesPage() {
   const makeBrandedQr = async (
     targetUrl: string,
     color = qrColor,
-    style: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid' = qrStyle,
+    style: 'artistic' | 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid' = qrStyle,
     logo = restaurantLogo,
     name = restaurantName,
     tNum?: number,
@@ -186,8 +186,8 @@ export default function ProductionTablesPage() {
     }
   };
 
-  // Handle QR style switch (photo_watermark vs image_fill vs center_badge vs solid)
-  const handleStyleChange = async (newStyle: 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid') => {
+  // Handle QR style switch (artistic vs photo_watermark vs image_fill vs center_badge vs solid)
+  const handleStyleChange = async (newStyle: 'artistic' | 'photo_watermark' | 'image_fill' | 'center_badge' | 'solid') => {
     setQrStyle(newStyle);
     try {
       localStorage.setItem('qr_style', newStyle);
@@ -488,6 +488,19 @@ export default function ProductionTablesPage() {
             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
               <button
                 type="button"
+                onClick={() => handleStyleChange('artistic')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                  qrStyle === 'artistic'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-md shadow-red-500/20 ring-2 ring-red-500/30'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                <span>🎨</span>
+                <span>فني (دوائر + صورة) ✨</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleStyleChange('photo_watermark')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
                   qrStyle === 'photo_watermark'
@@ -496,7 +509,7 @@ export default function ProductionTablesPage() {
                 }`}
               >
                 <Sparkles size={14} />
-                <span>خلفية صورة المطعم كاملة (الأوضح والأجمل ✨)</span>
+                <span>خلفية صورة كاملة</span>
               </button>
 
               <button
