@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Readex_Pro } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({
+const readexPro = Readex_Pro({
   subsets: ["arabic"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
+  variable: "--font-readex",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default function RootLayout({
   const nonce = headers().get("x-nonce") ?? undefined;
 
   return (
-    <html lang="ar" dir="rtl" className={ibmPlexArabic.className}>
+    <html lang="ar" dir="rtl" className={`${readexPro.className} ${readexPro.variable}`}>
       <body className="antialiased">
         <LanguageProvider>
           {children}

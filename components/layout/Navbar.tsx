@@ -25,22 +25,22 @@ export default function Navbar() {
   if (pathname.startsWith('/demo') || pathname.startsWith('/dashboard') || pathname === '/m' || pathname === '/staff') return null;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-100 shadow-2xs" dir={direction}>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-xs" dir={direction}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-16 sm:h-[68px]">
           {/* Logo */}
-          <Logo size="sm" />
+          <Logo size="md" />
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                className={`px-4 py-2 rounded-xl text-[15px] font-bold tracking-normal transition-all ${
                   pathname === link.href
-                    ? 'text-orange-600 bg-orange-50'
-                    : 'text-slate-600 hover:text-orange-600 hover:bg-orange-50/50'
+                    ? 'text-orange-600 bg-orange-50 font-black border border-orange-200/70 shadow-2xs'
+                    : 'text-slate-700 hover:text-orange-600 hover:bg-orange-50/60'
                 }`}
               >
                 {link.label}
@@ -49,19 +49,19 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Buttons + Language Switcher */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-3">
             {/* Language Switcher */}
             <LanguageSwitcher variant="pill" />
 
             <Link
               href="/login"
-              className="px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:text-orange-600 transition-colors"
+              className="px-4 py-2 text-[15px] font-bold text-slate-700 hover:text-orange-600 hover:bg-slate-100/70 rounded-xl transition-all"
             >
               {t('nav.login', 'تسجيل الدخول')}
             </Link>
             <Link
               href="/register"
-              className="px-4 py-2 text-xs font-black text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors shadow-md shadow-orange-500/20"
+              className="px-5 py-2.5 text-[15px] font-black text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-md shadow-orange-500/25 hover:shadow-orange-500/35 hover:scale-[1.02] active:scale-[0.98]"
             >
               {t('nav.startFree', 'ابدأ مجانًا')}
             </Link>

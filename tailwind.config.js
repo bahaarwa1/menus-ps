@@ -1,6 +1,5 @@
-import type { Config } from "tailwindcss";
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: 'class',
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -13,8 +12,11 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        sans: ['var(--font-readex)', 'Readex Pro', 'Cairo', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        cairo: ['Cairo', 'sans-serif'],
+      },
     },
   },
   plugins: [],
 };
-export default config;

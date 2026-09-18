@@ -34,8 +34,8 @@ export default function PricingPage() {
       id: 'pro',
       name: 'Pro Complete',
       subtitle: 'Most popular for active busy dining rooms',
-      monthlyPrice: 149,
-      yearlyPrice: 119,
+      monthlyPrice: 250,
+      yearlyPrice: 199,
       popular: true,
       badge: 'Most Popular 🔥',
       features: [
@@ -53,8 +53,8 @@ export default function PricingPage() {
       id: 'enterprise',
       name: 'Chains & Enterprise',
       subtitle: 'For large venues and multi-branch brands',
-      monthlyPrice: 249,
-      yearlyPrice: 199,
+      monthlyPrice: 399,
+      yearlyPrice: 319,
       popular: false,
       features: [
         'Everything in Pro plan',
@@ -89,8 +89,8 @@ export default function PricingPage() {
       id: 'pro',
       name: 'برو المتكاملة',
       subtitle: 'الأكثر طلباً للمطاعم النشطة',
-      monthlyPrice: 149,
-      yearlyPrice: 119,
+      monthlyPrice: 250,
+      yearlyPrice: 199,
       popular: true,
       badge: 'الأكثر شعبية 🔥',
       features: [
@@ -108,8 +108,8 @@ export default function PricingPage() {
       id: 'enterprise',
       name: 'سلاسل وفروع',
       subtitle: 'للمطاعم الكبيرة ومتعددة الفروع',
-      monthlyPrice: 249,
-      yearlyPrice: 199,
+      monthlyPrice: 399,
+      yearlyPrice: 319,
       popular: false,
       features: [
         'كل ما في باقة برو',

@@ -351,164 +351,264 @@ export default function HomePage() {
         {/* =========================================================================
             SLIDE 2: WINDOWS 11 DESKTOP SIMULATOR (سلايد 2: محاكي نظام ويندوز المتطور)
         ========================================================================= */}
-        <section className="w-full relative flex flex-col justify-center items-center bg-slate-950 text-white overflow-hidden py-10 sm:py-14 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[580px] md:snap-start md:snap-always p-3 sm:p-6">
+        <section className="w-full relative flex flex-col justify-center items-center bg-slate-950 text-white overflow-hidden py-10 sm:py-14 md:py-0 md:h-[calc(100dvh-3.5rem)] md:min-h-[620px] md:snap-start md:snap-always p-3 sm:p-6 lg:p-8">
           
-          <div className="text-center max-w-2xl mx-auto mb-3 z-10">
-            <span className="bg-sky-500/20 text-sky-400 text-xs font-black px-3.5 py-1 rounded-full mb-1.5 inline-flex items-center gap-1.5 border border-sky-500/30">
-              <span>🪟</span>
+          {/* Ambient Glows & Grid to eradicate the empty dark void */}
+          <div className="absolute top-1/4 -right-20 w-[450px] h-[450px] bg-orange-500/12 rounded-full blur-[140px] pointer-events-none -z-10" />
+          <div className="absolute bottom-10 -left-20 w-[450px] h-[450px] bg-sky-500/12 rounded-full blur-[140px] pointer-events-none -z-10" />
+          <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:28px_28px] opacity-20 pointer-events-none" />
+
+          {/* Section Header with Elevated Typography */}
+          <div className="text-center max-w-3xl mx-auto mb-4 sm:mb-6 z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-xs sm:text-sm font-bold mb-2.5 shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
               <span>
-                {isRtl ? 'واجهة وتجربة سطح مكتب ويندوز 11 المتطورة' : 'Modern Windows 11 Desktop Experience'}
+                {isRtl ? '🪟 واجهة وتجربة سطح مكتب ويندوز 11 المتطورة' : '🪟 Modern Windows 11 Desktop Simulator'}
               </span>
-            </span>
-            <h2 className="text-xl sm:text-3xl font-black mb-1">
-              {isRtl 
-                ? 'نظام تشغيل متكامل لمطعمك في شاشة واحدة' 
-                : 'A Complete Operating System for Your Restaurant in One Screen'}
+            </div>
+            
+            <h2 className="text-2xl sm:text-4xl lg:text-[2.6rem] font-black tracking-tight text-white mb-2 leading-tight">
+              {isRtl ? (
+                <>نظام تشغيل متكامل لمطعمك <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">في شاشة واحدة</span></>
+              ) : (
+                <>A Complete Restaurant OS <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">in One Screen</span></>
+              )}
             </h2>
-            <p className="text-slate-400 text-xs sm:text-sm">
+
+            <p className="text-xs sm:text-sm lg:text-base text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
               {isRtl 
-                ? 'تحكم بالمنيو، راقب المطبخ لحظة بلحظة، وتابع حركة الكاشير كما لو كنت على كمبيوتر ويندوز' 
-                : 'Manage your menu, monitor the kitchen in real-time, and track cashier KPIs just like a desktop OS'}
+                ? 'تحكم بالمنيو، راقب المطبخ لحظة بلحظة، وتابع حركة الكاشير كما لو كنت على كمبيوتر ويندوز — متوافق مع كافة الشاشات والأجهزة' 
+                : 'Manage your menu, monitor the kitchen in real-time, and track cashier KPIs just like a native desktop app'}
             </p>
           </div>
 
-          {/* Windows 11 Application Window Frame */}
-          <div className="w-full max-w-4xl bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col z-10" dir={direction}>
+          {/* Windows 11 Application Window Frame (Expanded to max-w-5xl) */}
+          <div className="w-full max-w-5xl lg:max-w-6xl bg-slate-900/95 backdrop-blur-2xl rounded-2xl sm:rounded-3xl border border-slate-700/80 shadow-[0_25px_70px_rgba(0,0,0,0.55)] overflow-hidden flex flex-col z-10" dir={direction}>
             
             {/* Windows 11 Title Bar */}
-            <div className="bg-slate-950 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between text-xs select-none">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-5 h-5 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center font-black text-xs shrink-0">
+            <div className="bg-slate-950/90 px-4 py-2.5 border-b border-slate-800/90 flex items-center justify-between text-xs select-none">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-xs shrink-0 border border-sky-500/30">
                   🪟
                 </div>
-                <span className="font-extrabold text-white text-[11px] sm:text-xs truncate">
+                <span className="font-black text-white text-xs sm:text-sm truncate">
                   {isRtl 
                     ? 'Menus.ps Windows OS — مركز إدارة المطاعم الموحد (Burger House نابلس)' 
                     : 'Menus.ps Windows OS — Unified Restaurant Command Center (Burger House Nablus)'}
                 </span>
+                <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  {isRtl ? 'سحابي نشط' : 'Cloud Active'}
+                </span>
               </div>
 
               {/* Windows Window Controls */}
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">—</span>
-                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer">🗖</span>
-                <span className="w-6 h-5 flex items-center justify-center text-slate-400 hover:bg-rose-600 hover:text-white rounded text-xs cursor-pointer">✕</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="w-7 h-6 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer transition-colors">—</span>
+                <span className="w-7 h-6 flex items-center justify-center text-slate-400 hover:bg-slate-800 rounded text-xs cursor-pointer transition-colors">🗖</span>
+                <span className="w-7 h-6 flex items-center justify-center text-slate-400 hover:bg-rose-600 hover:text-white rounded text-xs cursor-pointer transition-colors">✕</span>
               </div>
             </div>
 
             {/* App Tabs inside the Windows Window */}
-            <div className="px-3 pt-3 bg-slate-900/90 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+            <div className="px-4 pt-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center gap-2 overflow-x-auto hide-scrollbar">
               <button
                 onClick={() => setActiveTab('menu')}
-                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 border-t-2 cursor-pointer ${
                   activeTab === 'menu' 
                     ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
                 }`}
               >
-                <Smartphone size={14} className="text-orange-400" />
-                <span>{isRtl ? '1. منيو العميل للجوال' : '1. Customer Mobile Menu'}</span>
+                <Smartphone size={16} className={activeTab === 'menu' ? 'text-orange-400' : 'text-slate-400'} />
+                <span>{isRtl ? '1. منيو العميل للجوال (تجربة حية)' : '1. Customer Mobile Menu (Live)'}</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('kitchen')}
-                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 border-t-2 cursor-pointer ${
                   activeTab === 'kitchen' 
                     ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
                 }`}
               >
-                <ChefHat size={14} className="text-amber-400" />
-                <span>{isRtl ? '2. شاشة المطبخ (KDS)' : '2. Kitchen Display (KDS)'}</span>
+                <ChefHat size={16} className={activeTab === 'kitchen' ? 'text-amber-400' : 'text-slate-400'} />
+                <span>{isRtl ? '2. شاشة المطبخ الفورية (KDS)' : '2. Kitchen Display (KDS)'}</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-3.5 py-1.5 rounded-t-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 border-t-2 ${
+                className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 border-t-2 cursor-pointer ${
                   activeTab === 'dashboard' 
                     ? 'bg-slate-950 text-white border-orange-500 shadow-sm' 
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
                 }`}
               >
-                <BarChart3 size={14} className="text-emerald-400" />
+                <BarChart3 size={16} className={activeTab === 'dashboard' ? 'text-emerald-400' : 'text-slate-400'} />
                 <span>{isRtl ? '3. لوحة الكاشير والـ KPI' : '3. Cashier & KPI Dashboard'}</span>
               </button>
             </div>
 
             {/* Window Content Area */}
-            <div className="p-3 sm:p-5 bg-slate-950 min-h-[290px] flex items-center justify-center">
+            <div className="p-4 sm:p-6 bg-slate-950 min-h-[320px]">
               <AnimatePresence mode="wait">
                 {activeTab === 'menu' && (
                   <motion.div
                     key="sim-menu"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className={`w-full max-w-md bg-white text-slate-900 rounded-2xl p-3.5 shadow-xl ${isRtl ? 'text-right' : 'text-left'}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch"
                     dir={direction}
                   >
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2.5">
-                      <div>
-                        <h4 className="font-black text-xs sm:text-sm text-slate-900">
-                          {isRtl ? 'منيو طاولة 12 (تجربة تفاعلية)' : 'Table 12 Menu (Interactive Demo)'}
-                        </h4>
-                        <p className="text-[10px] text-slate-400">
-                          {isRtl ? 'انقر على (+) لتجربة إضافة الوجبة للسلة فوراً' : 'Click (+) to add an item to the cart instantly'}
-                        </p>
-                      </div>
-                      <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                        {isRtl ? 'مباشر' : 'Live'}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 mb-3">
-                      <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-xs text-slate-900">
-                            {isRtl ? 'دبل سماش برغر فاخر' : 'Deluxe Double Smash Burger'}
-                          </p>
-                          <span className="text-xs font-black text-orange-600">42 ₪</span>
+                    {/* Right / Main Pane: Customer Menu View */}
+                    <div className="lg:col-span-7 bg-white text-slate-900 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between border border-slate-100">
+                      {/* Menu Header */}
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-sm shadow-xs">
+                            🍔
+                          </div>
+                          <div>
+                            <h4 className="font-black text-sm sm:text-base text-slate-900">
+                              {isRtl ? 'Burger House نابلس • منيو طاولة 12' : 'Burger House Nablus • Table 12 Menu'}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              {isRtl ? 'انقر على (+ أضف) لإضافة الوجبات ومراقبة التزامن اللحظي' : 'Click (+ Add) to add items and watch instant live sync'}
+                            </p>
+                          </div>
                         </div>
-                        <button 
-                          onClick={() => handleAddDemoItem(42)}
-                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform cursor-pointer"
-                        >
-                          {isRtl ? '+ أضف' : '+ Add'}
-                        </button>
-                      </div>
-
-                      <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-xs text-slate-900">
-                            {isRtl ? 'تشيز بيكون فرايز مقرمش' : 'Crispy Cheese Bacon Fries'}
-                          </p>
-                          <span className="text-xs font-black text-orange-600">22 ₪</span>
-                        </div>
-                        <button 
-                          onClick={() => handleAddDemoItem(22)}
-                          className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-xs font-black active:scale-90 transition-transform cursor-pointer"
-                        >
-                          {isRtl ? '+ أضف' : '+ Add'}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-2 bg-slate-100 rounded-xl flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">
-                          {demoCartCount} {isRtl ? 'أصناف بالسلة' : 'items in cart'}
+                        <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1.5 shrink-0 border border-emerald-200">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          {isRtl ? 'مباشر' : 'Live'}
                         </span>
-                        <span className="text-sm font-black text-slate-900">{demoCartTotal} ₪</span>
                       </div>
-                      <Link
-                        href="/m"
-                        target="_blank"
-                        className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors shadow-xs"
-                      >
-                        <span>{isRtl ? 'فتح المنيو الكامل' : 'Open Full Menu'}</span>
-                        <ExternalLink size={12} />
-                      </Link>
+
+                      {/* Food Items List */}
+                      <div className="space-y-2.5 mb-4">
+                        <div className="p-3 bg-slate-50 hover:bg-orange-50/40 border border-slate-200/90 rounded-xl flex items-center justify-between transition-colors">
+                          <div className="flex-1 min-w-0 ml-3">
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-xs sm:text-sm text-slate-900">
+                                {isRtl ? 'دبل سماش برغر فاخر' : 'Deluxe Double Smash Burger'}
+                              </p>
+                              <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-1.5 py-0.2 rounded">
+                                {isRtl ? 'الأكثر طلباً 🔥' : 'Best Seller 🔥'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {isRtl ? 'لحم أنجوس، جبن شيدر ذائب، مخلل، صوص خاص' : 'Angus beef, melted cheddar, pickles, secret sauce'}
+                            </p>
+                            <span className="text-xs sm:text-sm font-black text-orange-600 mt-1 inline-block">42 ₪</span>
+                          </div>
+                          <button 
+                            onClick={() => handleAddDemoItem(42)}
+                            className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs sm:text-sm font-black active:scale-90 transition-all shadow-xs cursor-pointer shrink-0"
+                          >
+                            {isRtl ? '+ أضف' : '+ Add'}
+                          </button>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 hover:bg-orange-50/40 border border-slate-200/90 rounded-xl flex items-center justify-between transition-colors">
+                          <div className="flex-1 min-w-0 ml-3">
+                            <p className="font-black text-xs sm:text-sm text-slate-900">
+                              {isRtl ? 'تشيز بيكون فرايز مقرمش' : 'Crispy Cheese Bacon Fries'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {isRtl ? 'بطاطا ذهبية مع صوص الجبن الدافئ وقطع البيكون' : 'Golden fries with warm cheese sauce & bacon bits'}
+                            </p>
+                            <span className="text-xs sm:text-sm font-black text-orange-600 mt-1 inline-block">22 ₪</span>
+                          </div>
+                          <button 
+                            onClick={() => handleAddDemoItem(22)}
+                            className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs sm:text-sm font-black active:scale-90 transition-all shadow-xs cursor-pointer shrink-0"
+                          >
+                            {isRtl ? '+ أضف' : '+ Add'}
+                          </button>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 hover:bg-orange-50/40 border border-slate-200/90 rounded-xl flex items-center justify-between transition-colors">
+                          <div className="flex-1 min-w-0 ml-3">
+                            <p className="font-black text-xs sm:text-sm text-slate-900">
+                              {isRtl ? 'كرسبي تشيكن زنجر سبايسي' : 'Spicy Crispy Chicken Zinger'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {isRtl ? 'صدر دجاج مقرمش مع صلصة هالبينو حارة وكولسلو' : 'Crispy chicken breast with spicy jalapeno & coleslaw'}
+                            </p>
+                            <span className="text-xs sm:text-sm font-black text-orange-600 mt-1 inline-block">38 ₪</span>
+                          </div>
+                          <button 
+                            onClick={() => handleAddDemoItem(38)}
+                            className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs sm:text-sm font-black active:scale-90 transition-all shadow-xs cursor-pointer shrink-0"
+                          >
+                            {isRtl ? '+ أضف' : '+ Add'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Live Cart Bar */}
+                      <div className="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between shadow-md">
+                        <div>
+                          <span className="text-[11px] text-slate-300 font-bold block">
+                            {demoCartCount} {isRtl ? 'أصناف في السلة الحالية' : 'items in current cart'}
+                          </span>
+                          <span className="text-base sm:text-lg font-black text-orange-400">{demoCartTotal} ₪</span>
+                        </div>
+                        <Link
+                          href="/m"
+                          target="_blank"
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                        >
+                          <span>{isRtl ? 'فتح تجربة الجوال الكاملة' : 'Open Full Mobile View'}</span>
+                          <ExternalLink size={14} />
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Left Pane: Live Order Telemetry & Instant Kitchen Sync */}
+                    <div className="lg:col-span-5 flex flex-col gap-3">
+                      {/* Telemetry Card */}
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-black text-sky-400 flex items-center gap-1.5">
+                              <Zap size={15} />
+                              {isRtl ? 'المزامنة السحابية اللحظية' : 'Real-time Cloud Sync'}
+                            </span>
+                            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
+                              0.1s Latency
+                            </span>
+                          </div>
+
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                              <span className="text-slate-400 font-medium">{isRtl ? 'حالة الطاولة' : 'Table Status'}</span>
+                              <span className="font-black text-emerald-400">{isRtl ? 'طاولة 12 (متصلة 🟢)' : 'Table 12 (Connected 🟢)'}</span>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                              <span className="text-slate-400 font-medium">{isRtl ? 'تنبيه المطبخ' : 'Kitchen Alert'}</span>
+                              <span className="font-black text-white">{isRtl ? 'إشعار صوتي فوري 🛎️' : 'Instant Chime 🛎️'}</span>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                              <span className="text-slate-400 font-medium">{isRtl ? 'تشفير الطلب' : 'Order Security'}</span>
+                              <span className="font-black text-sky-400">AES-256 Verified ✓</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+                          <Link
+                            href="/staff"
+                            target="_blank"
+                            className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                          >
+                            <ChefHat size={15} className="text-amber-400" />
+                            <span>{isRtl ? 'انتقل لشاشة المطبخ (KDS) لتتبع التذاكر' : 'Open KDS Kitchen Display'}</span>
+                            <ExternalLink size={12} />
+                          </Link>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -516,70 +616,101 @@ export default function HomePage() {
                 {activeTab === 'kitchen' && (
                   <motion.div
                     key="sim-kitchen"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className={`w-full grid sm:grid-cols-3 gap-2.5 ${isRtl ? 'text-right' : 'text-left'}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className={`w-full grid sm:grid-cols-3 gap-3.5 ${isRtl ? 'text-right' : 'text-left'}`}
                     dir={direction}
                   >
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-rose-400 block mb-1.5">
-                        {isRtl ? 'جديد (2)' : 'New (2)'}
-                      </span>
-                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
-                        <div className="flex justify-between text-xs font-black mb-1">
-                          <span className="text-orange-400">#4241</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
-                            {isRtl ? 'طاولة 7' : 'Table 7'}
+                    <div className="bg-slate-900 border border-rose-950/40 p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-xs font-black text-rose-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                            {isRtl ? 'طلبات جديدة (2)' : 'New Orders (2)'}
+                          </span>
+                          <span className="text-[10px] text-slate-400">منذ دقيقة</span>
+                        </div>
+                        <div className="bg-slate-800/90 p-3 rounded-xl text-white border border-slate-700/60">
+                          <div className="flex justify-between text-xs font-black mb-1.5">
+                            <span className="text-orange-400">#4241</span>
+                            <span className="bg-slate-700 px-2 py-0.5 rounded text-[10px]">
+                              {isRtl ? 'طاولة 7' : 'Table 7'}
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-200">
+                            {isRtl ? '2x دبل سماش برغر' : '2x Double Smash Burger'}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {isRtl ? '+ بدون مخلل، زيادة جبن' : '+ No pickles, extra cheese'}
+                          </p>
+                          <span className="text-[10px] text-rose-400 font-bold block mt-2">
+                            {isRtl ? '🔔 رن جرس المطبخ تلقائياً' : '🔔 Kitchen bell triggered'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">
-                          {isRtl ? '2x دبل سماش برغر' : '2x Double Smash Burger'}
-                        </p>
-                        <span className="text-[9px] text-rose-400 block mt-1">
-                          {isRtl ? 'تنبيه صوتي رن 🛎️' : 'Audio chime triggered 🛎️'}
-                        </span>
                       </div>
+                      <button className="mt-3 w-full py-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg text-xs font-bold transition-colors">
+                        {isRtl ? 'بدء التحضير ➔' : 'Start Preparing ➔'}
+                      </button>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-amber-400 block mb-1.5">
-                        {isRtl ? 'قيد التحضير (1)' : 'In Progress (1)'}
-                      </span>
-                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
-                        <div className="flex justify-between text-xs font-black mb-1">
-                          <span className="text-orange-400">#4240</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
-                            {isRtl ? 'طاولة 12' : 'Table 12'}
+                    <div className="bg-slate-900 border border-amber-950/40 p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                            <Clock size={13} />
+                            {isRtl ? 'قيد التحضير (1)' : 'In Progress (1)'}
+                          </span>
+                          <span className="text-[10px] text-amber-400/80 font-mono">04:15 د</span>
+                        </div>
+                        <div className="bg-slate-800/90 p-3 rounded-xl text-white border border-slate-700/60">
+                          <div className="flex justify-between text-xs font-black mb-1.5">
+                            <span className="text-orange-400">#4240</span>
+                            <span className="bg-slate-700 px-2 py-0.5 rounded text-[10px]">
+                              {isRtl ? 'طاولة 12' : 'Table 12'}
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-200">
+                            {isRtl ? '1x دبل سماش + تشيز فرايز' : '1x Double Smash + Cheese Fries'}
+                          </p>
+                          <span className="text-[10px] text-amber-400 font-bold block mt-2">
+                            {isRtl ? '🔥 على الشواية الآن' : '🔥 Currently grilling'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">
-                          {isRtl ? '1x كلاسيك برغر فاخر' : '1x Classic Burger'}
-                        </p>
-                        <span className="text-[9px] text-amber-400 block mt-1">
-                          {isRtl ? 'جاري الشوي' : 'Currently grilling'}
-                        </span>
                       </div>
+                      <button className="mt-3 w-full py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-lg text-xs font-bold transition-colors">
+                        {isRtl ? 'تحديد كجاهز للتسليم ✓' : 'Mark as Ready ✓'}
+                      </button>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-xs font-black text-emerald-400 block mb-1.5">
-                        {isRtl ? 'جاهز للتسليم (1)' : 'Ready to Serve (1)'}
-                      </span>
-                      <div className="bg-slate-800 p-2.5 rounded-lg text-white">
-                        <div className="flex justify-between text-xs font-black mb-1">
-                          <span className="text-orange-400">#4239</span>
-                          <span className="bg-slate-700 px-1.5 rounded text-[10px]">
-                            {isRtl ? 'طاولة 4' : 'Table 4'}
+                    <div className="bg-slate-900 border border-emerald-950/40 p-3.5 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 size={13} />
+                            {isRtl ? 'جاهز للتسليم (1)' : 'Ready to Serve (1)'}
+                          </span>
+                          <span className="text-[10px] text-emerald-400/80 font-mono">جاهز الآن</span>
+                        </div>
+                        <div className="bg-slate-800/90 p-3 rounded-xl text-white border border-slate-700/60">
+                          <div className="flex justify-between text-xs font-black mb-1.5">
+                            <span className="text-orange-400">#4239</span>
+                            <span className="bg-slate-700 px-2 py-0.5 rounded text-[10px]">
+                              {isRtl ? 'طاولة 4' : 'Table 4'}
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-200">
+                            {isRtl ? '3x تشيكن كريسبي سبايسي' : '3x Crispy Chicken Spicy'}
+                          </p>
+                          <span className="text-[10px] text-emerald-400 font-bold block mt-2">
+                            {isRtl ? '🍽️ جاهز على الصينية للتقديم' : '🍽️ Ready on serving tray'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-300">
-                          {isRtl ? '3x تشيكن كريسبي' : '3x Crispy Chicken'}
-                        </p>
-                        <span className="text-[9px] text-emerald-400 block mt-1">
-                          {isRtl ? 'جاهز على الصينية' : 'Ready on tray'}
-                        </span>
                       </div>
+                      <button className="mt-3 w-full py-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 rounded-lg text-xs font-bold transition-colors">
+                        {isRtl ? 'تم التسليم للزبون ✓' : 'Delivered to Table ✓'}
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -587,48 +718,49 @@ export default function HomePage() {
                 {activeTab === 'dashboard' && (
                   <motion.div
                     key="sim-dashboard"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className={`w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 ${isRtl ? 'text-right' : 'text-left'}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className={`w-full grid grid-cols-2 sm:grid-cols-4 gap-3 ${isRtl ? 'text-right' : 'text-left'}`}
                     dir={direction}
                   >
-                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                      <span className="text-xs text-slate-400 font-bold block mb-1">
                         {isRtl ? 'مبيعات اليوم' : "Today's Sales"}
                       </span>
-                      <span className="text-lg font-black text-white">3,350 ₪</span>
-                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">
-                        {isRtl ? '+12.5% نمو' : '+12.5% growth'}
+                      <span className="text-xl sm:text-2xl font-black text-white">3,480 ₪</span>
+                      <span className="text-xs text-emerald-400 font-bold block mt-1">
+                        {isRtl ? '+14.2% نمو' : '+14.2% growth'}
                       </span>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
-                        {isRtl ? 'طلبات QR' : 'QR Orders'}
+                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                      <span className="text-xs text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'طلبات QR المباشرة' : 'Direct QR Orders'}
                       </span>
-                      <span className="text-lg font-black text-orange-400">72%</span>
-                      <span className="text-[10px] text-slate-400 font-bold block mt-1">
-                        {isRtl ? '43 طلب مباشر' : '43 direct orders'}
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
-                        {isRtl ? 'متوسط الطلب' : 'Average Order'}
-                      </span>
-                      <span className="text-lg font-black text-white">76.8 ₪</span>
-                      <span className="text-[10px] text-emerald-400 font-bold block mt-1">
-                        {isRtl ? '+18% عبر الإضافات' : '+18% via add-ons'}
+                      <span className="text-xl sm:text-2xl font-black text-orange-400">76%</span>
+                      <span className="text-xs text-slate-400 font-bold block mt-1">
+                        {isRtl ? '48 طلب طاولة' : '48 table orders'}
                       </span>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-                      <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                      <span className="text-xs text-slate-400 font-bold block mb-1">
+                        {isRtl ? 'متوسط الفاتورة' : 'Average Ticket'}
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-white">78.5 ₪</span>
+                      <span className="text-xs text-emerald-400 font-bold block mt-1">
+                        {isRtl ? '+22% مع الـ Upselling' : '+22% with upselling'}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                      <span className="text-xs text-slate-400 font-bold block mb-1">
                         {isRtl ? 'إشغال الصالة' : 'Floor Occupancy'}
                       </span>
-                      <span className="text-lg font-black text-emerald-400">9 / 15</span>
-                      <span className="text-[10px] text-slate-400 font-bold block mt-1">
+                      <span className="text-xl sm:text-2xl font-black text-emerald-400">11 / 16</span>
+                      <span className="text-xs text-slate-400 font-bold block mt-1">
                         {isRtl ? 'طاولات نشطة' : 'active tables'}
                       </span>
                     </div>
@@ -638,17 +770,17 @@ export default function HomePage() {
             </div>
 
             {/* Windows 11 Taskbar at Bottom of Window */}
-            <div className="bg-slate-950 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-white select-none">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 rounded-md bg-sky-600 text-white font-black text-xs flex items-center gap-1 shadow-xs">
-                  🪟 <span className="hidden sm:inline">{isRtl ? 'ابدأ' : 'Start'}</span>
+            <div className="bg-slate-950 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-white select-none">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-1 rounded-md bg-sky-600 text-white font-black text-xs flex items-center gap-1.5 shadow-xs">
+                  🪟 <span>{isRtl ? 'ابدأ' : 'Start'}</span>
                 </span>
-                <span className="text-[11px] text-slate-400 font-bold hidden sm:inline">
+                <span className="text-xs text-slate-400 font-bold hidden sm:inline">
                   {isRtl ? 'متصل بـ Burger House Nablus' : 'Connected to Burger House Nablus'}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2.5 text-[11px] text-slate-400 font-medium">
+              <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   {isRtl ? 'سحابي نشط' : 'Cloud Active'}
@@ -913,7 +1045,7 @@ export default function HomePage() {
               </p>
 
               <div className="flex items-baseline justify-center gap-1 mb-5">
-                <span className="text-4xl sm:text-5xl font-black text-slate-900">150</span>
+                <span className="text-4xl sm:text-5xl font-black text-slate-900">250</span>
                 <span className="text-xl font-black text-orange-600">₪</span>
                 <span className="text-xs text-slate-400 font-bold">
                   {isRtl ? '/ شهرياً' : '/ month'}

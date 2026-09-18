@@ -35,7 +35,7 @@ const englishFaqItems = [
   },
   {
     question: 'How much does the subscription cost?',
-    answer: 'Menus.ps Pro is only 150 ₪ per month with zero sales commissions. It includes unlimited menu items, tables, orders, KDS kitchen screens, and a 14-day free trial.',
+    answer: 'Menus.ps Pro is only 250 ₪ per month with zero sales commissions. It includes unlimited menu items, tables, orders, KDS kitchen screens, and a 14-day free trial.',
   },
   {
     question: 'Is technical support included?',
