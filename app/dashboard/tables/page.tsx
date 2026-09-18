@@ -574,7 +574,7 @@ export default function ProductionTablesPage() {
         </div>
       </div>
 
-      {/* Sleek, Compact QR Customizer Toolbar */}
+      {/* Sleek, Compact QR & Stand Customizer Toolbar */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:px-4 sm:py-3 shadow-2xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
@@ -582,17 +582,20 @@ export default function ProductionTablesPage() {
               <Palette size={16} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-black text-slate-900">تخصيص باركود الـ QR:</span>
+              <span className="font-black text-slate-900">تخصيص بطاقات الطاولات والباركود:</span>
               <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-600 font-bold">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: qrColor }} />
                 <span>
                   {qrStyle === 'center_badge' ? 'شعار بالمنتصف' : qrStyle === 'photo_watermark' ? 'خلفية صورة واضحة 100%' : qrStyle === 'solid' ? 'لون موحد' : 'تصميم فني'}
                 </span>
               </span>
-              {restaurantLogo && (
-                <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold text-[11px] flex items-center gap-1">
-                  <span>تم إضافة صورة المطعم</span>
-                  <span>✨</span>
+              {cardBgImage ? (
+                <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg font-bold text-[11px] flex items-center gap-1">
+                  <span>خلفية مخصصة للبطاقة 🖼️</span>
+                </span>
+              ) : (
+                <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg font-bold text-[11px]">
+                  {cardTheme === 'modern_luxury' ? 'قالب ذهبي فخم ✨' : cardTheme === 'burger_grill' ? 'قالب برجر ومشاوي 🔥' : cardTheme === 'cafe_warm' ? 'قالب كافيه دافئ ☕' : cardTheme === 'oriental_heritage' ? 'قالب تراثي شرقي 🌿' : 'قالب أبيض ناصع ⚪'}
                 </span>
               )}
             </div>
@@ -601,18 +604,141 @@ export default function ProductionTablesPage() {
           <button
             type="button"
             onClick={() => setShowCustomizer(!showCustomizer)}
-            className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <span>{showCustomizer ? 'إخفاء لوحة التخصيص' : 'تعديل ألوان ومظهر الـ QR ⚙️'}</span>
+            <span>{showCustomizer ? 'إخفاء لوحة التخصيص' : 'تخصيص الخلفية ومظهر البطاقة والـ QR ⚙️'}</span>
             <ChevronDown size={14} className={`transition-transform duration-200 ${showCustomizer ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
-        {/* Collapsible Clean QR Settings Card */}
+        {/* Collapsible Clean Settings Panel */}
         {showCustomizer && (
           <div className="mt-3 pt-3 border-t border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-1 duration-150">
+            
+            {/* 1. Background & Stand Card Theme Section (خلفية وتصميم بطاقة الطاولة المطبوعة) */}
+            <div className="bg-gradient-to-br from-amber-50/60 via-slate-50/80 to-orange-50/50 p-4 rounded-2xl border border-amber-200/70 space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🖼️</span>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900">خلفية وتصميم بطاقة الطاولة المطبوعة (A5 Stand Card)</h3>
+                    <p className="text-[11px] text-slate-500">اختر صورة صالة المطعم أو قالباً جاهزاً مع ضمان وضوح الخطوط بنسبة 100%</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Background Image Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  {cardBgImage ? (
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-amber-500 shadow-xs shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cardBgImage} alt="خلفية البطاقة" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-amber-100/60 border border-amber-200 text-amber-700 flex flex-col items-center justify-center font-black text-xs shrink-0">
+                      <ImageIcon size={22} className="mb-0.5 text-amber-600" />
+                      <span className="text-[10px]">بدون صورة</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-xs font-black text-slate-900 block">
+                      {cardBgImage ? 'تم تفعيل صورة خلفية البطاقة المطبوعة' : 'رفع صورة خلفية مخصصة للبطاقة المطبوعة'}
+                    </span>
+                    <span className="text-[11px] text-slate-600 block mt-0.5 max-w-md leading-relaxed">
+                      {cardBgImage
+                        ? '✨ تظهر الصورة في خلفية البطاقة بالكامل مع كبسولات نصوص زجاجية داكنة تحافظ على وضوح الخطوط'
+                        : 'يمكنك رفع صورة عالية الجودة لمطعمك أو صالتك لتظهر كخلفية كاملة للبطاقة مع نصوص زجاجية واضحة جداً'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputBgRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadBgImage(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isUploadingBg}
+                    onClick={() => fileInputBgRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  >
+                    <Upload size={13} />
+                    <span>{isUploadingBg ? 'جاري الرفع...' : cardBgImage ? 'تغيير صورة الخلفية 🖼️' : 'رفع صورة خلفية للبطاقة 🖼️'}</span>
+                  </button>
+
+                  {cardBgImage && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveBgImage}
+                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center gap-1 border border-rose-200 transition-colors cursor-pointer"
+                      title="إزالة صورة الخلفية والعودة للقالب القياسي"
+                    >
+                      <Trash2 size={13} />
+                      <span>إزالة الصورة</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Ready Preset Themes */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-2">أو اختر قالب تصميم جاهز:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { id: 'modern_luxury', label: '✨ ذهبي فخم', desc: 'Modern Luxury' },
+                    { id: 'burger_grill', label: '🔥 برجر ومشاوي', desc: 'Dark Charcoal' },
+                    { id: 'cafe_warm', label: '☕ كافيه ومخبوزات', desc: 'Warm Latte' },
+                    { id: 'oriental_heritage', label: '🌿 تراثي شرقي', desc: 'Olive Damascene' },
+                    { id: 'clean_minimal', label: '⚪ أبيض ناصع', desc: 'Clean Minimal' },
+                  ].map((th) => (
+                    <button
+                      key={th.id}
+                      type="button"
+                      onClick={() => handleThemeChange(th.id as any)}
+                      className={`p-2.5 text-right rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col justify-between ${
+                        cardTheme === th.id && !cardBgImage
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      <span className="font-black text-[11.5px]">{th.label}</span>
+                      <span className={`text-[10px] mt-0.5 ${cardTheme === th.id && !cardBgImage ? 'text-slate-300' : 'text-slate-500'}`}>
+                        {th.desc}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tagline input */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">نص العبارة الترحيبية على البطاقة:</label>
+                <input
+                  type="text"
+                  value={cardTagline}
+                  onChange={(e) => handleTaglineChange(e.target.value)}
+                  placeholder="امسح الرمز لتصفح قائمة الطعام والطلب مباشرة إلى طاولتك"
+                  className="w-full text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
+
+            </div>
+
+            {/* 2. QR Code Customizer Section (باركود الـ QR، النمط والألوان) */}
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-4">
-              
+              <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
+                <QrCode size={15} className="text-slate-700" />
+                <h3 className="text-xs font-black text-slate-900">تخصيص باركود الـ QR (الشعار والألوان)</h3>
+              </div>
+
               {/* QR Style Select */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-2">شكل الرمز والشعار:</label>
@@ -734,6 +860,7 @@ export default function ProductionTablesPage() {
               </div>
 
             </div>
+
           </div>
         )}
       </div>
@@ -887,77 +1014,113 @@ export default function ProductionTablesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-150">
             
-            {/* Printable Preview Frame (تظهر خلفية الصورة بالكامل بدون أي طبقة بيضاء) */}
+            {/* Quick Background Controls in Modal */}
+            <div className="flex items-center justify-between gap-2 mb-3 bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-xs">
+              <span className="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
+                <span>🖼️ خلفية البطاقة:</span>
+                <span className={cardBgImage ? 'text-amber-700 font-black' : 'text-slate-500 font-medium'}>
+                  {cardBgImage ? 'صورة مخصصة' : 'قالب تلقائي'}
+                </span>
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileInputBgRef.current?.click()}
+                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                >
+                  <Upload size={11} />
+                  <span>{cardBgImage ? 'تغيير الصورة 🖼️' : 'رفع صورة خلفية 🖼️'}</span>
+                </button>
+                {cardBgImage && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBgImage}
+                    className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] border border-rose-200 transition-colors cursor-pointer"
+                    title="إزالة صورة الخلفية والعودة للتصميم القياسي"
+                  >
+                    <Trash2 size={11} />
+                    <span>إزالة</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Printable Preview Frame (تظهر خلفية الصورة بالكامل بدون أي حجب مع كبسولات زجاجية واضحة 100%) */}
             <div 
-              className="rounded-3xl p-5 mb-4 relative shadow-lg text-center overflow-hidden border-2 border-slate-200"
-              style={{ background: cardBgImage ? `url(${cardBgImage}) center/cover no-repeat` : '#ffffff' }}
+              className="rounded-3xl p-4 mb-4 relative shadow-xl text-center overflow-hidden border-2 border-amber-400/80 min-h-[420px] flex flex-col justify-between"
+              style={{ background: cardBgImage ? `url(${cardBgImage}) center/cover no-repeat` : '#fdfbf7' }}
             >
               {cardBgImage && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={cardBgImage} alt="خلفية البطاقة" className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" />
               )}
               {cardBgImage && (
-                <div className="absolute inset-2 border-1.5 border-amber-400/80 rounded-2xl pointer-events-none z-5" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/10 to-slate-950/45 pointer-events-none z-2" />
               )}
-              <div className="relative z-10">
-                <div className="flex items-center justify-center gap-1.5 text-xs font-black mb-1.5">
-                  {restaurantLogo ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
+              <div className="absolute inset-2 border-1.5 border-amber-400/70 rounded-2xl pointer-events-none z-5" />
+
+              {/* Top Brand Capsule */}
+              <div className={`relative z-10 ${cardBgImage ? 'bg-slate-950/85 backdrop-blur-md border border-amber-400/70 rounded-2xl p-3 shadow-lg' : 'bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-sm'}`}>
+                <div className="flex items-center justify-center gap-1.5 text-xs font-black mb-1">
+                  <span className="text-amber-400 text-xs">✦</span>
+                  <span className={cardBgImage ? 'text-amber-200 text-[11px]' : 'text-slate-600 text-[11px]'}>أهلاً وسهلاً بكم</span>
+                  <span className="text-amber-400 text-xs">✦</span>
+                </div>
+
+                {restaurantLogo && (
+                  <div className="flex justify-center mb-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={restaurantLogo}
                       alt="Logo"
-                      className="w-12 h-12 rounded-2xl object-cover border-2 shadow-xs mb-1 bg-white"
+                      className="w-11 h-11 rounded-full object-cover border-2 shadow-xs bg-white"
                       style={{ borderColor: qrColor }}
                     />
-                  ) : (
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <span>✦</span>
-                      <span className="text-base">🍽️</span>
-                      <span>✦</span>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                <h3 className={`text-lg font-black mb-0.5 ${cardBgImage ? 'text-slate-900 drop-shadow-md' : 'text-slate-900'}`} style={cardBgImage ? { textShadow: '0 1px 3px rgba(255,255,255,0.95), 0 0 10px rgba(255,255,255,0.9)' } : {}}>
+                <h3 className={`text-base font-black leading-tight ${cardBgImage ? 'text-white' : 'text-slate-900'}`}>
                   {restaurantName || 'أهلاً وسهلاً بكم'}
                 </h3>
-                <p className={`text-[10.5px] font-bold max-w-[220px] mx-auto mb-2.5 leading-snug ${cardBgImage ? 'text-slate-800' : 'text-slate-500'}`} style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
-                  قائمة الطعام الرقمية والطلب المباشر إلى طاولتك
+                <p className={`text-[10px] font-bold max-w-[200px] mx-auto mt-0.5 leading-snug ${cardBgImage ? 'text-amber-200' : 'text-slate-500'}`}>
+                  {cardTagline}
                 </p>
 
-                {/* Proper Arabic badge */}
+                {/* Table Badge */}
                 <div
-                  className="inline-flex items-center justify-center gap-2 px-4 py-1 rounded-full text-white text-xs font-black mb-3 shadow-sm"
-                  style={{ backgroundColor: qrColor }}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full text-white text-[11px] font-black mt-2 shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', border: '1px solid #fbbf24' }}
                 >
-                  <span>طاولة رقم</span>
-                  <span className="text-yellow-300 text-sm font-black">{selectedPrintTable.tableNumber}</span>
+                  <span>طاولة</span>
+                  <span className="text-yellow-200 text-xs font-black">{selectedPrintTable.tableNumber}</span>
                 </div>
+              </div>
 
-                <div className="w-48 h-48 bg-white p-3 rounded-2xl border-2 mx-auto shadow-md mb-3 flex items-center justify-center" style={{ borderColor: qrColor }}>
-                  {selectedPrintTable.qrDataUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={selectedPrintTable.qrDataUrl}
-                      alt="QR"
-                      className="w-full h-full object-contain rounded-xl"
-                    />
-                  ) : (
-                    <QrCode size={60} className="text-slate-300" />
-                  )}
-                </div>
+              {/* Center QR Box */}
+              <div className="relative z-10 w-44 h-44 bg-white p-2 rounded-2xl border-2 border-amber-400 mx-auto shadow-xl flex items-center justify-center my-2">
+                {selectedPrintTable.qrDataUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={selectedPrintTable.qrDataUrl}
+                    alt="QR"
+                    className="w-full h-full object-contain rounded-xl"
+                  />
+                ) : (
+                  <QrCode size={60} className="text-slate-300" />
+                )}
+              </div>
 
-                <p className="text-xs font-black text-slate-900 mb-0.5" style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
-                  امسح الرمز لطلب طعامك مباشرة 📲
+              {/* Bottom Guide Capsule */}
+              <div className={`relative z-10 ${cardBgImage ? 'bg-slate-950/85 backdrop-blur-md border border-amber-400/60 rounded-xl p-2 shadow-lg' : 'bg-white/90 border border-slate-200/80 rounded-xl p-2 shadow-sm'}`}>
+                <p className={`text-[10.5px] font-black mb-1 ${cardBgImage ? 'text-white' : 'text-slate-900'}`}>
+                  وجّه كاميرا هاتفك نحو الرمز للطلب الفوري 📲
                 </p>
-                <p className={`text-[10px] font-medium max-w-[200px] mx-auto mb-2.5 ${cardBgImage ? 'text-slate-800' : 'text-slate-500'}`} style={cardBgImage ? { textShadow: '0 1px 2px rgba(255,255,255,0.95)' } : {}}>
-                  وجّه كاميرا هاتفك نحو الرمز لتصفح القائمة والطلب إلى طاولتك
-                </p>
-
-                <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-200/60 text-[10px] font-extrabold text-slate-800">
-                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">📷 ١. الكاميرا</span>
-                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">🍔 ٢. طلبك</span>
-                  <span className="bg-white/90 shadow-2xs px-2 py-0.5 rounded-md">⚡ ٣. لطاولتك</span>
+                <div className="flex items-center justify-center gap-1 text-[9.5px] font-bold">
+                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>١. تصفح</span>
+                  <span className={cardBgImage ? 'text-amber-400/60' : 'text-slate-300'}>•</span>
+                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>٢. اختر</span>
+                  <span className={cardBgImage ? 'text-amber-400/60' : 'text-slate-300'}>•</span>
+                  <span className={cardBgImage ? 'text-slate-200' : 'text-slate-700'}>٣. اطلب</span>
                 </div>
               </div>
             </div>

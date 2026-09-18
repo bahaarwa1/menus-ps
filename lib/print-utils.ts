@@ -149,54 +149,60 @@ export function buildStandCardHtml(
     <div class="page ${idx < stands.length - 1 ? 'page-break' : ''}">
       <div class="card-wrap ${themeWrapClass} ${hasBgImage ? 'has-bg-img' : ''}" style="${hasBgImage ? `background-image: url('${bgImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;` : ''}">
         
-        ${hasBgImage ? `<img src="${bgImage}" class="card-bg-full" alt="خلفية البطاقة" />` : ''}
+        ${hasBgImage ? `
+          <img src="${bgImage}" class="card-bg-full" alt="خلفية البطاقة" />
+          <div class="card-bg-overlay"></div>
+        ` : ''}
 
         <!-- Background Overlay / Inset Frame -->
         <div class="card-frame-border"></div>
 
-        <!-- Center Shield Container (شفاف تماماً بدون أي طبقة بيضاء تحجب صورة الخلفية) -->
+        <!-- Center Shield Container -->
         <div class="center-shield">
 
-          <!-- Top Welcome Ribbon -->
-          <div class="welcome-ribbon">
-            <span class="welcome-star">✦</span>
-            <span class="welcome-text">أهلاً وسهلاً بكم</span>
-            <span class="welcome-star">✦</span>
-          </div>
+          <!-- Top Brand Capsule (كبسولة أنيقة شفافة لحماية وضوح نصوص الهوية وشعار المطعم) -->
+          <div class="brand-capsule">
+            <!-- Top Welcome Ribbon -->
+            <div class="welcome-ribbon">
+              <span class="welcome-star">✦</span>
+              <span class="welcome-text">أهلاً وسهلاً بكم</span>
+              <span class="welcome-star">✦</span>
+            </div>
 
-          <!-- Restaurant Brand Header -->
-          <div class="brand-header">
-            ${stand.logoUrl ? `
-              <div class="logo-ring" style="border-color: ${brandColor};">
-                <img src="${stand.logoUrl}" class="logo-img" alt="شعار المطعم" />
-              </div>
-            ` : `
-              <div class="logo-ring default-icon" style="border-color: ${brandColor}; background: ${brandColor}15;">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="${brandColor}">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+            <!-- Restaurant Brand Header -->
+            <div class="brand-header">
+              ${stand.logoUrl ? `
+                <div class="logo-ring" style="border-color: ${brandColor};">
+                  <img src="${stand.logoUrl}" class="logo-img" alt="شعار المطعم" />
+                </div>
+              ` : `
+                <div class="logo-ring default-icon" style="border-color: ${brandColor}; background: ${brandColor}15;">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="${brandColor}">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                </div>
+              `}
+
+              <h1 class="restaurant-name">${titleText}</h1>
+              <p class="restaurant-tagline">${taglineText}</p>
+            </div>
+
+            <!-- Table Badge: Correct Natural Arabic "طاولة [X]" -->
+            <div class="table-badge" style="border-color: ${brandColor};">
+              <div class="table-badge-icon" style="background: ${brandColor};">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#ffffff">
+                  <rect x="5" y="8" width="14" height="2.5" rx="1"/>
+                  <rect x="11" y="10.5" width="2" height="7.5" rx="0.5"/>
+                  <rect x="8" y="17" width="8" height="2" rx="1"/>
+                  <rect x="2" y="5" width="2" height="13" rx="1"/>
+                  <rect x="2" y="11" width="4" height="2" rx="0.5"/>
+                  <rect x="20" y="5" width="2" height="13" rx="1"/>
+                  <rect x="18" y="11" width="4" height="2" rx="0.5"/>
                 </svg>
               </div>
-            `}
-
-            <h1 class="restaurant-name">${titleText}</h1>
-            <p class="restaurant-tagline">${taglineText}</p>
-          </div>
-
-          <!-- Table Badge: Correct Natural Arabic "طاولة [X]" -->
-          <div class="table-badge" style="border-color: ${brandColor};">
-            <div class="table-badge-icon" style="background: ${brandColor};">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="#ffffff">
-                <rect x="5" y="8" width="14" height="2.5" rx="1"/>
-                <rect x="11" y="10.5" width="2" height="7.5" rx="0.5"/>
-                <rect x="8" y="17" width="8" height="2" rx="1"/>
-                <rect x="2" y="5" width="2" height="13" rx="1"/>
-                <rect x="2" y="11" width="4" height="2" rx="0.5"/>
-                <rect x="20" y="5" width="2" height="13" rx="1"/>
-                <rect x="18" y="11" width="4" height="2" rx="0.5"/>
-              </svg>
+              <span class="table-badge-label">طاولة</span>
+              <span class="table-badge-number">${stand.tableNumber}</span>
             </div>
-            <span class="table-badge-label">طاولة</span>
-            <span class="table-badge-number">${stand.tableNumber}</span>
           </div>
 
           <!-- High-Contrast Clean QR Code Box -->
@@ -204,38 +210,41 @@ export function buildStandCardHtml(
             <img class="qr-code-img" src="${stand.qrDataUrl}" alt="رمز QR طاولة ${stand.tableNumber}" />
           </div>
 
-          <!-- Scan Instruction Hint -->
-          <div class="scan-prompt">
-            <svg class="scan-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="5" y="2" width="14" height="20" rx="3"/>
-              <line x1="12" y1="18" x2="12" y2="18.01" stroke-width="3" stroke-linecap="round"/>
-            </svg>
-            <span class="scan-text">وجّه كاميرا هاتفك نحو الرمز للطلب الفوري</span>
-          </div>
+          <!-- Bottom Guide Capsule (كبسولة أنيقة لحماية وضوح تعليمات المسح وخطوات الطلب) -->
+          <div class="guide-capsule">
+            <!-- Scan Instruction Hint -->
+            <div class="scan-prompt">
+              <svg class="scan-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="3"/>
+                <line x1="12" y1="18" x2="12" y2="18.01" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <span class="scan-text">وجّه كاميرا هاتفك نحو الرمز للطلب الفوري</span>
+            </div>
 
-          <!-- 3 Easy Steps Guide -->
-          <div class="steps-row">
-            <div class="step-cell">
-              <span class="step-num">١</span>
-              <span class="step-text">تصفح المنيو</span>
+            <!-- 3 Easy Steps Guide -->
+            <div class="steps-row">
+              <div class="step-cell">
+                <span class="step-num">١</span>
+                <span class="step-text">تصفح المنيو</span>
+              </div>
+              <div class="step-sep" style="background: ${brandColor}40;"></div>
+              <div class="step-cell">
+                <span class="step-num">٢</span>
+                <span class="step-text">اختر طلبك</span>
+              </div>
+              <div class="step-sep" style="background: ${brandColor}40;"></div>
+              <div class="step-cell">
+                <span class="step-num">٣</span>
+                <span class="step-text">اطلب لطاولتك</span>
+              </div>
             </div>
-            <div class="step-sep" style="background: ${brandColor}40;"></div>
-            <div class="step-cell">
-              <span class="step-num">٢</span>
-              <span class="step-text">اختر طلبك</span>
-            </div>
-            <div class="step-sep" style="background: ${brandColor}40;"></div>
-            <div class="step-cell">
-              <span class="step-num">٣</span>
-              <span class="step-text">اطلب لطاولتك</span>
-            </div>
-          </div>
 
-          <!-- Footer Courtesy -->
-          <div class="card-footer">
-            <span class="footer-dash" style="background: ${brandColor}60;"></span>
-            <span class="footer-text">نتمنى لكم وجبة شهية وتجربة مميزة</span>
-            <span class="footer-dash" style="background: ${brandColor}60;"></span>
+            <!-- Footer Courtesy -->
+            <div class="card-footer">
+              <span class="footer-dash" style="background: ${brandColor}60;"></span>
+              <span class="footer-text">نتمنى لكم وجبة شهية وتجربة مميزة</span>
+              <span class="footer-dash" style="background: ${brandColor}60;"></span>
+            </div>
           </div>
 
         </div>
@@ -250,7 +259,8 @@ export function buildStandCardHtml(
   <meta charset="utf-8">
   <title>بطاقات طاولات المطعم</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A5 portrait;
@@ -276,9 +286,10 @@ export function buildStandCardHtml(
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     body {
-      font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #e2e8f0;
       direction: rtl;
     }
@@ -427,7 +438,7 @@ export function buildStandCardHtml(
       box-shadow: none !important;
     }
 
-    /* ─── Real HTML Background Image ─── */
+    /* ─── Real HTML Background Image & Overlay ─── */
     .card-bg-full {
       position: absolute;
       inset: 0;
@@ -438,44 +449,154 @@ export function buildStandCardHtml(
       border-radius: 26px;
       pointer-events: none;
     }
+    .card-bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.08) 45%, rgba(15, 23, 42, 0.45) 100%);
+      z-index: 2;
+      border-radius: 26px;
+      pointer-events: none;
+    }
 
-    /* ─── Text & Border Styling When Background Photo is Present ─── */
+    /* ─── Base Capsules ─── */
+    .brand-capsule {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .guide-capsule {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    /* ─── High-Contrast Frosted Glass Capsules When Background Photo is Present ─── */
+    .has-bg-img .brand-capsule {
+      background: rgba(15, 23, 42, 0.86) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(251, 191, 36, 0.75) !important;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
+      border-radius: 20px !important;
+      padding: 10px 14px 12px !important;
+      width: 100% !important;
+      z-index: 10;
+    }
+
+    .has-bg-img .guide-capsule {
+      background: rgba(15, 23, 42, 0.86) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(251, 191, 36, 0.65) !important;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
+      border-radius: 18px !important;
+      padding: 8px 12px 10px !important;
+      width: 100% !important;
+      gap: 6px !important;
+      z-index: 10;
+    }
+
     .has-bg-img .card-frame-border {
       position: absolute;
       inset: 8px;
-      border: 1.5px solid rgba(212, 175, 55, 0.85);
+      border: 1.5px solid rgba(251, 191, 36, 0.8);
       border-radius: 20px;
       z-index: 5;
       pointer-events: none;
     }
+
     .has-bg-img .restaurant-name {
-      color: #0f172a !important;
-      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 10px rgba(255, 255, 255, 0.9) !important;
+      color: #ffffff !important;
+      font-size: 23px !important;
+      font-weight: 900 !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+      margin: 3px 0 1px !important;
+      letter-spacing: -0.3px;
     }
     .has-bg-img .restaurant-tagline {
-      color: #1e293b !important;
-      font-weight: 800 !important;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+      color: #fef08a !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
+      margin-top: 2px !important;
+      margin-bottom: 6px !important;
+      text-shadow: none !important;
+      line-height: 1.35;
+    }
+    .has-bg-img .welcome-ribbon {
+      margin-bottom: 4px;
     }
     .has-bg-img .welcome-text {
-      color: #0f172a !important;
+      color: #fef3c7 !important;
       font-weight: 800 !important;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+      font-size: 11.5px !important;
+      text-shadow: none !important;
+      letter-spacing: 0.5px;
+    }
+    .has-bg-img .welcome-star {
+      color: #fbbf24 !important;
+      font-size: 12px;
+    }
+    .has-bg-img .table-badge {
+      background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%) !important;
+      border: 1.5px solid #fbbf24 !important;
+      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
+      margin: 2px 0 0 !important;
+      padding: 4px 16px !important;
+    }
+    .has-bg-img .table-badge-label {
+      color: #ffffff !important;
+      font-weight: 900 !important;
+      font-size: 13px !important;
+    }
+    .has-bg-img .table-badge-number {
+      color: #fef08a !important;
+      font-weight: 900 !important;
+      font-size: 19px !important;
+    }
+    .has-bg-img .qr-box {
+      border: 2.5px solid #fbbf24 !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45) !important;
+      margin: 6px 0 !important;
+      background: #ffffff !important;
     }
     .has-bg-img .scan-prompt {
-      color: #0f172a !important;
+      color: #ffffff !important;
       font-weight: 800 !important;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+      font-size: 11px !important;
+      text-shadow: none !important;
+      margin-top: 0 !important;
+    }
+    .has-bg-img .scan-phone-icon {
+      color: #34d399 !important;
+    }
+    .has-bg-img .step-num {
+      background: rgba(251, 191, 36, 0.22) !important;
+      color: #fbbf24 !important;
+      border: 1px solid rgba(251, 191, 36, 0.45) !important;
+      font-weight: 900 !important;
     }
     .has-bg-img .step-text {
-      color: #0f172a !important;
+      color: #ffffff !important;
       font-weight: 800 !important;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+      font-size: 10px !important;
+      text-shadow: none !important;
+    }
+    .has-bg-img .step-sep {
+      background: rgba(251, 191, 36, 0.35) !important;
     }
     .has-bg-img .footer-text {
-      color: #1e293b !important;
-      font-weight: 800 !important;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+      color: #e2e8f0 !important;
+      font-weight: 700 !important;
+      font-size: 9.5px !important;
+      text-shadow: none !important;
+    }
+    .has-bg-img .footer-dash {
+      background: rgba(251, 191, 36, 0.5) !important;
     }
 
     /* ─── Top Welcome Ribbon ─── */
@@ -699,13 +820,26 @@ export function printTableStand(stand: TableStandData) {
     printed = true;
     iframe.contentWindow?.focus();
     iframe.contentWindow?.print();
-    setTimeout(() => { iframe.remove(); }, 2000);
+    setTimeout(() => { iframe.remove(); }, 2500);
+  };
+
+  const schedulePrint = () => {
+    const frameDoc = iframe.contentWindow?.document;
+    if (frameDoc && (frameDoc as any).fonts?.ready) {
+      (frameDoc as any).fonts.ready.then(() => {
+        setTimeout(doPrint, 200);
+      }).catch(() => {
+        setTimeout(doPrint, 350);
+      });
+    } else {
+      setTimeout(doPrint, 400);
+    }
   };
 
   if (iframe.contentWindow) {
-    iframe.contentWindow.onload = () => setTimeout(doPrint, 150);
+    iframe.contentWindow.onload = schedulePrint;
   }
-  setTimeout(doPrint, 500);
+  setTimeout(schedulePrint, 700);
 }
 
 export function printAllTableStands(
@@ -741,11 +875,24 @@ export function printAllTableStands(
     printed = true;
     iframe.contentWindow?.focus();
     iframe.contentWindow?.print();
-    setTimeout(() => { iframe.remove(); }, 2000);
+    setTimeout(() => { iframe.remove(); }, 2500);
+  };
+
+  const schedulePrint = () => {
+    const frameDoc = iframe.contentWindow?.document;
+    if (frameDoc && (frameDoc as any).fonts?.ready) {
+      (frameDoc as any).fonts.ready.then(() => {
+        setTimeout(doPrint, 200);
+      }).catch(() => {
+        setTimeout(doPrint, 350);
+      });
+    } else {
+      setTimeout(doPrint, 400);
+    }
   };
 
   if (iframe.contentWindow) {
-    iframe.contentWindow.onload = () => setTimeout(doPrint, 150);
+    iframe.contentWindow.onload = schedulePrint;
   }
-  setTimeout(doPrint, 500);
+  setTimeout(schedulePrint, 700);
 }
