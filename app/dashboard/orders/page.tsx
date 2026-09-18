@@ -6,11 +6,13 @@ import {
   Search, Volume2, VolumeX, Check, RefreshCw, ShoppingBag
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { matchFoodPhoto } from '@/lib/food-presets-catalog';
 
 interface OrderItem {
   name: string;
   qty: number;
   price: number;
+  imageUrl?: string;
   extras?: string[];
   notes?: string;
 }
@@ -42,13 +44,18 @@ export default function ProductionOrdersPage() {
     else if (rawStatus === 'جاهز' || rawStatus === 'ready') cardStatus = 'ready';
     else if (rawStatus === 'تم التسليم' || rawStatus === 'completed') cardStatus = 'completed';
 
-    const items: OrderItem[] = (raw.order_items || raw.items || []).map((it: any) => ({
-      name: it.item_name || it.itemName || it.name || 'صنف',
-      qty: Number(it.quantity || it.qty) || 1,
-      price: Number(it.unit_price || it.price) || 0,
-      extras: it.selected_extras || it.extras || [],
-      notes: it.notes || it.customization || it.note || '',
-    }));
+    const items: OrderItem[] = (raw.order_items || raw.items || []).map((it: any) => {
+      const name = it.item_name || it.itemName || it.name || 'صنف';
+      const rawImg = it.image_url || it.imageUrl || it.image;
+      return {
+        name,
+        qty: Number(it.quantity || it.qty) || 1,
+        price: Number(it.unit_price || it.price) || 0,
+        imageUrl: rawImg || matchFoodPhoto(name),
+        extras: it.selected_extras || it.extras || [],
+        notes: it.notes || it.customization || it.note || '',
+      };
+    });
 
     return {
       id: raw.order_number || `#${raw.id?.slice(0, 6)}`,
@@ -357,23 +364,39 @@ export default function ProductionOrdersPage() {
                 </div>
 
                 {/* Items List */}
-                <div className="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                <div className="space-y-2 mb-3 max-h-64 overflow-y-auto">
                   {order.items.map((item, idx) => (
-                    <div key={idx} className="bg-slate-50 rounded-xl p-2.5 text-xs">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
-                        <span>{item.qty}x {item.name}</span>
-                        <span className="font-mono text-slate-500">{item.price * item.qty} ₪</span>
+                    <div key={idx} className="bg-slate-50 rounded-xl p-2 text-xs flex items-center gap-2.5">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-11 h-11 rounded-lg object-cover shrink-0 border border-slate-200/80 shadow-xs"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-lg bg-orange-100/70 border border-orange-200/60 flex items-center justify-center shrink-0 text-orange-600 font-black text-sm">
+                          🍽️
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between font-bold text-slate-800 gap-1">
+                          <span className="truncate">{item.qty}x {item.name}</span>
+                          <span className="font-mono text-slate-600 shrink-0 font-black">{item.price * item.qty} ₪</span>
+                        </div>
+                        {item.extras && item.extras.length > 0 && (
+                          <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                            إضافات: {item.extras.join('، ')}
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-[10px] font-bold text-orange-700 bg-orange-100/60 border border-orange-200/80 rounded px-1.5 py-0.5 mt-0.5 inline-block">
+                            📝 {item.notes}
+                          </p>
+                        )}
                       </div>
-                      {item.extras && item.extras.length > 0 && (
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          إضافات: {item.extras.join('، ')}
-                        </p>
-                      )}
-                      {item.notes && (
-                        <p className="text-[11px] font-bold text-orange-700 bg-orange-100/60 border border-orange-200/80 rounded-md px-1.5 py-0.5 mt-1 inline-block">
-                          📝 ملاحظة: {item.notes}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>

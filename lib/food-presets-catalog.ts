@@ -417,3 +417,50 @@ export const POPULAR_DISH_TEMPLATES: DishTemplateItem[] = [
     image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
   },
 ];
+
+// Helper to reliably find an appetizing HD photo for any dish name
+export function matchFoodPhoto(name?: string): string {
+  if (!name) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+  const clean = name.trim().toLowerCase();
+
+  // 1. Direct match with popular dish templates
+  const templateMatch = POPULAR_DISH_TEMPLATES.find((t) => 
+    t.name.toLowerCase() === clean || clean.includes(t.name.toLowerCase()) || t.name.toLowerCase().includes(clean)
+  );
+  if (templateMatch?.image) return templateMatch.image;
+
+  // 2. Keyword intelligent matching
+  if (/جاج|دجاج|كرسبي|ستربس|بروستد|chicken|crispy|wings|أجنحة/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/بيتزا|pizza|مارغريتا|بيبروني/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/شاورما|shawarma|بسشب|تورتيلا|wrap|ساندويش|سندويش/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/برجر|burger|سماش|بيف/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/سلطه|سلطة|salad|فتوش|تبولة|يونانية/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/حلو|كيك|تشيز|وافل|كريب|شوكولاتة|dessert|cake/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/مشاوي|كباب|ستيك|لحم|شقف|كفتة|grill|steak|meat/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/بطاطا|fries|ودجز|أصابع/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/عصير|كولا|موهيتو|مشروب|ليمون|برتقال|drink|juice|soda/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80';
+  }
+  if (/قهوة|كافيه|لاتيه|اسبريسو|شاي|coffee|tea|latte/.test(clean)) {
+    return 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80';
+  }
+
+  // Default appetizing food photo
+  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+}

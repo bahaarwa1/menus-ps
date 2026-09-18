@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { printThermalReceipt } from '@/lib/print-utils';
+import { matchFoodPhoto } from '@/lib/food-presets-catalog';
 
 // Audio chime using Web Audio API
 function playOrderChime() {
@@ -49,7 +50,8 @@ function mapDbOrder(raw: any) {
       quantity: Number(it.quantity) || 1,
       price: Number(it.unit_price || it.unitPrice || it.price) || 0,
       extras: it.selected_extras || it.extras || [],
-      customization: it.notes || it.customization || ''
+      customization: it.notes || it.customization || '',
+      imageUrl: it.image_url || it.imageUrl || it.image || matchFoodPhoto(it.item_name || it.itemName || it.name),
     })),
     total: Number(raw.total_amount || raw.totalAmount) || 0,
     status: raw.status || 'جديد',
@@ -493,7 +495,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
             محتويات الطلب ({order.items.length} أصناف)
           </p>
           {order.items.map((item: any, iIdx: number) => {
-            const img = item.imageUrl || item.image || null;
+            const img = item.imageUrl || item.image || matchFoodPhoto(item.name);
             return (
               <div 
                 key={iIdx} 
@@ -507,12 +509,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                   <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                     {item.quantity}×
                   </span>
-                  {img && (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200/70">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt={item.name} className="w-full h-full object-cover" />
-                    </div>
-                  )}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-2xs">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
                   <div className="min-w-0">
                     <p className={`font-semibold text-xs sm:text-sm truncate ${
                       isDarkMode ? 'text-white' : 'text-slate-800'
@@ -1053,9 +1053,9 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                       </div>
                     </div>
 
-                    {/* Items preview with count */}
+                    {/* Items preview with food thumbnails & count */}
                     <div className="mb-2.5 flex-1">
-                      <div className="flex items-center justify-between mb-1 text-xs">
+                      <div className="flex items-center justify-between mb-1.5 text-xs">
                         <span className="text-[11px] font-bold text-slate-400">
                           {order.items.length} أصناف
                         </span>
@@ -1063,6 +1063,30 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                           {order.total} ₪
                         </span>
                       </div>
+
+                      {/* Mini food thumbnails preview */}
+                      <div className="flex items-center gap-1.5 mb-2 overflow-hidden">
+                        {order.items.slice(0, 4).map((it: any, itIdx: number) => {
+                          const itImg = it.imageUrl || it.image || matchFoodPhoto(it.name);
+                          return (
+                            <div key={itIdx} className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200/80 shadow-2xs shrink-0" title={`${it.quantity}x ${it.name}`}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={itImg} alt={it.name} className="w-full h-full object-cover" />
+                              {it.quantity > 1 && (
+                                <span className="absolute bottom-0 right-0 bg-orange-600 text-white text-[9px] font-black px-1 rounded-tl-md">
+                                  {it.quantity}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {order.items.length > 4 && (
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg px-1.5 py-1 shrink-0">
+                            +{order.items.length - 4}
+                          </span>
+                        )}
+                      </div>
+
                       <p className={`text-xs line-clamp-2 leading-relaxed ${
                         isDarkMode ? 'text-slate-300' : 'text-slate-600'
                       }`}>

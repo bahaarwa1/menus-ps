@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, Check, Search, Bell, Star, 
   Utensils, Edit3, AlertCircle, ShieldCheck, Flame, 
   Sparkles, ChefHat, ArrowLeft, ArrowRight, Loader2,
-  Store, Home, Lock, MessageCircle, Share2, PhoneCall
+  Store, Home, Lock, MessageCircle, Share2, PhoneCall, ArrowDown
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -245,15 +245,32 @@ export default function CustomerMenuClient({
   const [waiterCalled, setWaiterCalled] = useState(false);
   const [liveOrderStatus, setLiveOrderStatus] = useState<'new' | 'cooking' | 'ready' | 'completed'>('new');
 
-  // Auto-rotating Hero Ad Banner carousel state (يتبدل تلقائياً كل 4.5 ثانية لعرض العروض وإعلان التواصل والواتساب)
+  // Auto-rotating Hero Ad Banner carousel state (مدة البقاء 7.5 ثانية لكل صورة/عرض)
   const [currentBannerSlide, setCurrentBannerSlide] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBannerSlide((prev) => (prev + 1) % 3);
-    }, 4500);
+    }, 7500);
     return () => clearInterval(timer);
   }, []);
+
+  const handleBannerClick = () => {
+    if (currentBannerSlide === 1) {
+      if (cleanWhatsappUrl) {
+        window.open(cleanWhatsappUrl, '_blank');
+        return;
+      } else if (cleanPhoneUrl) {
+        window.location.href = cleanPhoneUrl;
+        return;
+      }
+    }
+    // Slide 0 (عروض وتوفير) & Slide 2 (لحوم طازجة وشيف المطعم): التمرير السلس إلى قائمة الأطباق
+    const el = document.getElementById('dishes-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Touch swipe between categories
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -974,70 +991,6 @@ export default function CustomerMenuClient({
             </div>
           </div>
 
-          {/* Search Input Bar */}
-          <div className="px-3 pb-2">
-            <div className="relative">
-              <Search size={14} className={`absolute ${direction === 'rtl' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-slate-400`} />
-              <input 
-                type="text"
-                placeholder={language === 'ar' ? "ابحث عن وجبة، صوص، أو عصير..." : "Search burger, sides, drinks..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-8 py-1.5 bg-slate-100/90 hover:bg-slate-100 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 border border-slate-200/80 rounded-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Categories 2-Row Grid (التصنيفات سطرين: 4 بالأعلى و4 بالأسفل) */}
-          {categoryItems.length > 0 ? (
-            <div className="px-2.5 sm:px-3 py-2 bg-white/95 border-t border-slate-100">
-              <div 
-                className={
-                  categoryItems.length <= 8
-                    ? "grid grid-cols-4 gap-1.5 sm:gap-2"
-                    : "grid grid-rows-2 grid-flow-col auto-cols-[calc((100%-18px)/4)] gap-1.5 overflow-x-auto hide-scrollbar pb-0.5"
-                }
-              >
-                {categoryItems.map((cat) => {
-                  const isActive = (activeCategory === cat.id || (cat.id === 'all' && (!activeCategory || activeCategory === 'all'))) && !searchQuery;
-                  return (
-                    <button
-                      key={cat.id}
-                      id={`cat-btn-${cat.id}`}
-                      onClick={() => {
-                        setActiveCategory(cat.id);
-                        setSearchQuery('');
-                      }}
-                      className={`h-9 sm:h-10 px-1 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 active:scale-95 cursor-pointer min-w-0 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs shadow-orange-500/25 ring-2 ring-orange-500/20'
-                          : 'bg-slate-100/90 text-slate-700 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
-                      }`}
-                      title={cat.name}
-                    >
-                      <span className="text-sm shrink-0">{cat.icon}</span>
-                      <span className="truncate max-w-[55px] sm:max-w-[70px] leading-tight text-center">{cat.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : menuLoading ? (
-            <div className="px-3 py-2 bg-white/95 border-t border-slate-100 grid grid-cols-4 gap-1.5 animate-pulse">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="h-9 rounded-xl bg-slate-100" />
-              ))}
-            </div>
-          ) : null}
-
           {/* Waiter Alert Toast Notification */}
           <AnimatePresence>
             {waiterCalled && (
@@ -1128,21 +1081,21 @@ export default function CustomerMenuClient({
                   : 'The restaurant has not added any dishes yet. The menu will update once items are published from the dashboard.'}
               </p>
             </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="py-20 text-center text-slate-400">
-              <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />
-              <p className="text-sm font-bold text-slate-700">
-                {language === 'ar' ? 'لم يتم العثور على أطباق مطابقة' : 'No matching dishes found'}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                {language === 'ar' ? 'جرّب البحث باسم آخر أو تصفح بقية الأقسام' : 'Try searching for another dish or browse other categories'}
-              </p>
-            </div>
           ) : (
-            <div className="space-y-4">
-              {/* 1. Large Auto-Rotating Hero Ad Banner (صورة كبيرة وعروض ترويجية وإعلان تواصل وسوشال ميديا يتبدل تلقائياً) */}
+            <div className="space-y-3 sm:space-y-3.5">
+              {/* 1. Large Auto-Rotating Hero Ad Banner (الصورة - مدة 7.5 ثانية وقابلة للنقر لتنفيذ الإجراء المناسب) */}
               {!searchQuery && (
-                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 aspect-[16/9] sm:aspect-[21/9] bg-slate-950 group select-none">
+                <div 
+                  onClick={handleBannerClick}
+                  className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-200/90 aspect-[16/9] sm:aspect-[21/9] bg-slate-950 group select-none cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  title={
+                    currentBannerSlide === 1
+                      ? (language === 'ar' ? 'اضغط للتواصل أو الطلب عبر واتساب' : 'Click to contact or order via WhatsApp')
+                      : (language === 'ar' ? 'اضغط لتصفح الأطباق والعروض' : 'Click to explore dishes')
+                  }
+                >
                   <AnimatePresence mode="wait">
                     {currentBannerSlide === 0 && (
                       <motion.div
@@ -1167,6 +1120,10 @@ export default function CustomerMenuClient({
                             </span>
                             <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
                               🔥 {language === 'ar' ? 'لفترة محدودة' : 'Limited Offer'}
+                            </span>
+                            <span className="bg-white/20 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto flex items-center gap-0.5">
+                              <span>{language === 'ar' ? 'اضغط للتصفح' : 'Tap to browse'}</span>
+                              <ArrowDown size={10} />
                             </span>
                           </div>
                           <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
@@ -1207,6 +1164,9 @@ export default function CustomerMenuClient({
                             <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
                               📢 {language === 'ar' ? 'خدمة فورية' : 'Instant Reply'}
                             </span>
+                            <span className="bg-[#25D366]/30 text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto border border-emerald-400/30">
+                              {language === 'ar' ? 'اضغط للدردشة واتساب 💬' : 'Tap for WhatsApp 💬'}
+                            </span>
                           </div>
 
                           <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
@@ -1217,7 +1177,7 @@ export default function CustomerMenuClient({
                           </p>
 
                           {/* Direct Clickable Action Badges embedded inside the Ad Banner */}
-                          <div className="flex items-center gap-1.5 flex-wrap z-10">
+                          <div className="flex items-center gap-1.5 flex-wrap z-10" onClick={(e) => e.stopPropagation()}>
                             {(cleanWhatsappUrl || restaurantPhone) && (
                               <a
                                 href={cleanWhatsappUrl || `https://wa.me/?text=${encodeURIComponent(activeRestaurantName || 'Menus.ps')}`}
@@ -1314,6 +1274,10 @@ export default function CustomerMenuClient({
                             <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
                               ⭐ {language === 'ar' ? 'طازج ١٠٠٪ يومياً' : '100% Fresh Daily'}
                             </span>
+                            <span className="bg-white/20 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full mr-auto flex items-center gap-0.5">
+                              <span>{language === 'ar' ? 'اضغط للاختيار' : 'Tap to choose'}</span>
+                              <ArrowDown size={10} />
+                            </span>
                           </div>
                           <h2 className="text-white font-black text-sm sm:text-base leading-tight mb-0.5 drop-shadow-md">
                             {language === 'ar' ? 'لحوم طازجة ١٠٠٪ ومكونات منتقاة بعناية' : '100% Fresh Meats & Artisan Quality'}
@@ -1367,8 +1331,84 @@ export default function CustomerMenuClient({
                 </div>
               )}
 
-              {/* 3. All Menu Items in Modern 2-Column Grid (وتحتهن الباقي بشبكة ثنائية أنيقة) */}
-              <div className="space-y-2.5 pt-1">
+              {/* 2. STICKY SEARCH & CATEGORIES CONTAINER (منيو البحث وقوائم الطعام تحت الصورة تماماً) */}
+              <div className="sticky top-[49px] sm:top-[53px] z-30 bg-[#F8FAFC]/95 backdrop-blur-md -mx-3.5 px-3.5 pt-1.5 pb-2 border-b border-slate-200/70 shadow-2xs space-y-2">
+                {/* Search Bar (منيو البحث تحت الصورة) */}
+                <div className="relative">
+                  <Search size={14} className={`absolute ${direction === 'rtl' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-slate-400`} />
+                  <input 
+                    type="text"
+                    placeholder={language === 'ar' ? "ابحث عن وجبة، صوص، أو عصير..." : "Search burger, sides, drinks..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-8 py-2 bg-white hover:bg-white focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/15 border border-slate-200/90 rounded-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Categories Bar (قوائم الطعام تحت منيو البحث - سطرين واضحة بدون قص نص الكلمة) */}
+                {categoryItems.length > 0 && (
+                  <div className="grid grid-rows-2 grid-flow-col auto-cols-max gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar scroll-smooth py-0.5">
+                    {categoryItems.map((cat) => {
+                      const isActive = (activeCategory === cat.id || (cat.id === 'all' && (!activeCategory || activeCategory === 'all'))) && !searchQuery;
+                      return (
+                        <button
+                          key={cat.id}
+                          id={`cat-btn-${cat.id}`}
+                          onClick={() => {
+                            setActiveCategory(cat.id);
+                            setSearchQuery('');
+                          }}
+                          className={`h-9 px-3 sm:px-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs ${
+                            isActive
+                              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs shadow-orange-500/25 ring-2 ring-orange-500/20 font-black'
+                              : 'bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200/80'
+                          }`}
+                          title={cat.name}
+                        >
+                          <span className="text-sm shrink-0">{cat.icon}</span>
+                          <span className="leading-none">{cat.name}</span>
+                          {cat.count !== undefined && cat.count > 0 && (
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                              {cat.count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Empty State or Dishes Grid */}
+              {filteredItems.length === 0 ? (
+                <div className="py-16 text-center text-slate-400">
+                  <Utensils size={40} className="mx-auto mb-2 opacity-30 text-orange-500" />
+                  <p className="text-sm font-bold text-slate-700">
+                    {language === 'ar' ? 'لم يتم العثور على أطباق مطابقة' : 'No matching dishes found'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1 mb-4">
+                    {language === 'ar' ? 'جرّب البحث باسم آخر أو تصفح بقية الأقسام' : 'Try searching for another dish or browse other categories'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('all');
+                    }}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-all"
+                  >
+                    {language === 'ar' ? 'عرض جميع أطباق القائمة' : 'Show all dishes'}
+                  </button>
+                </div>
+              ) : (
+                <div id="dishes-section" className="space-y-2.5 pt-1">
                 <div className="flex items-center justify-between px-1">
                   <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
                     <Utensils size={14} className="text-orange-500" />
@@ -1491,8 +1531,9 @@ export default function CustomerMenuClient({
                   })}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
         </main>
 
         {/* ============================================================
