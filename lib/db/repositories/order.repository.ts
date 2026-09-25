@@ -168,10 +168,10 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
         created_at: string;
       };
 
-      // Insert items
+      // Insert items (validate UUID for item_id to avoid PostgreSQL 22P02 invalid uuid syntax)
       const orderItemsToInsert = dto.items.map((item) => ({
         order_id: orderData.id,
-        item_id: item.itemId || null,
+        item_id: (item.itemId && uuidRegex.test(item.itemId)) ? item.itemId : null,
         item_name: item.itemName,
         quantity: item.quantity,
         unit_price: item.unitPrice,
@@ -179,7 +179,14 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
         notes: item.notes || null,
       }));
 
-      await (supabase.from('order_items') as any).insert(orderItemsToInsert);
+      try {
+        const { error: itemsErr } = await (supabase.from('order_items') as any).insert(orderItemsToInsert);
+        if (itemsErr) {
+          console.error('Failed to insert order items:', itemsErr);
+        }
+      } catch (insertItemsErr) {
+        console.error('Order items insert exception:', insertItemsErr);
+      }
 
       result = {
         id: orderData.id,
