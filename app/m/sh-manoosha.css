@@ -154,37 +154,33 @@ body[dir="ltr"], .sh-manoosha-body[dir="ltr"] {
 }
 
 .brand-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--primary);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   line-height: 1.2;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--success);
-  background: rgba(16, 185, 129, 0.12);
-  padding: 1px 5px;
-  border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
-.status-dot {
-  width: 5px;
-  height: 5px;
+.brand-name-text {
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.status-dot-inline {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--success);
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  flex-shrink: 0;
 }
 
 .brand-subtitle {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--stone-600);
   white-space: nowrap;
   overflow: hidden;
@@ -195,24 +191,24 @@ body[dir="ltr"], .sh-manoosha-body[dir="ltr"] {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 .action-btn {
-  height: 30px;
+  height: 28px;
   border-radius: var(--radius-full);
   border: 1px solid var(--stone-200);
   background: var(--stone-50);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--stone-700);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
+  gap: 3px;
+  padding: 0 7px;
   white-space: nowrap;
 }
 
@@ -222,22 +218,29 @@ body[dir="ltr"], .sh-manoosha-body[dir="ltr"] {
   color: var(--primary);
 }
 
+.table-badge-text {
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .table-number-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 17px;
-  height: 17px;
+  min-width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--primary);
   color: white;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 900;
+  padding: 0 3px;
 }
 
 .btn-bell {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   padding: 0;
   justify-content: center;
   background: #FFFBEB;
@@ -246,11 +249,12 @@ body[dir="ltr"], .sh-manoosha-body[dir="ltr"] {
 }
 
 .btn-lang {
-  width: 32px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   padding: 0;
   justify-content: center;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
 }
 

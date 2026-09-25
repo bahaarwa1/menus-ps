@@ -277,14 +277,11 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
             </div>
             <div className="brand-info">
               <h1 className="brand-title">
-                <span>{lang === 'ar' ? MANOOSHA_INFO.name : MANOOSHA_INFO.nameEn}</span>
-                <span className="status-badge">
-                  <span className="status-dot"></span>
-                  <span>{lang === 'ar' ? 'في خدمتكم' : 'Open'}</span>
-                </span>
+                <span className="brand-name-text">{lang === 'ar' ? MANOOSHA_INFO.name : MANOOSHA_INFO.nameEn}</span>
+                <span className="status-dot-inline" title={lang === 'ar' ? 'في خدمتكم' : 'Open'}></span>
               </h1>
               <p className="brand-subtitle">
-                {lang === 'ar' ? MANOOSHA_INFO.serviceNote : MANOOSHA_INFO.serviceNoteEn}
+                {lang === 'ar' ? 'مطعم وكافيه • خدمة الطاولة' : 'Restaurant & Cafe • Dine-In'}
               </p>
             </div>
           </div>
@@ -293,7 +290,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
             {/* Table button */}
             <button className="action-btn btn-table" onClick={() => setIsTableModalOpen(true)} title="تغيير الطاولة">
               <span>🪑</span>
-              <span>{lang === 'ar' ? 'طاولة' : 'Table'}</span>
+              <span className="table-badge-text">{lang === 'ar' ? 'طاولة' : 'Table'}</span>
               <span className="table-number-label">{tableNumber}</span>
             </button>
 
