@@ -36,6 +36,8 @@ export default function ProductionOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [branchId, setBranchId] = useState<string | null>(null); // null = not resolved yet
+  const [restaurantName, setRestaurantName] = useState<string>('مطعم وكافيه شيشة ومنقوشة');
+  const [restaurantLogo, setRestaurantLogo] = useState<string>('/sh-manoosha/logo.png');
 
   const mapDbOrderToCard = (raw: any): Order => {
     const rawStatus = raw.status || 'جديد';
@@ -126,8 +128,19 @@ export default function ProductionOrdersPage() {
   useEffect(() => {
     fetch('/api/auth/session')
       .then((r) => r.json())
-      .then((data) => {
+      .then(async (data) => {
         const bid: string = data.user?.branchId || '';
+        const rSlug = data.user?.restaurantSlug || (bid === 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9' ? 'sh-manoosha' : 'sh-manoosha');
+        if (data.user?.restaurantName) setRestaurantName(data.user.restaurantName);
+        try {
+          const restRes = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(rSlug)}`);
+          const restData = await restRes.json();
+          if (restData.success && (restData.settings || restData.restaurant)) {
+            const r = restData.settings || restData.restaurant;
+            if (r.name) setRestaurantName(r.name);
+            if (r.logoUrl) setRestaurantLogo(r.logoUrl);
+          }
+        } catch {}
         setBranchId(bid); // '' means no branchId, null means not resolved
         // Load orders with the correct branchId right away
         loadOrders(bid || undefined);
@@ -237,12 +250,22 @@ export default function ProductionOrdersPage() {
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">إدارة الطلبات الحية</h1>
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-xs p-1 flex items-center justify-center shrink-0">
+            {restaurantLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={restaurantLogo} alt={restaurantName} className="w-full h-full object-contain rounded-xl" />
+            ) : (
+              <ChefHat size={24} className="text-[#7A1C30]" />
+            )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">متابعة وحفظ تحديثات طلبات الزبائن مباشرة في قاعدة البيانات</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900">{restaurantName || 'إدارة الطلبات الحية'}</h1>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">متابعة وتحديث طلبات الزبائن مباشرة في صالة المطعم والمطبخ</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -252,7 +275,7 @@ export default function ProductionOrdersPage() {
             className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
             title="تحديث الطلبات من قاعدة البيانات"
           >
-            <RefreshCw size={14} className={isLoading ? 'animate-spin text-orange-500' : 'text-slate-500'} />
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : 'text-slate-500'} style={isLoading ? { color: '#7A1C30' } : undefined} />
             <span>تحديث</span>
           </button>
 
@@ -260,7 +283,7 @@ export default function ProductionOrdersPage() {
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
               soundEnabled
-                ? 'bg-orange-50 border-orange-200 text-orange-600'
+                ? 'bg-[#FDF2F4] border-[#7A1C30]/30 text-[#7A1C30]'
                 : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
@@ -287,9 +310,10 @@ export default function ProductionOrdersPage() {
                 onClick={() => setFilter(tab.id as typeof filter)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   active
-                    ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                    ? 'text-white shadow-sm'
                     : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
                 }`}
+                style={active ? { backgroundColor: '#7A1C30', boxShadow: '0 2px 8px rgba(122, 28, 48, 0.25)' } : undefined}
               >
                 <span>{tab.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
@@ -308,7 +332,7 @@ export default function ProductionOrdersPage() {
             placeholder="بحث برقم الطلب أو الطاولة..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
+            className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:border-[#7A1C30]"
           />
           <Search size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
         </div>
@@ -360,7 +384,7 @@ export default function ProductionOrdersPage() {
                   <div className="px-3 py-1 rounded-xl bg-slate-900 text-white font-black text-xs flex items-center gap-1.5">
                     <span>طاولة رقم {order.tableNumber}</span>
                   </div>
-                  <span className="font-mono font-black text-sm text-orange-600">{order.total} ₪</span>
+                  <span className="font-mono font-black text-sm" style={{ color: '#7A1C30' }}>{order.total} ₪</span>
                 </div>
 
                 {/* Items List */}
@@ -418,7 +442,8 @@ export default function ProductionOrdersPage() {
                 {order.status === 'new' && (
                   <button
                     onClick={() => advanceOrderStatus(order.rawId, 'new')}
-                    className="flex-1 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer"
+                    className="flex-1 py-2 rounded-xl text-white font-black text-xs flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer hover:brightness-95"
+                    style={{ backgroundColor: '#7A1C30', boxShadow: '0 2px 8px rgba(122, 28, 48, 0.25)' }}
                   >
                     <ChefHat size={14} />
                     <span>تحويل للمطبخ (تحضير)</span>

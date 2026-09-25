@@ -79,9 +79,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
   const [newOrderAlert, setNewOrderAlert] = useState<{ id: string; table: number; count: number; time: string } | null>(null);
 
   // Restaurant & Authentication States
-  const [restaurantSlug, setRestaurantSlug] = useState<string>(initialSlug || '');
-  const [restaurantName, setRestaurantName] = useState<string>('');
-  const [restaurantLogo, setRestaurantLogo] = useState<string>('');
+  const [restaurantSlug, setRestaurantSlug] = useState<string>(initialSlug || 'sh-manoosha');
+  const [restaurantName, setRestaurantName] = useState<string>('مطعم وكافيه شيشة ومنقوشة');
+  const [restaurantLogo, setRestaurantLogo] = useState<string>('/sh-manoosha/logo.png');
+  const [brandColor, setBrandColor] = useState<string>('#7A1C30');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>('');
@@ -129,19 +130,20 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
         const sessionSlug = user?.restaurantSlug || '';
         const sessionName = user?.restaurantName || '';
 
-        const effectiveSlug = slug || sessionSlug;
+        const effectiveSlug = slug || sessionSlug || (sessionBranchId === 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9' ? 'sh-manoosha' : 'sh-manoosha');
         if (effectiveSlug) setRestaurantSlug(effectiveSlug);
         if (sessionName) setRestaurantName(sessionName);
 
-        let targetBranch = sessionBranchId;
+        let targetBranch = sessionBranchId || (effectiveSlug === 'sh-manoosha' ? 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9' : '');
         if (effectiveSlug) {
           try {
             const restRes = await fetch(`/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`);
             const restData = await restRes.json();
-            if (restData.success && restData.restaurant) {
-              setRestaurantName(restData.restaurant.name || sessionName);
-              if (restData.restaurant.logoUrl) setRestaurantLogo(restData.restaurant.logoUrl);
-              if (restData.restaurant.branchId) targetBranch = restData.restaurant.branchId;
+            if (restData.success && (restData.settings || restData.restaurant)) {
+              const r = restData.settings || restData.restaurant;
+              if (r.name) setRestaurantName(r.name);
+              if (r.logoUrl) setRestaurantLogo(r.logoUrl);
+              if (r.branchId) targetBranch = r.branchId;
             }
           } catch {}
         }
@@ -506,7 +508,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-7 h-7 rounded-lg bg-orange-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                  <span className="w-7 h-7 rounded-lg text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" style={{ backgroundColor: '#7A1C30' }}>
                     {item.quantity}×
                   </span>
                   <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 shadow-2xs">
@@ -518,7 +520,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                       isDarkMode ? 'text-white' : 'text-slate-800'
                     }`}>{item.name}</p>
                     {item.customization && (
-                      <span className="text-[11px] text-orange-600 font-medium block">• {item.customization}</span>
+                      <span className="text-[11px] font-medium block" style={{ color: '#7A1C30' }}>• {item.customization}</span>
                     )}
                     {item.extras && item.extras.length > 0 && (
                       <span className={`text-[11px] font-normal block ${
@@ -577,7 +579,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
             isDarkMode ? 'border-slate-700' : 'border-slate-200/80'
           }`}>
             <span className={isDarkMode ? 'text-slate-200' : 'text-slate-800'}>الإجمالي المطلوب:</span>
-            <span className="text-orange-600 font-extrabold text-base">{order.total} ₪</span>
+            <span className="font-extrabold text-base" style={{ color: '#7A1C30' }}>{order.total} ₪</span>
           </div>
         </div>
 
@@ -586,7 +588,8 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
           {order.status === 'جديد' && (
             <button
               onClick={() => updateOrderStatus(order.id, 'قيد التحضير')}
-              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-95"
+              style={{ backgroundColor: '#7A1C30', boxShadow: '0 4px 16px rgba(122, 28, 48, 0.25)' }}
             >
               <ChefHat size={17} />
               <span>بدء تحضير الطلب</span>
@@ -628,7 +631,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
   };
 
   return (
-    <div className={`min-h-screen font-sans flex flex-col selection:bg-orange-500 selection:text-white transition-colors duration-200 ${
+    <div className={`min-h-screen font-sans flex flex-col selection:bg-[#7A1C30] selection:text-white transition-colors duration-200 ${
       isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F4F6F9] text-slate-900'
     }`} dir="rtl">
       
@@ -639,7 +642,8 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
             initial={{ y: -60, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -60, opacity: 0, scale: 0.95 }}
-            className="fixed top-4 inset-x-4 max-w-lg mx-auto z-50 bg-gradient-to-r from-orange-600 to-amber-600 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-orange-400/40"
+            className="fixed top-4 inset-x-4 max-w-lg mx-auto z-50 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-rose-900/40"
+            style={{ background: 'linear-gradient(135deg, #7A1C30, #9C2A43)' }}
           >
             <div className="flex items-center gap-2.5">
               <span className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
@@ -647,7 +651,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               </span>
               <div>
                 <p className="text-xs font-black">طلب جديد لطاولة #{newOrderAlert.table}!</p>
-                <p className="text-[11px] text-orange-100">{newOrderAlert.count} أصناف · الساعة {newOrderAlert.time}</p>
+                <p className="text-[11px] text-rose-100">{newOrderAlert.count} أصناف · الساعة {newOrderAlert.time}</p>
               </div>
             </div>
             <button
@@ -656,7 +660,8 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                 setIsMobileDetailOpen(true);
                 setNewOrderAlert(null);
               }}
-              className="px-3.5 py-2 bg-white hover:bg-orange-50 text-orange-600 rounded-xl text-xs font-black shadow-xs cursor-pointer shrink-0 transition-all"
+              className="px-3.5 py-2 bg-white hover:bg-rose-50 rounded-xl text-xs font-black shadow-xs cursor-pointer shrink-0 transition-all"
+              style={{ color: '#7A1C30' }}
             >
               معاينة الطلب
             </button>
@@ -675,17 +680,22 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center text-slate-900 relative"
             >
               {/* Header */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/20 overflow-hidden">
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg p-1 bg-white border"
+                style={{ borderColor: 'rgba(122, 28, 48, 0.25)', boxShadow: '0 4px 16px rgba(122, 28, 48, 0.15)' }}
+              >
                 {restaurantLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={restaurantLogo} alt={restaurantName} className="w-full h-full object-cover" />
+                  <img src={restaurantLogo} alt={restaurantName} className="w-full h-full object-contain rounded-xl" />
                 ) : (
-                  <ChefHat size={32} />
+                  <div className="w-full h-full rounded-xl flex items-center justify-center text-white" style={{ background: 'linear-gradient(135deg, #7A1C30, #9C2A43)' }}>
+                    <ChefHat size={32} />
+                  </div>
                 )}
               </div>
               
               <h2 className="text-lg font-black text-slate-900 mb-0.5">
-                {restaurantName || (restaurantSlug ? `مطعم ${restaurantSlug}` : 'شاشة المطبخ والطلبات')}
+                {restaurantName || 'مطعم وكافيه شيشة ومنقوشة'}
               </h2>
               <p className="text-xs text-slate-500 mb-5">
                 أدخل رمز دخول الموظف (PIN) المكون من 4 إلى 6 أرقام
@@ -705,7 +715,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                     key={idx}
                     className={`w-10 h-12 rounded-xl border-2 flex items-center justify-center text-xl font-bold transition-all ${
                       pinInput.length > idx
-                        ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-xs scale-105'
+                        ? 'border-[#7A1C30] bg-[#FDF2F4] text-[#7A1C30] shadow-xs scale-105'
                         : 'border-slate-200 bg-slate-50 text-slate-300'
                     }`}
                   >
@@ -727,7 +737,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                         if (next.length === 6) handlePinSubmit(next);
                       }
                     }}
-                    className="h-12 rounded-xl bg-slate-50 hover:bg-orange-50 active:bg-orange-100 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                    className="h-12 rounded-xl bg-slate-50 hover:bg-[#FDF2F4] active:bg-[#FDF2F4]/80 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                   >
                     {num}
                   </button>
@@ -748,7 +758,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                       if (next.length === 6) handlePinSubmit(next);
                     }
                   }}
-                  className="h-12 rounded-xl bg-slate-50 hover:bg-orange-50 active:bg-orange-100 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="h-12 rounded-xl bg-slate-50 hover:bg-[#FDF2F4] active:bg-[#FDF2F4]/80 border border-slate-200 text-slate-800 text-lg font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                 >
                   0
                 </button>
@@ -766,7 +776,8 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                 type="button"
                 disabled={pinInput.length < 4 || isSubmittingPin}
                 onClick={() => handlePinSubmit()}
-                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md shadow-orange-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer hover:brightness-95"
+                style={{ backgroundColor: '#7A1C30', boxShadow: '0 4px 16px rgba(122, 28, 48, 0.25)' }}
               >
                 {isSubmittingPin ? (
                   <><RefreshCw size={16} className="animate-spin" /> جاري التحقق...</>
@@ -777,7 +788,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
 
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                 <span>كود من 4 إلى 6 أرقام</span>
-                <a href="/login?role=staff" className="text-orange-600 hover:underline font-bold">
+                <a href="/login?role=staff" className="hover:underline font-bold" style={{ color: '#7A1C30' }}>
                   تسجيل الدخول الرئيسي
                 </a>
               </div>
@@ -795,14 +806,36 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
           {/* Logo & Title */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl flex items-center justify-center font-bold shadow-md shadow-orange-500/20">
-                <ChefHat size={22} />
+              <div 
+                className="w-11 h-11 rounded-2xl flex items-center justify-center overflow-hidden border shadow-sm shrink-0 p-1 transition-all bg-white"
+                style={{ 
+                  borderColor: isDarkMode ? '#334155' : 'rgba(122, 28, 48, 0.2)',
+                  boxShadow: '0 4px 12px rgba(122, 28, 48, 0.12)'
+                }}
+              >
+                {restaurantLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img 
+                    src={restaurantLogo} 
+                    alt={restaurantName} 
+                    className="w-full h-full object-contain rounded-xl"
+                  />
+                ) : (
+                  <div 
+                    className="w-full h-full rounded-xl flex items-center justify-center text-white"
+                    style={{ background: 'linear-gradient(135deg, #7A1C30, #9C2A43)' }}
+                  >
+                    <ChefHat size={22} />
+                  </div>
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className={`text-base sm:text-lg font-bold leading-tight ${
+                  <h1 className={`text-base sm:text-lg font-black leading-tight ${
                     isDarkMode ? 'text-white' : 'text-slate-900'
-                  }`}>إدارة الطلبات الحية</h1>
+                  }`}>
+                    {restaurantName || 'مطعم وكافيه شيشة ومنقوشة'}
+                  </h1>
                   <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     isRealtimeConnected 
                       ? 'bg-emerald-500 text-white shadow-xs' 
@@ -812,10 +845,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                     <span>{isRealtimeConnected ? 'سحابي مباشر' : 'إعادة اتصال...'}</span>
                   </span>
                 </div>
-                <p className={`text-xs mt-0.5 ${
+                <p className={`text-xs mt-0.5 font-medium ${
                   isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}>
-                  {restaurantName ? `${restaurantName} · متابعة وتحديث طلبات الصالة` : 'شاشة المطبخ والطلبات · متابعة وتحديث طلبات الصالة'}
+                  شاشة المطبخ والطلبات الحية · صالة المطعم
                 </p>
               </div>
             </div>
@@ -824,9 +857,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
             <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`p-2 rounded-xl border text-xs font-medium ${
-                  soundEnabled ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-500 border-slate-200'
+                className={`p-2 rounded-xl border text-xs font-medium transition-all ${
+                  soundEnabled ? 'text-white' : 'bg-white text-slate-500 border-slate-200'
                 }`}
+                style={soundEnabled ? { backgroundColor: '#7A1C30', borderColor: '#7A1C30' } : undefined}
               >
                 {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
               </button>
@@ -851,7 +885,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               }`}
               title="تحديث قائمة الطلبات"
             >
-              <RefreshCw size={14} className={isLoadingOrders ? 'animate-spin text-orange-500' : 'text-slate-500'} />
+              <RefreshCw size={14} className={isLoadingOrders ? 'animate-spin' : 'text-slate-500'} style={isLoadingOrders ? { color: '#7A1C30' } : undefined} />
               <span>تحديث الطلبات</span>
             </button>
 
@@ -862,11 +896,12 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               }}
               className={`hidden md:flex p-2 rounded-xl border text-xs font-medium transition-all shadow-2xs ${
                 soundEnabled
-                  ? 'bg-orange-500 text-white border-orange-500'
+                  ? 'text-white'
                   : isDarkMode
                   ? 'bg-slate-800 text-slate-400 border-slate-700'
                   : 'bg-white text-slate-500 border-slate-200/80'
               }`}
+              style={soundEnabled ? { backgroundColor: '#7A1C30', borderColor: '#7A1C30' } : undefined}
               title={soundEnabled ? 'كتم الصوت' : 'تفعيل صوت التنبيه'}
             >
               {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
@@ -921,9 +956,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-xl transition-all shrink-0 font-bold ${
                 statusFilter === 'all'
-                  ? 'bg-slate-900 text-white shadow-2xs'
+                  ? 'text-white shadow-2xs'
                   : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
+              style={statusFilter === 'all' ? { backgroundColor: '#7A1C30' } : undefined}
             >
               الكل ({ordersList.length})
             </button>
@@ -1028,11 +1064,11 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                     className={`rounded-2xl p-2.5 sm:p-3 border transition-all cursor-pointer relative shadow-xs hover:shadow-md flex flex-col justify-between ${
                       isSelected
                         ? isDarkMode
-                          ? 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-950/20'
-                          : 'border-orange-500 ring-2 ring-orange-500/30 bg-orange-50/20'
+                          ? 'border-[#7A1C30] ring-2 ring-[#7A1C30]/40 bg-[#7A1C30]/10'
+                          : 'border-[#7A1C30] ring-2 ring-[#7A1C30]/25 bg-[#FDF2F4]/50'
                         : isDarkMode
                         ? 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                        : 'bg-white border-slate-200/80 hover:border-orange-300'
+                        : 'bg-white border-slate-200/80 hover:border-[#7A1C30]/40'
                     }`}
                   >
                     {/* Top Row: Clean Table Badge + Status + Time */}
@@ -1073,7 +1109,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={itImg} alt={it.name} className="w-full h-full object-cover" />
                               {it.quantity > 1 && (
-                                <span className="absolute bottom-0 right-0 bg-orange-600 text-white text-[9px] font-black px-1 rounded-tl-md">
+                                <span 
+                                  className="absolute bottom-0 right-0 text-white text-[9px] font-black px-1 rounded-tl-md"
+                                  style={{ backgroundColor: '#7A1C30' }}
+                                >
                                   {it.quantity}
                                 </span>
                               )}
@@ -1110,7 +1149,8 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                             e.stopPropagation();
                             updateOrderStatus(order.id, 'قيد التحضير');
                           }}
-                          className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                          className="flex-1 py-2 active:scale-98 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer hover:brightness-95"
+                          style={{ backgroundColor: '#7A1C30', boxShadow: '0 2px 8px rgba(122, 28, 48, 0.2)' }}
                         >
                           <ChefHat size={14} />
                           <span>بدء التحضير</span>
