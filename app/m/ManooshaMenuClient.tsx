@@ -228,6 +228,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
       const data = await res.json();
 
       if (res.ok && data.success) {
+        setIsCartOpen(false);
         setOrderSuccess({
           orderId: data.orderNumber || data.orderId || `#${Date.now().toString().slice(-4)}`,
           table: tableNumber,
@@ -746,7 +747,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 5. Order Success Dialog (Direct in-app confirmation) */}
       {orderSuccess && (
-        <div className="modal-backdrop open" onClick={() => setOrderSuccess(null)}>
+        <div className="modal-backdrop open" style={{ zIndex: 1200 }} onClick={() => setOrderSuccess(null)}>
           <div className="dialog-card success-card" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-icon-success">✓</div>
             <h3 className="dialog-title">{lang === 'ar' ? 'تم استلام طلبك بنجاح!' : 'Order Placed Successfully!'}</h3>
