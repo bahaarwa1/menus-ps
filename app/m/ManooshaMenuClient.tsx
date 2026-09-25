@@ -321,44 +321,6 @@ export default function ManooshaMenuClient({
     }, 900);
   };
 
-  // 1-Click set user's current live location as official restaurant location
-  const handleSetCurrentAsRestaurantLocation = async () => {
-    if (!clientCoords) return;
-    setToastMsg('جاري تعيين موقعك الحالي كموقع رسمي للمطعم...');
-    try {
-      const res = await fetch('/api/v1/restaurant/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug: 'sh-manoosha',
-          requireGps: true,
-          gpsLatitude: clientCoords.latitude,
-          gpsLongitude: clientCoords.longitude,
-          gpsRadiusMeters: gpsConfig.radiusMeters || 350,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setGpsConfig((prev) => ({
-          ...prev,
-          latitude: clientCoords.latitude,
-          longitude: clientCoords.longitude,
-        }));
-        setGpsStatus('success');
-        setDistanceMeters(0);
-        setToastMsg('✅ تم حفظ موقع المطعم بنجاح! جاري إرسال الطلب...');
-        setTimeout(() => {
-          setGpsModalOpen(false);
-          executeSubmitOrder(clientCoords);
-        }, 1200);
-      } else {
-        setToastMsg('تعذر حفظ الموقع، يرجى المحاولة من لوحة الإعدادات');
-      }
-    } catch {
-      setToastMsg('حدث خطأ أثناء حفظ الموقع');
-    }
-  };
-
   // Step 2: Submit Order directly to Server / KDS with verified GPS coordinates
   const executeSubmitOrder = async (coords?: Coordinates, simulated: boolean = false) => {
     if (cartItems.length === 0) return;
@@ -980,8 +942,7 @@ export default function ManooshaMenuClient({
           setGpsModalOpen(false);
           handleSendWaiterCall(lang === 'ar' ? 'تأكيد الطلب على الطاولة يدوياً (GPS)' : 'Manual Table Verification (GPS)');
         }}
-        onSimulateInside={handleSimulateInside}
-        onSetAsRestaurantLocation={clientCoords ? handleSetCurrentAsRestaurantLocation : undefined}
+        onSimulateInside={process.env.NODE_ENV === 'development' ? handleSimulateInside : undefined}
       />
 
     </div>

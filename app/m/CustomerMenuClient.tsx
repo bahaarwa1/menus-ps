@@ -2189,7 +2189,7 @@ export default function CustomerMenuClient({
             setGpsModalOpen(false);
             setWaiterCalled(true);
           }}
-          onSimulateInside={handleSimulateInside}
+          onSimulateInside={process.env.NODE_ENV === 'development' ? handleSimulateInside : undefined}
         />
 
       </div>

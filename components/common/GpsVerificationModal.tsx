@@ -18,7 +18,6 @@ interface GpsVerificationModalProps {
   onRetry: () => void;
   onCallWaiter?: () => void;
   onSimulateInside?: () => void; // for testing/preview in dev or authorized demo
-  onSetAsRestaurantLocation?: () => void; // automatically sets user's live position as restaurant location
 }
 
 export default function GpsVerificationModal({
@@ -33,7 +32,6 @@ export default function GpsVerificationModal({
   onRetry,
   onCallWaiter,
   onSimulateInside,
-  onSetAsRestaurantLocation,
 }: GpsVerificationModalProps) {
   if (!isOpen) return null;
 
@@ -114,17 +112,6 @@ export default function GpsVerificationModal({
             </div>
 
             <div className="space-y-2 pt-2">
-              {onSetAsRestaurantLocation && (
-                <button
-                  type="button"
-                  onClick={onSetAsRestaurantLocation}
-                  className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-                >
-                  <MapPin size={15} />
-                  <span>📍 تعيين موقعي الحالي كموقع رسمي للمطعم وحفظه</span>
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={onRetry}
