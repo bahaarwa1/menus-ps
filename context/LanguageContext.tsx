@@ -87,7 +87,7 @@ const translations: Record<Language, Record<string, string>> = {
     'staff.preparing': 'قيد التحضير',
     'staff.ready': 'جاهز للتسليم',
     'staff.completed': 'مكتمل',
-    'staff.printReceipt': 'طباعة البون',
+    'staff.printReceipt': 'طباعة الفاتورة',
     'staff.acceptOrder': 'قبول الطلب وبدء التحضير فوراً 🔥',
     'staff.markReady': 'الطلب جاهز للتسليم ✅',
     'staff.markDelivered': 'تم التسليم وإغلاق الطلب 🚀',

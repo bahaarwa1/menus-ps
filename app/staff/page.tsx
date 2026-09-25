@@ -467,10 +467,10 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
             <button
               onClick={() => handlePrintReceipt(order)}
               className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
-              title="طباعة بون المطبخ (صفحة واحدة فورية)"
+              title="طباعة الفاتورة (صفحة واحدة فورية)"
             >
               <Printer size={15} />
-              <span>طباعة البون</span>
+              <span>طباعة الفاتورة</span>
             </button>
 
             {isMobileModal && (
@@ -1189,7 +1189,7 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                             ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                         }`}
-                        title="طباعة البون"
+                        title="طباعة الفاتورة"
                       >
                         <Printer size={14} />
                       </button>

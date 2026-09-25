@@ -100,8 +100,26 @@ if (!global.__menusRestaurantsStore) {
       qrUrl: `https://sh-manoosha.menus.cool/m?table=${i + 1}`,
     })),
     logoUrl: '/sh-manoosha/logo.png',
+    address: 'نابلس - رفيديا - الشارع الرئيسي',
     isActive: true,
-    createdAt: new Date().toISOString(),
+    ownerEmail: 'shisha.manoosha@menus.ps',
+    subscription: {
+      plan: 'pro',
+      planNameAr: 'الباقة الاحترافية السنوية (VIP PRO)',
+      expiresAt: '2027-01-01T00:00:00.000Z',
+      daysRemaining: 281,
+      isExpired: false,
+      status: 'active',
+    },
+    whatsappNumber: '092343905',
+    instagramUrl: 'shisha_manoosha',
+    facebookUrl: 'https://facebook.com/shisha.manoosha',
+    tiktokUrl: '',
+    offersBannerUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&auto=format&fit=crop&q=80',
+    offersBannerTitle: 'أشهى المناقيش والشيشة الفاخرة يومياً 🔥',
+    offersBannerSubtitle: 'مناقيش طازجة على الحطب مع تشكيلة واسعة من المشروبات والمقبلات',
+    offersBannerActive: true,
+    createdAt: new Date('2025-01-01').toISOString(),
   });
 }
 

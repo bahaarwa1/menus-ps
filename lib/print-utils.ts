@@ -50,7 +50,7 @@ export function printThermalReceipt(order: {
     )
     .join('');
 
-  const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>بون طلب - ${order.id}</title>
+  const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>فاتورة طلب - ${order.id}</title>
     <style>
       @page { size: 80mm auto; margin: 0mm; }
       @media print { html, body { width: 78mm; margin: 0 !important; padding: 4mm 2mm !important; background: #fff !important; color: #000 !important; } }
@@ -65,7 +65,7 @@ export function printThermalReceipt(order: {
     <div class="tc">
       <h2 style="margin:0;font-size:17px;font-weight:900;">${order.restaurantName || 'مطعمنا'}</h2>
       <div class="dd"></div>
-      <div style="font-size:16px;font-weight:900;margin:4px 0;">بون طلب — طاولة رقم (${order.table})</div>
+      <div style="font-size:16px;font-weight:900;margin:4px 0;">فاتورة طلب — طاولة رقم (${order.table})</div>
       <div style="font-size:11px;font-weight:bold;color:#222;">${order.id} | الوقت: ${order.time}</div>
     </div>
     <div class="d"></div>
