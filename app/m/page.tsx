@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { getRestaurantMenu, PublicMenuCategory } from '@/lib/db/repositories/menu.repository';
 import { getRestaurantBySlug } from '@/lib/db/repositories/restaurant.repository';
 import CustomerMenuClient from './CustomerMenuClient';
+import ManooshaMenuClient from './ManooshaMenuClient';
 import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
 
 export const dynamic = 'force-dynamic';
@@ -89,6 +90,16 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
 
   const cleanSlug = rawSlug.trim().toLowerCase();
   const isDemo = !cleanSlug || cleanSlug === 'demo';
+
+  // Specific Custom Design for client: شيشة ومنقوشة (sh-manoosha)
+  if (cleanSlug === 'sh-manoosha') {
+    return (
+      <ManooshaMenuClient
+        initialTable={tableNumber || 5}
+        qrTokenParam={qrTokenParam}
+      />
+    );
+  }
 
   // 3. Instant Demo Render (Zero-latency fallback)
   if (isDemo) {
