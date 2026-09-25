@@ -33,7 +33,7 @@ export default function ManooshaMenuClient({
 
   // Client-side live sync of restaurant GPS settings from API
   useEffect(() => {
-    fetch('/api/v1/restaurant/settings?slug=sh-manoosha')
+    fetch(`/api/v1/restaurant/settings?slug=sh-manoosha&_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.settings) {
@@ -235,24 +235,42 @@ export default function ManooshaMenuClient({
   };
 
   // Step 1: Initiate GPS Geofence Verification before placing order
-  const handleInitiateOrderWithGps = () => {
+  const handleInitiateOrderWithGps = async () => {
     if (cartItems.length === 0) return;
 
+    setGpsModalOpen(true);
+    setGpsStatus('checking');
+    setGpsErrorMessage('');
+
+    // Fetch latest fresh GPS coordinates & toggle from server
+    let currentConfig = gpsConfig;
+    try {
+      const res = await fetch(`/api/v1/restaurant/settings?slug=sh-manoosha&_t=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.settings) {
+        currentConfig = {
+          requireGps: data.settings.requireGps !== false,
+          latitude: typeof data.settings.gpsLatitude === 'number' ? data.settings.gpsLatitude : gpsConfig.latitude,
+          longitude: typeof data.settings.gpsLongitude === 'number' ? data.settings.gpsLongitude : gpsConfig.longitude,
+          radiusMeters: typeof data.settings.gpsRadiusMeters === 'number' ? data.settings.gpsRadiusMeters : gpsConfig.radiusMeters,
+        };
+        setGpsConfig(currentConfig);
+      }
+    } catch {}
+
     // If restaurant has disabled GPS geofencing in settings, submit directly!
-    if (!gpsConfig.requireGps) {
+    if (!currentConfig.requireGps) {
+      setGpsModalOpen(false);
       executeSubmitOrder();
       return;
     }
 
     // If customer already verified GPS during this session, proceed directly
     if (clientCoords) {
+      setGpsModalOpen(false);
       executeSubmitOrder(clientCoords);
       return;
     }
-
-    setGpsModalOpen(true);
-    setGpsStatus('checking');
-    setGpsErrorMessage('');
 
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setGpsStatus('error');
@@ -270,9 +288,9 @@ export default function ManooshaMenuClient({
 
         const result = verifyCustomerLocation(coords, {
           name: 'مطعم وكافيه شيشة ومنقوشة',
-          latitude: gpsConfig.latitude,
-          longitude: gpsConfig.longitude,
-          radiusMeters: gpsConfig.radiusMeters,
+          latitude: currentConfig.latitude,
+          longitude: currentConfig.longitude,
+          radiusMeters: currentConfig.radiusMeters,
         });
         setDistanceMeters(result.distanceMeters);
 

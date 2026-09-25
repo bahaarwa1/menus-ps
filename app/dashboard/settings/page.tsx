@@ -101,6 +101,7 @@ export default function ProductionSettingsPage() {
   const [gpsLongitude, setGpsLongitude] = useState<number>(35.2289);
   const [gpsRadiusMeters, setGpsRadiusMeters] = useState<number>(350);
   const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
+  const [isSavingGps, setIsSavingGps] = useState<boolean>(false);
   const [gpsFeedbackMsg, setGpsFeedbackMsg] = useState<string>('');
 
   // Social Media Links
@@ -206,9 +207,9 @@ export default function ProductionSettingsPage() {
           }
         } catch {}
 
-        // Fetch from backend
-        const settingsUrl = `/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}`;
-        const res = await fetch(settingsUrl);
+        // Fetch from backend (with cache buster and no-store)
+        const settingsUrl = `/api/v1/restaurant/settings?slug=${encodeURIComponent(effectiveSlug)}&_t=${Date.now()}`;
+        const res = await fetch(settingsUrl, { cache: 'no-store' });
         const data = await res.json();
 
         if (data.success && data.settings) {
@@ -341,9 +342,10 @@ export default function ProductionSettingsPage() {
           const res = await fetch('/api/v1/restaurant/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
             body: JSON.stringify({
               slug: slug || 'sh-manoosha',
-              requireGps: true,
+              requireGps: Boolean(requireGps),
               gpsLatitude: lat,
               gpsLongitude: lon,
               gpsRadiusMeters: gpsRadiusMeters || 350,
@@ -355,10 +357,10 @@ export default function ProductionSettingsPage() {
             setSavedMessage('تم حفظ موقع المطعم الجغرافي الجديد بنجاح واعتماده لكافة الزبائن!');
             setTimeout(() => setSavedMessage(''), 5000);
           } else {
-            setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ الإعدادات" لتأكيدها.`);
+            setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ إعدادات الـ GPS" لتأكيدها.`);
           }
         } catch {
-          setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ الإعدادات" لتأكيدها.`);
+          setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ إعدادات الـ GPS" لتأكيدها.`);
         }
       },
       (error) => {
@@ -377,6 +379,42 @@ export default function ProductionSettingsPage() {
         maximumAge: 0,
       }
     );
+  };
+
+  // Dedicated instant save for GPS Geofencing settings
+  const handleSaveGpsOnly = async () => {
+    setIsSavingGps(true);
+    setGpsFeedbackMsg('جاري حفظ وتثبيت إعدادات الـ GPS في قاعدة البيانات...');
+    try {
+      const lat = Number(gpsLatitude);
+      const lon = Number(gpsLongitude);
+      const rad = Number(gpsRadiusMeters);
+
+      const res = await fetch('/api/v1/restaurant/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({
+          slug: slug || 'sh-manoosha',
+          requireGps: Boolean(requireGps),
+          gpsLatitude: lat,
+          gpsLongitude: lon,
+          gpsRadiusMeters: rad || 350,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGpsFeedbackMsg(`✅ تم حفظ إعدادات الـ GPS في قاعدة البيانات بنجاح! الموقع المعتمد: (${lat}, ${lon}) ونطاق السماح: ${rad || 350} متر.`);
+        setSavedMessage('تم حفظ موقع المطعم بنجاح وتحديث نظام المنيو فورياً!');
+        setTimeout(() => setSavedMessage(''), 5000);
+      } else {
+        setGpsFeedbackMsg(`❌ ${data.error || 'تعذر حفظ الإعدادات'}`);
+      }
+    } catch {
+      setGpsFeedbackMsg('❌ حدث خطأ أثناء الاتصال بالسيرفر لحفظ الموقع');
+    } finally {
+      setIsSavingGps(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -924,7 +962,7 @@ export default function ProductionSettingsPage() {
                 </div>
               </div>
 
-              {/* Google Maps Preview Link */}
+              {/* Google Maps Preview Link & Quick Rafidia Preset */}
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex-wrap gap-3">
                 <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
                   <Compass size={16} className="text-[#7A1C30]" />
@@ -932,15 +970,53 @@ export default function ProductionSettingsPage() {
                   <span className="font-mono font-black text-slate-900" dir="ltr">{gpsLatitude}, {gpsLongitude}</span>
                 </div>
 
-                <a
-                  href={`https://www.google.com/maps?q=${gpsLatitude},${gpsLongitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#7A1C30] hover:border-[#7A1C30]/40 text-xs font-bold shadow-2xs transition-all"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGpsLatitude(32.2272);
+                      setGpsLongitude(35.2400);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <span>📍 إحداثيات رفيديا الافتراضية</span>
+                  </button>
+
+                  <a
+                    href={`https://www.google.com/maps?q=${gpsLatitude},${gpsLongitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#7A1C30] hover:border-[#7A1C30]/40 text-xs font-bold shadow-2xs transition-all"
+                  >
+                    <span>معاينة الموقع على خرائط Google</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Dedicated Save GPS Settings Button inside Card */}
+              <div className="pt-2 flex items-center justify-between flex-wrap gap-3 border-t border-slate-100">
+                <span className="text-[11px] text-slate-500 font-medium">
+                  احفظ التغييرات هنا فورياً لاعتمادها وتطبيقها على المنيو مباشرة بدون الحاجة للتمرير لأسفل الصفحة:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveGpsOnly}
+                  disabled={isSavingGps}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
                 >
-                  <span>معاينة الموقع على خرائط Google</span>
-                  <ExternalLink size={12} />
-                </a>
+                  {isSavingGps ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>جاري حفظ وتثبيت الـ GPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={15} />
+                      <span>💾 حفظ إعدادات الـ GPS فورياً</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 

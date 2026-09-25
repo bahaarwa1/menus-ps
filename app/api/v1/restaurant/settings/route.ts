@@ -4,6 +4,15 @@ import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { getRestaurantBySlug, updateRestaurantSettings } from '@/lib/db/repositories/restaurant.repository';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -93,10 +102,10 @@ export async function GET(request: NextRequest) {
         subscription,
         account,
       },
-    });
+    }, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error('Get restaurant settings error:', error);
-    return NextResponse.json({ success: false, error: 'فشل استرجاع إعدادات المطعم' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'فشل استرجاع إعدادات المطعم' }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }
 
@@ -165,12 +174,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'تم حفظ إعدادات وهوية المطعم وتحديث كافة الأنظمة المرتبطة بنجاح!',
-    });
+    }, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error('Update restaurant settings error:', error);
     return NextResponse.json(
       { success: false, error: 'فشل حفظ إعدادات المطعم' },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

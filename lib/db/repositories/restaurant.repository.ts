@@ -495,8 +495,8 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               createdAt: restData.created_at,
             };
 
-            // Cache for 10 minutes in appCache
-            appCache.set(cacheKey, result, 600, ['restaurants', `restaurant:${cleanSlug}`]);
+            // Cache for 5 seconds in appCache for dynamic freshness
+            appCache.set(cacheKey, result, 5, ['restaurants', `restaurant:${cleanSlug}`]);
             global.__menusRestaurantsStore?.set(cleanSlug, result);
             return result;
           }
@@ -652,10 +652,14 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
             nextMeta
           );
 
-          await (supabase as any)
+          const { error: bErr } = await (supabase as any)
             .from('branches')
             .update(branchUpdates)
             .eq('restaurant_id', rest.id);
+
+          if (bErr) {
+            console.error('Failed to update branches in Supabase:', bErr);
+          }
 
           // Update staff PIN if provided
           if (input.staffPin && input.staffPin.length >= 4) {
