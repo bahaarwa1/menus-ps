@@ -203,6 +203,8 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
         name: it.dish.name,
         price: it.price,
         quantity: it.qty,
+        imageUrl: it.dish.image || undefined,
+        image: it.dish.image || undefined,
         selectedExtras: it.size ? [{ id: it.size.name, name: it.size.name, price: it.size.price }] : [],
         customerNotes: it.note || undefined,
         note: it.note || undefined,

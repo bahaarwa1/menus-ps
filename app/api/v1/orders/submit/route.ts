@@ -67,10 +67,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Resolve branch from restaurant slug and strictly verify restaurant existence
-    if (restaurantSlug) {
+    // Resolve branch from restaurant slug only if branchId is not already a valid UUID
+    const isBranchUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedBranch || '');
+    if (!isBranchUuid && restaurantSlug) {
       const cleanSlug = String(restaurantSlug).trim().toLowerCase();
-      if (cleanSlug && cleanSlug !== 'demo') {
+      if (cleanSlug === 'sh-manoosha') {
+        resolvedBranch = 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9';
+      } else if (cleanSlug && cleanSlug !== 'demo') {
         const restaurant = await getRestaurantBySlug(cleanSlug);
         if (!restaurant) {
           return NextResponse.json(

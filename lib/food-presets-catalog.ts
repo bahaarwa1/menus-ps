@@ -418,18 +418,63 @@ export const POPULAR_DISH_TEMPLATES: DishTemplateItem[] = [
   },
 ];
 
+import { MANOOSHA_DISHES } from '@/data/sh-manoosha-data';
+
 // Helper to reliably find an appetizing HD photo for any dish name
 export function matchFoodPhoto(name?: string): string {
-  if (!name) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+  if (!name) return '/sh-manoosha/menu_images_webp/assets_images_manaqish_thyme-manousheh.webp';
   const clean = name.trim().toLowerCase();
 
-  // 1. Direct match with popular dish templates
+  // 1. Direct match with authentic Sh & Manoosha catalog (exact or includes)
+  const manooshaExact = MANOOSHA_DISHES.find((m) => {
+    const mName = m.name.trim().toLowerCase();
+    const mNameEn = (m.nameEn || '').trim().toLowerCase();
+    return mName === clean || mNameEn === clean;
+  });
+  if (manooshaExact?.image) return manooshaExact.image;
+
+  const manooshaFuzzy = MANOOSHA_DISHES.find((m) => {
+    const mName = m.name.trim().toLowerCase();
+    return (mName.length > 3 && clean.includes(mName)) || (clean.length > 3 && mName.includes(clean));
+  });
+  if (manooshaFuzzy?.image) return manooshaFuzzy.image;
+
+  // 2. Keyword intelligent matching for Palestinian & Levantine specialties
+  if (/زعتر|thyme/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_manaqish_thyme-manousheh.webp';
+  }
+  if (/جبنة|جبن|cheese/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_manaqish_white-cheese-manousheh.webp';
+  }
+  if (/لبنة|لبنه|labneh/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_manaqish_brick-manakish.webp';
+  }
+  if (/بيض|egg/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_manaqish_egg-manoushe.webp';
+  }
+  if (/محمرة|محمره/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_manaqish_red-manakish.webp';
+  }
+  if (/قلاية|قلايه/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_fryers_tomato-with-meat.webp';
+  }
+  if (/شيشة|شيشه|ارجيلة|أرجيلة|ارغيلة|shisha|hookah/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_shisha_double-apple.webp';
+  }
+  if (/فلافل|falafel/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_breakfast_falafel.webp';
+  }
+  if (/حمص|hummus/.test(clean)) {
+    return '/sh-manoosha/menu_images_webp/assets_images_breakfast_hummus-plate.webp';
+  }
+
+  // 3. Direct match with popular dish templates
   const templateMatch = POPULAR_DISH_TEMPLATES.find((t) => 
     t.name.toLowerCase() === clean || clean.includes(t.name.toLowerCase()) || t.name.toLowerCase().includes(clean)
   );
   if (templateMatch?.image) return templateMatch.image;
 
-  // 2. Keyword intelligent matching
+  // 4. Keyword intelligent matching for general items
   if (/جاج|دجاج|كرسبي|ستربس|بروستد|chicken|crispy|wings|أجنحة/.test(clean)) {
     return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&auto=format&fit=crop&q=80';
   }
@@ -462,5 +507,5 @@ export function matchFoodPhoto(name?: string): string {
   }
 
   // Default appetizing food photo
-  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+  return '/sh-manoosha/menu_images_webp/assets_images_manaqish_thyme-manousheh.webp';
 }

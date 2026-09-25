@@ -71,20 +71,43 @@ export async function validateAndCalculateOrder(
   };
 
   const authoritativeItems: AuthoritativeItem[] = [];
+
+  // Fast Memory Catalog: Index authentic sh-manoosha dishes FIRST so validation runs in 0ms with zero DB latency
+  for (const m of MANOOSHA_DISHES) {
+    authoritativeItems.push({
+      id: m.id,
+      name: m.name,
+      price: m.price,
+      isAvailable: true,
+      extras: (m.sizes || []).map((s: any) => ({
+        id: s.name,
+        name: s.name,
+        price: s.price,
+      })),
+    });
+  }
+
   const missingItemIds: string[] = [];
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   // Cost-optimization: Check LRU cache first to avoid repetitive Supabase hits on popular dishes
   for (const item of rawItems) {
     const rawId = item.itemId || item.id || '';
     item.itemId = rawId;
     if (!rawId) continue;
+
+    // Check if already in authoritativeItems (from MANOOSHA_DISHES)
+    const existing = authoritativeItems.find(ai => ai.id === rawId || ai.name === item.name || ai.name === item.itemName);
+    if (existing) continue;
+
     const cachedItem = appCache.get<AuthoritativeItem>(`item_price:${rawId}`);
     if (cachedItem) {
       if (!authoritativeItems.some((ai) => ai.id === cachedItem.id)) {
         authoritativeItems.push(cachedItem);
       }
     } else {
-      if (!missingItemIds.includes(rawId)) {
+      // Only query DB for real UUID IDs to prevent PostgreSQL 22P02 syntax errors & 3s timeouts
+      if (uuidRegex.test(rawId) && !missingItemIds.includes(rawId)) {
         missingItemIds.push(rawId);
       }
     }
@@ -128,23 +151,6 @@ export async function validateAndCalculateOrder(
       }
     } catch (err) {
       console.warn('Database price lookup warning, using demo catalog:', err);
-    }
-  }
-
-  // Authoritative catalog for authentic sh-manoosha dishes
-  for (const m of MANOOSHA_DISHES) {
-    if (!authoritativeItems.some((ai) => ai.id === m.id)) {
-      authoritativeItems.push({
-        id: m.id,
-        name: m.name,
-        price: m.price,
-        isAvailable: true,
-        extras: (m.sizes || []).map((s: any) => ({
-          id: s.name,
-          name: s.name,
-          price: s.price,
-        })),
-      });
     }
   }
 

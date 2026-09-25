@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 import { appCache } from '@/lib/cache/lru-cache';
+import { matchFoodPhoto } from '@/lib/food-presets-catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,6 +159,16 @@ export async function GET(request: NextRequest) {
           : typeof o.table_id === 'string' && /^\d+$/.test(o.table_id)
             ? parseInt(o.table_id, 10)
             : 0;
+
+      const items = (o.order_items || []).map((it: any) => {
+        const photo = it.image_url || it.image || matchFoodPhoto(it.item_name);
+        return {
+          ...it,
+          imageUrl: photo,
+          image: photo,
+        };
+      });
+
       return {
         ...o,
         table_number: tableNum,
@@ -165,6 +176,8 @@ export async function GET(request: NextRequest) {
         orderNumber: o.order_number,
         totalAmount: Number(o.total_amount) || 0,
         customerNote: o.customer_note,
+        order_items: items,
+        items,
       };
     });
 

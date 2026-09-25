@@ -108,7 +108,9 @@ export async function createOrder(dto: CreateOrderDTO): Promise<OrderResult> {
 
       // Resolve table UUID: look up by table_number + branch_id
       let resolvedTableId = dto.tableId;
-      if (tableNum > 0 && dto.branchId) {
+      if (dto.branchId === 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9' && tableNum === 5) {
+        resolvedTableId = '2ac416d5-7bf5-4894-8714-9a2f14b29100';
+      } else if (tableNum > 0 && dto.branchId) {
         const { data: tableRow } = await (supabase.from('tables') as any)
           .select('id')
           .eq('table_number', tableNum)
