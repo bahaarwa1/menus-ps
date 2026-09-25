@@ -80,6 +80,29 @@ if (!global.__menusRestaurantsStore) {
     })),
     createdAt: new Date().toISOString(),
   });
+
+  // Seed authentic sh-manoosha restaurant with exact database branch UUID
+  global.__menusRestaurantsStore.set('sh-manoosha', {
+    id: '0b2f5bd8-7cd2-4cc9-854f-d0a136698cfb',
+    name: 'مطعم وكافيه شيشة ومنقوشة',
+    slug: 'sh-manoosha',
+    phone: '092343905',
+    city: 'نابلس - رفيديا',
+    currency: '₪',
+    subdomainUrl: 'https://sh-manoosha.menus.cool',
+    branchId: 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9',
+    branchName: 'الفرع الرئيسي - نابلس',
+    tablesCount: 15,
+    tables: Array.from({ length: 15 }, (_, i) => ({
+      id: `tbl-manoosha-${i + 1}`,
+      tableNumber: i + 1,
+      qrToken: `qr_sh-manoosha_t${i + 1}`,
+      qrUrl: `https://sh-manoosha.menus.cool/m?table=${i + 1}`,
+    })),
+    logoUrl: '/sh-manoosha/logo.png',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+  });
 }
 
 const RESERVED_SLUGS = new Set([

@@ -1,14 +1,20 @@
 import { menuItems as demoMenuItems } from '@/data/demo-data';
+import { MANOOSHA_DISHES } from '@/data/sh-manoosha-data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/client';
 import { appCache } from '@/lib/cache/lru-cache';
 
 export interface ClientOrderItemInput {
-  itemId: string;
+  itemId?: string;
+  id?: string;
+  itemName?: string;
+  name?: string;
+  price?: number;
   quantity: number;
   note?: string;
-  selectedExtras?: string[]; // Extra IDs or names
-  extras?: string[];
+  customerNotes?: string;
+  selectedExtras?: any[];
+  extras?: any[];
 }
 
 export interface ValidatedOrderItem {
@@ -69,14 +75,17 @@ export async function validateAndCalculateOrder(
 
   // Cost-optimization: Check LRU cache first to avoid repetitive Supabase hits on popular dishes
   for (const item of rawItems) {
-    const cachedItem = appCache.get<AuthoritativeItem>(`item_price:${item.itemId}`);
+    const rawId = item.itemId || item.id || '';
+    item.itemId = rawId;
+    if (!rawId) continue;
+    const cachedItem = appCache.get<AuthoritativeItem>(`item_price:${rawId}`);
     if (cachedItem) {
       if (!authoritativeItems.some((ai) => ai.id === cachedItem.id)) {
         authoritativeItems.push(cachedItem);
       }
     } else {
-      if (!missingItemIds.includes(item.itemId)) {
-        missingItemIds.push(item.itemId);
+      if (!missingItemIds.includes(rawId)) {
+        missingItemIds.push(rawId);
       }
     }
   }
@@ -122,22 +131,37 @@ export async function validateAndCalculateOrder(
     }
   }
 
+  // Authoritative catalog for authentic sh-manoosha dishes
+  for (const m of MANOOSHA_DISHES) {
+    if (!authoritativeItems.some((ai) => ai.id === m.id)) {
+      authoritativeItems.push({
+        id: m.id,
+        name: m.name,
+        price: m.price,
+        isAvailable: true,
+        extras: (m.sizes || []).map((s: any) => ({
+          id: s.name,
+          name: s.name,
+          price: s.price,
+        })),
+      });
+    }
+  }
+
   // Fallback to demoMenuItems if DB returned empty or unconfigured
-  if (authoritativeItems.length < rawItems.length) {
-    for (const m of demoMenuItems) {
-      if (!authoritativeItems.some((ai) => ai.id === m.id)) {
-        authoritativeItems.push({
-          id: m.id,
-          name: m.name,
-          price: m.price,
-          isAvailable: true,
-          extras: m.extras?.map((e) => ({
-            id: e.id,
-            name: e.name,
-            price: e.price,
-          })),
-        });
-      }
+  for (const m of demoMenuItems) {
+    if (!authoritativeItems.some((ai) => ai.id === m.id)) {
+      authoritativeItems.push({
+        id: m.id,
+        name: m.name,
+        price: m.price,
+        isAvailable: true,
+        extras: m.extras?.map((e) => ({
+          id: e.id,
+          name: e.name,
+          price: e.price,
+        })),
+      });
     }
   }
 
@@ -146,12 +170,15 @@ export async function validateAndCalculateOrder(
   let subtotal = 0;
 
   for (const clientItem of rawItems) {
+    const rawId = clientItem.itemId || clientItem.id || '';
+    clientItem.itemId = rawId;
+
     // Quantity validation: must be integer between 1 and 50
     const qty = Math.floor(Number(clientItem.quantity));
     if (isNaN(qty) || qty < 1 || qty > 50) {
       return {
         isValid: false,
-        error: `الكمية غير صالحة للصنف (${clientItem.itemId}). يجب أن تكون بين 1 و 50`,
+        error: `الكمية غير صالحة للصنف (${rawId}). يجب أن تكون بين 1 و 50`,
         items: [],
         subtotal: 0,
         taxAmount: 0,
@@ -160,8 +187,12 @@ export async function validateAndCalculateOrder(
       };
     }
 
-    // Lookup authoritative item
-    const catalogItem = authoritativeItems.find((i) => i.id === clientItem.itemId);
+    // Lookup authoritative item by ID or name
+    const catalogItem = authoritativeItems.find(
+      (i) => (rawId && i.id === rawId) || 
+             (clientItem.name && i.name === clientItem.name) || 
+             (clientItem.itemName && i.name === clientItem.itemName)
+    );
     if (!catalogItem) {
       return {
         isValid: false,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySession, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { cookies } from 'next/headers';
 import { listStaffAccessCodes, deleteStaffAccessCode } from '@/lib/db/repositories/staff-code.repository';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,36 +14,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
     }
 
-    // Force branch isolation: users can only see codes for their own branch
-    let branchId = session.role === 'admin' 
-      ? (request.nextUrl.searchParams.get('branchId') || session.branchId)
-      : session.branchId;
+    const slugParam = request.nextUrl.searchParams.get('slug') || request.nextUrl.searchParams.get('restaurantSlug');
+    const branchParam = request.nextUrl.searchParams.get('branchId');
 
-    if (!branchId && (session.restaurantId || session.restaurantSlug)) {
+    let branchId = branchParam || (session.branchId !== 'master' ? session.branchId : '');
+    const targetSlug = slugParam || session.restaurantSlug;
+
+    if (targetSlug === 'sh-manoosha' || (!branchId && targetSlug === 'sh-manoosha')) {
+      branchId = 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9';
+    }
+
+    if (!branchId && targetSlug && isSupabaseConfigured()) {
       try {
         const { createAdminClient } = await import('@/lib/supabase/admin');
         const adminSb = createAdminClient();
-        if (session.restaurantId) {
-          const { data: bData } = await (adminSb as any)
-            .from('branches')
-            .select('id')
-            .eq('restaurant_id', session.restaurantId)
-            .eq('is_active', true)
-            .limit(1)
-            .maybeSingle();
-          if (bData?.id) branchId = bData.id;
-        } else if (session.restaurantSlug) {
-          const { data: rData } = await (adminSb as any)
-            .from('restaurants')
-            .select('branches(id, is_active)')
-            .eq('slug', session.restaurantSlug)
-            .maybeSingle();
-          if (rData) {
-            const branches = Array.isArray(rData.branches) ? rData.branches : (rData.branches ? [rData.branches] : []);
-            const activeB = branches.find((b: any) => b.is_active) || branches[0];
-            if (activeB?.id) branchId = activeB.id;
-          }
+        const { data: rData } = await (adminSb as any)
+          .from('restaurants')
+          .select('branches(id, is_active)')
+          .eq('slug', targetSlug)
+          .maybeSingle();
+        if (rData) {
+          const branches = Array.isArray(rData.branches) ? rData.branches : (rData.branches ? [rData.branches] : []);
+          const activeB = branches.find((b: any) => b.is_active) || branches[0];
+          if (activeB?.id) branchId = activeB.id;
         }
+      } catch {}
+    }
+
+    if (!branchId && session.restaurantId && isSupabaseConfigured()) {
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSb = createAdminClient();
+        const { data: bData } = await (adminSb as any)
+          .from('branches')
+          .select('id')
+          .eq('restaurant_id', session.restaurantId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        if (bData?.id) branchId = bData.id;
       } catch {}
     }
 

@@ -176,6 +176,20 @@ export default function ProductionDashboardOverview() {
         </div>
       </div>
 
+      {/* 2. Sleek KPI Grid Header */}
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+          <span>📊 ملخص نشاط اليوم اللحظي</span>
+        </h2>
+        <Link
+          href="/dashboard/analytics"
+          className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200/60 flex items-center gap-1.5 transition-all shadow-2xs"
+        >
+          <span>التقارير والتحليلات المفصلة (يومي / شهري)</span>
+          <ArrowUpRight size={14} />
+        </Link>
+      </div>
+
       {/* 2. Sleek KPI Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, idx) => {

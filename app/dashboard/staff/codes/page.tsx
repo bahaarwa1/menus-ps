@@ -48,10 +48,11 @@ export default function StaffCodesPage() {
   const [restaurantName, setRestaurantName] = useState('');
   const [copiedLink, setCopiedLink] = useState<'kitchen' | 'menu' | null>(null);
 
-  const loadCodes = async () => {
+  const loadCodes = async (slug?: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/auth/staff-codes/list');
+      const activeSlug = slug || restaurantSlug || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('created') || new URLSearchParams(window.location.search).get('slug')) : '') || 'sh-manoosha';
+      const res = await fetch(`/api/auth/staff-codes/list?slug=${encodeURIComponent(activeSlug)}`);
       const data = await res.json();
       if (data.success) setCodes(data.codes || []);
     } catch {
@@ -62,13 +63,19 @@ export default function StaffCodesPage() {
   };
 
   useEffect(() => {
-    loadCodes();
+    const searchSlug = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('created') || new URLSearchParams(window.location.search).get('slug')) : '';
+    const initial = searchSlug || 'sh-manoosha';
+    setRestaurantSlug(initial);
+    loadCodes(initial);
+
     fetch('/api/auth/session')
       .then(r => r.json())
       .then(d => {
         if (d.user) {
-          if (d.user.restaurantSlug) setRestaurantSlug(d.user.restaurantSlug);
+          const s = d.user.restaurantSlug || initial;
+          setRestaurantSlug(s);
           if (d.user.restaurantName) setRestaurantName(d.user.restaurantName);
+          loadCodes(s);
         }
       })
       .catch(() => {});
@@ -85,17 +92,24 @@ export default function StaffCodesPage() {
     setIsGenerating(true);
     setNewCode(null);
     try {
+      const activeSlug = restaurantSlug || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('created') || new URLSearchParams(window.location.search).get('slug')) : '') || 'sh-manoosha';
       const res = await fetch('/api/auth/staff-codes/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeName: employeeName.trim(), role, expiresInHours }),
+        body: JSON.stringify({ 
+          employeeName: employeeName.trim(), 
+          role, 
+          expiresInHours,
+          restaurantSlug: activeSlug,
+          branchId: activeSlug === 'sh-manoosha' ? 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9' : undefined
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setNewCode(data.code);
         setNewCodeName(data.employeeName);
         setEmployeeName('');
-        await loadCodes();
+        await loadCodes(activeSlug);
       } else {
         setFormError(data.error || 'فشل توليد الرمز');
       }
@@ -146,7 +160,7 @@ export default function StaffCodesPage() {
           </p>
         </div>
         <button
-          onClick={loadCodes}
+          onClick={() => loadCodes()}
           className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
           title="تحديث القائمة"
         >

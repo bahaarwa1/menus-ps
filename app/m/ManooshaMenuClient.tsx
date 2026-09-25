@@ -197,16 +197,20 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
     try {
       // Prepare payload formatted for /api/v1/orders/submit
       const formattedItems = cartItems.map((it) => ({
+        itemId: it.dish.id,
         id: it.dish.id,
+        itemName: it.dish.name,
         name: it.dish.name,
         price: it.price,
         quantity: it.qty,
         selectedExtras: it.size ? [{ id: it.size.name, name: it.size.name, price: it.size.price }] : [],
         customerNotes: it.note || undefined,
+        note: it.note || undefined,
       }));
 
       const payload = {
         restaurantSlug: 'sh-manoosha',
+        branchId: 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9',
         tableNumber: Number(tableNumber) || 5,
         tableToken: qrTokenParam || undefined,
         items: formattedItems,
@@ -223,34 +227,18 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       if (res.ok && data.success) {
         setOrderSuccess({
-          orderId: data.orderId || `ORD-${Date.now().toString().slice(-4)}`,
+          orderId: data.orderNumber || data.orderId || `#${Date.now().toString().slice(-4)}`,
           table: tableNumber,
-          total: cartTotal,
+          total: data.totalAmount || cartTotal,
           itemsCount: cartCount,
         });
         setCart({});
         setOrderGeneralNote('');
       } else {
-        // Fallback for client preview/demo if API is relaxed
-        setOrderSuccess({
-          orderId: `ORD-${Date.now().toString().slice(-4)}`,
-          table: tableNumber,
-          total: cartTotal,
-          itemsCount: cartCount,
-        });
-        setCart({});
-        setOrderGeneralNote('');
+        showToast(data.error || 'حدث خطأ أثناء إرسال الطلب، يرجى المحاولة ثانية');
       }
     } catch (err) {
-      // Direct local success confirmation
-      setOrderSuccess({
-        orderId: `ORD-${Date.now().toString().slice(-4)}`,
-        table: tableNumber,
-        total: cartTotal,
-        itemsCount: cartCount,
-      });
-      setCart({});
-      setOrderGeneralNote('');
+      showToast('تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت');
     } finally {
       setIsSubmitting(false);
     }

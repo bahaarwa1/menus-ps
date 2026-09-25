@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   Menu, X, ExternalLink, LogOut, 
-  Copy, Check, ChefHat, 
+  Copy, Check, ChefHat, TrendingUp,
   BarChart3, Utensils, QrCode, Settings, ShoppingBag, Key
 } from 'lucide-react';
 import Logo from '@/components/common/Logo';
@@ -77,6 +77,7 @@ export default function ProductionSidebar({
   const navLinks = [
     { href: '/dashboard', label: 'لوحة القيادة والتقارير', icon: BarChart3, exact: true },
     { href: '/dashboard/orders', label: 'الطلبات الحية للمطبخ', icon: ShoppingBag, badge: 'مباشر' },
+    { href: '/dashboard/analytics', label: 'التحليلات والمبيعات المتقدمة', icon: TrendingUp },
     { href: '/dashboard/menu', label: 'إدارة قائمة الطعام', icon: Utensils },
     { href: '/dashboard/tables', label: 'الطاولات وأكواد QR', icon: QrCode },
     { href: '/dashboard/staff/codes', label: 'رموز وصول الموظفين', icon: Key },
