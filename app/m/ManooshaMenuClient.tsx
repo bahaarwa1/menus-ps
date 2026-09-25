@@ -390,23 +390,45 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
                     )}
                   </div>
 
-                  <div className="dish-content">
-                    <h4 className="dish-name">{lang === 'ar' ? dish.name : (dish.nameEn || dish.name)}</h4>
+                  <div className="dish-body">
+                    <h4 className="dish-title">{lang === 'ar' ? dish.name : (dish.nameEn || dish.name)}</h4>
                     <p className="dish-desc">{lang === 'ar' ? dish.description : (dish.descriptionEn || dish.description)}</p>
 
-                    <div className="dish-footer-row">
-                      <div className="dish-price-wrap">
-                        <span className="dish-price">{dish.price}</span>
-                        <span className="dish-currency">{lang === 'ar' ? '₪' : 'ILS'}</span>
+                    <div className="dish-footer" onClick={(e) => e.stopPropagation()}>
+                      <div className="dish-price">
+                        {dish.sizes && dish.sizes.length > 1 && (
+                          <span style={{ fontSize: '10px', color: 'var(--stone-600)', marginInlineEnd: '2px' }}>
+                            {lang === 'ar' ? 'من' : 'From'}
+                          </span>
+                        )}
+                        <span>{dish.sizes && dish.sizes.length > 0 ? dish.sizes[0].price : dish.price}</span>
+                        <span className="currency">{lang === 'ar' ? '₪' : 'ILS'}</span>
                       </div>
 
-                      <button
-                        className="dish-add-btn"
-                        onClick={(e) => handleQuickAdd(e, dish)}
-                        title="إضافة للطلب"
-                      >
-                        +
-                      </button>
+                      <div className="dish-action-box">
+                        {cartQty === 0 || (dish.sizes && dish.sizes.length > 1) ? (
+                          <button
+                            className={`btn-add-circle ${cartQty > 0 ? 'active-in-cart' : ''}`}
+                            onClick={(e) => handleQuickAdd(e, dish)}
+                            title={lang === 'ar' ? 'إضافة للطلب' : 'Add to order'}
+                          >
+                            {cartQty > 0 ? (
+                              <span style={{ fontSize: '11px', fontWeight: 900 }}>{cartQty}✓</span>
+                            ) : (
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                            )}
+                          </button>
+                        ) : (
+                          <div className="dish-qty-stepper">
+                            <button className="btn-step" onClick={() => updateCartItemQty(`${dish.id}_default`, -1)}>−</button>
+                            <span className="step-num">{cartQty}</span>
+                            <button className="btn-step" onClick={() => updateCartItemQty(`${dish.id}_default`, 1)}>+</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
