@@ -39,6 +39,8 @@ export default function ProductionMenuPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [dbStatus, setDbStatus] = useState<'ok' | 'error' | 'checking'>('checking');
+  const [isManageCatsOpen, setIsManageCatsOpen] = useState(false);
+  const [isDeletingCat, setIsDeletingCat] = useState(false);
 
   // Dish Preset / Selection & Rich Photo Gallery States
   const [addMethod, setAddMethod] = useState<'preset' | 'custom'>('preset');
@@ -228,6 +230,50 @@ export default function ProductionMenuPage() {
     }
   };
 
+  const deleteCategory = async (cat: { id: string; name: string }) => {
+    if (cat.id === 'all') return;
+
+    const catItemsCount = items.filter(
+      (it) => it.category === cat.id || it.category === cat.name || (it as any).categoryId === cat.id
+    ).length;
+
+    const confirmMsg = catItemsCount > 0
+      ? `هل أنت متأكد من حذف قسم "${cat.name}" من قائمة الطعام؟\nسيتم أيضاً حذف جميع الأصناف التابعة له (${catItemsCount} أصناف) نهائياً.`
+      : `هل أنت متأكد من حذف قسم "${cat.name}" من قائمة الطعام؟`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsDeletingCat(true);
+    try {
+      // Optimistic update
+      setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+      setItems((prev) => prev.filter((it) => it.category !== cat.id && it.category !== cat.name));
+      if (activeCategory === cat.id) {
+        setActiveCategory('all');
+      }
+
+      const res = await fetch('/api/v1/menu', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: cat.id,
+          categoryName: cat.name,
+          slug: currentSlug,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'تعذر حذف القسم من قاعدة البيانات');
+        loadMenu(currentSlug);
+      }
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+      loadMenu(currentSlug);
+    } finally {
+      setIsDeletingCat(false);
+    }
+  };
+
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newPrice) return;
@@ -414,21 +460,53 @@ export default function ProductionMenuPage() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
           {categories.map((cat) => {
             const active = activeCategory === cat.id;
+            const isAll = cat.id === 'all';
             return (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                  active
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span>{cat.icon}</span>
-                <span>{cat.name}</span>
-              </button>
+              <div key={cat.id} className="relative group shrink-0">
+                <button
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                    active
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+
+                  {!isAll && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCategory(cat);
+                      }}
+                      title={`حذف قسم ${cat.name}`}
+                      className={`p-1 rounded-md transition-all cursor-pointer ${
+                        active
+                          ? 'text-slate-400 hover:text-rose-300 hover:bg-slate-800'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                      }`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </button>
+              </div>
             );
           })}
+
+          {/* Manage / Delete Categories Modal Trigger */}
+          {categories.filter((c) => c.id !== 'all').length > 0 && (
+            <button
+              onClick={() => setIsManageCatsOpen(true)}
+              className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 bg-rose-50 border border-rose-200/80 text-rose-700 hover:bg-rose-100 shrink-0"
+              title="إدارة وحذف أقسام المنيو"
+            >
+              <Trash2 size={13} />
+              <span>إدارة وحذف الأقسام</span>
+            </button>
+          )}
         </div>
 
         <div className="relative min-w-[240px]">
@@ -442,6 +520,33 @@ export default function ProductionMenuPage() {
           <Search size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
         </div>
       </div>
+
+      {/* Active Category Banner with Quick Delete Button */}
+      {activeCategory !== 'all' && (
+        <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-bold text-amber-900 truncate">
+              تصفية حسب قسم: {categories.find((c) => c.id === activeCategory)?.name}
+            </span>
+            <span className="text-amber-700 text-[11px] shrink-0">
+              ({filteredItems.length} أطباق في هذا القسم)
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              const c = categories.find((cat) => cat.id === activeCategory);
+              if (c) deleteCategory(c);
+            }}
+            disabled={isDeletingCat}
+            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0 disabled:opacity-50"
+            title="حذف هذا القسم وجميع أصنافه"
+          >
+            <Trash2 size={13} />
+            <span>حذف هذا القسم بالكامل</span>
+          </button>
+        </div>
+      )}
 
       {/* Menu Items Grid or Empty State */}
       {isLoading ? (
@@ -1243,6 +1348,84 @@ export default function ProductionMenuPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Manage & Delete Categories Modal */}
+      {isManageCatsOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                  <Trash2 size={16} />
+                </span>
+                <h3 className="font-black text-slate-900 text-base">إدارة وحذف أقسام المنيو</h3>
+              </div>
+              <button
+                onClick={() => setIsManageCatsOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-4 font-medium leading-relaxed">
+              اختر القسم الذي ترغب بحذفه. سيتم حذف القسم وجميع الأطباق التابعة له من قائمة الطعام مباشرة:
+            </p>
+
+            <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+              {categories
+                .filter((c) => c.id !== 'all')
+                .map((cat) => {
+                  const count = items.filter(
+                    (it) => it.category === cat.id || it.category === cat.name || (it as any).categoryId === cat.id
+                  ).length;
+
+                  return (
+                    <div
+                      key={cat.id}
+                      className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-xl">{cat.icon}</span>
+                        <div>
+                          <h4 className="font-black text-xs text-slate-900">{cat.name}</h4>
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            {count} {count === 1 ? 'صنف مسجل' : 'أصناف مسجلة'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => deleteCategory(cat)}
+                        disabled={isDeletingCat}
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                        title={`حذف قسم ${cat.name}`}
+                      >
+                        <Trash2 size={13} />
+                        <span>حذف القسم</span>
+                      </button>
+                    </div>
+                  );
+                })}
+
+              {categories.filter((c) => c.id !== 'all').length === 0 && (
+                <div className="py-8 text-center text-slate-400 text-xs font-semibold">
+                  لا توجد أقسام مسجلة قابلة للحذف حالياً.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setIsManageCatsOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}

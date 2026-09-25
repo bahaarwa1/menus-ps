@@ -281,22 +281,87 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 });
     }
 
-    const { itemId } = await request.json();
-    if (!itemId) {
-      return NextResponse.json({ success: false, error: 'معرف الصنف مطلوب' }, { status: 400 });
+    const body = await request.json();
+    const { itemId, categoryId, categoryName, slug } = body;
+
+    if (!itemId && !categoryId && !categoryName) {
+      return NextResponse.json({ success: false, error: 'معرف الصنف أو القسم مطلوب' }, { status: 400 });
     }
+
+    const targetSlug = slug || session.restaurantSlug;
 
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient();
-      await (supabase as any).from('menu_items').delete().eq('id', itemId);
+
+      if (itemId) {
+        // Delete single menu item
+        await (supabase as any).from('menu_items').delete().eq('id', itemId);
+      } else if (categoryId || categoryName) {
+        let catIdToDelete = categoryId;
+
+        // If categoryId is not a UUID, or if categoryName provided, find category by restaurant
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catIdToDelete || '');
+        if (!isUuid && targetSlug) {
+          const { data: rest } = await (supabase as any)
+            .from('restaurants')
+            .select('id')
+            .eq('slug', targetSlug)
+            .maybeSingle();
+
+          if (rest?.id) {
+            const nameToFind = categoryName || categoryId;
+            const { data: catRow } = await (supabase as any)
+              .from('menu_categories')
+              .select('id')
+              .eq('restaurant_id', rest.id)
+              .or(`name_ar.eq.${nameToFind},name_ar.eq."${nameToFind}"`)
+              .maybeSingle();
+
+            if (catRow?.id) {
+              catIdToDelete = catRow.id;
+            }
+          }
+        }
+
+        if (catIdToDelete && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catIdToDelete)) {
+          // Delete child items first to maintain clean referential integrity
+          await (supabase as any).from('menu_items').delete().eq('category_id', catIdToDelete);
+          // Delete the category
+          await (supabase as any).from('menu_categories').delete().eq('id', catIdToDelete);
+        } else if (targetSlug && (categoryName || categoryId)) {
+          // Fallback deletion by name if restaurant found
+          const { data: rest } = await (supabase as any)
+            .from('restaurants')
+            .select('id')
+            .eq('slug', targetSlug)
+            .maybeSingle();
+          if (rest?.id) {
+            const nameToDel = categoryName || categoryId;
+            const { data: foundCats } = await (supabase as any)
+              .from('menu_categories')
+              .select('id')
+              .eq('restaurant_id', rest.id)
+              .eq('name_ar', nameToDel);
+
+            for (const c of (foundCats || [])) {
+              await (supabase as any).from('menu_items').delete().eq('category_id', c.id);
+              await (supabase as any).from('menu_categories').delete().eq('id', c.id);
+            }
+          }
+        }
+      }
     }
 
     appCache.clear();
     appCache.invalidateTag('menu');
-    return NextResponse.json({ success: true });
+    if (targetSlug) {
+      appCache.delete(`menu:${targetSlug}`);
+    }
+
+    return NextResponse.json({ success: true, message: 'تم الحذف بنجاح' });
   } catch (err) {
-    console.error('Delete menu item error:', err);
-    return NextResponse.json({ success: false, error: 'خطأ داخلي' }, { status: 500 });
+    console.error('Delete menu item/category error:', err);
+    return NextResponse.json({ success: false, error: 'خطأ داخلي أثناء الحذف' }, { status: 500 });
   }
 }
 
