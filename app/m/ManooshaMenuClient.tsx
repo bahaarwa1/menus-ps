@@ -45,6 +45,38 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
     }, 2800);
   };
 
+  // Prevent text selection and copying across menu
+  useEffect(() => {
+    const handleCopy = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    };
+    const handleSelectStart = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    };
+    const handleContextMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('selectstart', handleSelectStart);
+    document.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('selectstart', handleSelectStart);
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
   // Sync table if prop changes or URL changes
   useEffect(() => {
     if (initialTable && initialTable > 0) {
@@ -490,7 +522,13 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
                   <span className="cart-total-price">{cartTotal} ₪</span>
                 </div>
               </div>
-              <div className="cart-bar-right">
+              <div 
+                className="cart-bar-right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCartOpen(true);
+                }}
+              >
                 <span className="cart-action-text">{lang === 'ar' ? 'مراجعة وإرسال' : 'Review & Send'}</span>
                 <span className="cart-arrow">{lang === 'ar' ? '←' : '→'}</span>
               </div>
@@ -506,7 +544,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 1. Cart Drawer */}
       {isCartOpen && (
-        <div className="drawer-backdrop" onClick={() => setIsCartOpen(false)}>
+        <div className="drawer-backdrop open" onClick={() => setIsCartOpen(false)}>
           <div className="cart-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
               <div className="drawer-title-wrap">
@@ -614,7 +652,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 2. Dish Customization Modal */}
       {activeDish && (
-        <div className="modal-backdrop" onClick={() => setActiveDish(null)}>
+        <div className="modal-backdrop open" onClick={() => setActiveDish(null)}>
           <div className="product-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hero-img-wrap">
               <img src={activeDish.image || '/sh-manoosha/logo.png'} alt={activeDish.name} className="modal-hero-img" />
@@ -683,7 +721,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 3. Table Modal */}
       {isTableModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsTableModalOpen(false)}>
+        <div className="modal-backdrop open" onClick={() => setIsTableModalOpen(false)}>
           <div className="dialog-card" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-icon">🪑</div>
             <h3 className="dialog-title">{lang === 'ar' ? 'رقم طاولتك داخل الصالة' : 'Your Table Number'}</h3>
@@ -720,7 +758,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 4. Waiter Modal */}
       {isWaiterModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsWaiterModalOpen(false)}>
+        <div className="modal-backdrop open" onClick={() => setIsWaiterModalOpen(false)}>
           <div className="dialog-card" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-icon">🔔</div>
             <h3 className="dialog-title">
@@ -756,7 +794,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
 
       {/* 5. Order Success Dialog (Direct in-app confirmation) */}
       {orderSuccess && (
-        <div className="modal-backdrop" onClick={() => setOrderSuccess(null)}>
+        <div className="modal-backdrop open" onClick={() => setOrderSuccess(null)}>
           <div className="dialog-card success-card" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-icon-success">✓</div>
             <h3 className="dialog-title">{lang === 'ar' ? 'تم استلام طلبك بنجاح!' : 'Order Placed Successfully!'}</h3>
