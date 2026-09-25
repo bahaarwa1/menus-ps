@@ -333,10 +333,10 @@ export async function middleware(request: NextRequest) {
   // Referrer policy — don't leak full URL to third parties
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // Restrict browser features (no camera, mic, location, payment)
+  // Restrict browser features (allow geolocation for restaurant geofence verification)
   response.headers.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), serial=()'
+    'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), bluetooth=(), serial=()'
   );
 
   // HSTS — force HTTPS for 2 years (including subdomains)

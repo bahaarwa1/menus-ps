@@ -1261,6 +1261,55 @@ export default function ProductionSettingsPage() {
               </div>
             </div>
 
+            {/* GPS Geofencing Settings */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <MapPin size={16} className="text-[#7A1C30]" />
+                  <span>تأكيد تواجد الزبون في المطعم عبر الـ GPS (Geofencing)</span>
+                </h2>
+                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  مفعل لحماية الطلبات
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                يسمح للزبون بفتح المنيو وتصفح الأصناف بحرية، لكنه يشترط تواجده الفعلي داخل محيط المطعم (نابلس - رفيديا) قبل إرسال الطلب للمطبخ لمنع الطلبات العشوائية.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">خط العرض (Latitude)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value="32.2272"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">خط الطول (Longitude)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value="35.2289"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">نطاق الصالة المسموح به</label>
+                  <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#7A1C30] flex items-center justify-between">
+                    <span>350 متر</span>
+                    <span className="text-[10px] text-slate-400 font-normal">صالة + شرفة + باركينغ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Kitchen & Staff PIN */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
               <h2 className="text-sm font-black text-slate-900 mb-2 flex items-center gap-2">

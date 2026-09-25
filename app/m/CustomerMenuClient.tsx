@@ -19,6 +19,8 @@ import {
 } from '@/lib/smart-food-translator';
 
 import { categories as fallbackCategories, menuItems as fallbackMenuItems } from '@/data/demo-data';
+import GpsVerificationModal, { GpsStatus } from '@/components/common/GpsVerificationModal';
+import { verifyCustomerLocation, Coordinates, DEFAULT_RESTAURANT_COORDINATES } from '@/lib/geo/geofence';
 
 // --- Smart Food Image Helper with Appetizing Fallbacks ---
 function getSmartFoodImage(item: MenuItem): string {
@@ -739,10 +741,96 @@ export default function CustomerMenuClient({
     );
   };
 
-  const handleSendOrder = async () => {
+  // GPS Geofencing States
+  const [gpsModalOpen, setGpsModalOpen] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<GpsStatus>('idle');
+  const [distanceMeters, setDistanceMeters] = useState<number | undefined>();
+  const [gpsErrorMessage, setGpsErrorMessage] = useState('');
+  const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
+
+  // Step 1: Initiate GPS Geofence Verification before placing order
+  const handleInitiateOrderWithGps = () => {
     if (Object.keys(cartQuantities).length === 0) return;
 
     // If table number is missing or 0, open table picker modal instead of sending invalid order
+    if (!tableNumber || tableNumber <= 0) {
+      setIsTablePickerOpen(true);
+      return;
+    }
+
+    if (clientCoords) {
+      executeSendOrder(clientCoords);
+      return;
+    }
+
+    setGpsModalOpen(true);
+    setGpsStatus('checking');
+    setGpsErrorMessage('');
+
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsStatus('error');
+      setGpsErrorMessage('المتصفح لا يدعم خدمة تحديد الموقع (GPS).');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: Coordinates = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+
+        const result = verifyCustomerLocation(coords);
+        setDistanceMeters(result.distanceMeters);
+
+        if (result.isWithin) {
+          setClientCoords(coords);
+          setGpsStatus('success');
+          setTimeout(() => {
+            setGpsModalOpen(false);
+            executeSendOrder(coords);
+          }, 1100);
+        } else {
+          setGpsStatus('too_far');
+        }
+      },
+      (err) => {
+        console.warn('Geolocation error:', err);
+        if (err.code === 1) { // PERMISSION_DENIED
+          setGpsStatus('permission_denied');
+        } else {
+          setGpsStatus('error');
+          setGpsErrorMessage('تعذر التقاط إشارة الـ GPS بدقة. تأكد من تفعيل الموقع في هاتفك ثم أعد المحاولة.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      }
+    );
+  };
+
+  const handleSimulateInside = () => {
+    const fakeCoords: Coordinates = {
+      latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
+      longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
+      accuracy: 5,
+    };
+    setClientCoords(fakeCoords);
+    setDistanceMeters(8);
+    setGpsStatus('success');
+    setTimeout(() => {
+      setGpsModalOpen(false);
+      executeSendOrder(fakeCoords, true);
+    }, 900);
+  };
+
+  // Step 2: Send order with client GPS coordinates
+  const executeSendOrder = async (coords?: Coordinates, simulated: boolean = false) => {
+    if (Object.keys(cartQuantities).length === 0) return;
+
     if (!tableNumber || tableNumber <= 0) {
       setIsTablePickerOpen(true);
       return;
@@ -760,6 +848,8 @@ export default function CustomerMenuClient({
         selectedExtras: selectedExtras[id] || undefined,
       }));
 
+      const activeCoords = coords || clientCoords;
+
       const res = await fetch('/api/v1/orders/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -770,6 +860,12 @@ export default function CustomerMenuClient({
           tableToken: qrTokenParam || undefined,
           customerNote: orderGeneralNote.trim() || undefined,
           items: itemsPayload,
+          clientCoordinates: activeCoords ? {
+            latitude: activeCoords.latitude,
+            longitude: activeCoords.longitude,
+            accuracy: activeCoords.accuracy,
+            simulated,
+          } : undefined,
         }),
       });
 
@@ -1841,7 +1937,7 @@ export default function CustomerMenuClient({
                   </div>
 
                   <button
-                    onClick={handleSendOrder}
+                    onClick={handleInitiateOrderWithGps}
                     disabled={isSubmittingOrder}
                     className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-orange-500/25 transition-all disabled:opacity-50 cursor-pointer"
                   >
@@ -2077,6 +2173,24 @@ export default function CustomerMenuClient({
             </div>
           )}
         </AnimatePresence>
+
+        {/* GPS Geofencing Verification Modal */}
+        <GpsVerificationModal
+          isOpen={gpsModalOpen}
+          onClose={() => setGpsModalOpen(false)}
+          status={gpsStatus}
+          distanceMeters={distanceMeters}
+          allowedRadiusMeters={DEFAULT_RESTAURANT_COORDINATES.radiusMeters}
+          restaurantName={activeRestaurantName || 'مطعمنا'}
+          restaurantLocationText={activeRestaurantCity || 'نابلس - رفيديا'}
+          errorMessage={gpsErrorMessage}
+          onRetry={handleInitiateOrderWithGps}
+          onCallWaiter={() => {
+            setGpsModalOpen(false);
+            setWaiterCalled(true);
+          }}
+          onSimulateInside={handleSimulateInside}
+        />
 
       </div>
 

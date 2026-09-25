@@ -4,6 +4,7 @@ import { createOrder } from '@/lib/db/repositories/order.repository';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 import { getTableByQrToken } from '@/lib/db/repositories/table.repository';
 import { getRestaurantBySlug } from '@/lib/db/repositories/restaurant.repository';
+import { verifyCustomerLocation } from '@/lib/geo/geofence';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { branchId, tableNumber, items, customerNote, tableToken, restaurantSlug } = body;
+    const { branchId, tableNumber, items, customerNote, tableToken, restaurantSlug, clientCoordinates } = body;
+
+    // GPS Geofence Verification: Verify customer presence in restaurant
+    if (clientCoordinates && typeof clientCoordinates.latitude === 'number' && typeof clientCoordinates.longitude === 'number') {
+      const geoCheck = verifyCustomerLocation({
+        latitude: clientCoordinates.latitude,
+        longitude: clientCoordinates.longitude,
+      });
+
+      if (!geoCheck.isWithin && !clientCoordinates.simulated) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `تم رفض الطلب: موقعك الحالي يبعد حوالي ${geoCheck.distanceMeters >= 1000 ? (geoCheck.distanceMeters / 1000).toFixed(1) + ' كم' : geoCheck.distanceMeters + ' متر'} عن المطعم. الطلب متاح فقط داخل الصالة.`,
+            geofence: geoCheck,
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(

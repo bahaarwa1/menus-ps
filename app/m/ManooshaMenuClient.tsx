@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import './sh-manoosha.css';
 import { MANOOSHA_CATEGORIES, MANOOSHA_DISHES, MANOOSHA_INFO } from '@/data/sh-manoosha-data';
+import GpsVerificationModal, { GpsStatus } from '@/components/common/GpsVerificationModal';
+import { verifyCustomerLocation, Coordinates, DEFAULT_RESTAURANT_COORDINATES } from '@/lib/geo/geofence';
 
 interface ManooshaMenuClientProps {
   initialTable?: number;
@@ -20,6 +22,13 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const [inputTableVal, setInputTableVal] = useState<string>(String(initialTable || 5));
+
+  // GPS Geofence States
+  const [gpsModalOpen, setGpsModalOpen] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<GpsStatus>('idle');
+  const [distanceMeters, setDistanceMeters] = useState<number | undefined>();
+  const [gpsErrorMessage, setGpsErrorMessage] = useState('');
+  const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
   
   // Customization / Dish Modal
   const [activeDish, setActiveDish] = useState<any>(null);
@@ -189,8 +198,83 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
     });
   };
 
-  // Submit Order directly to Server / KDS (No WhatsApp!)
-  const handleSubmitOrder = async () => {
+  // Step 1: Initiate GPS Geofence Verification before placing order
+  const handleInitiateOrderWithGps = () => {
+    if (cartItems.length === 0) return;
+
+    // If customer already verified GPS during this session, proceed directly
+    if (clientCoords) {
+      executeSubmitOrder(clientCoords);
+      return;
+    }
+
+    setGpsModalOpen(true);
+    setGpsStatus('checking');
+    setGpsErrorMessage('');
+
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsStatus('error');
+      setGpsErrorMessage('المتصفح لا يدعم خدمة تحديد الموقع (GPS). يرجى طلب مساعدة الويتر لتأكيد الطلب.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: Coordinates = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+
+        const result = verifyCustomerLocation(coords);
+        setDistanceMeters(result.distanceMeters);
+
+        if (result.isWithin) {
+          setClientCoords(coords);
+          setGpsStatus('success');
+          setTimeout(() => {
+            setGpsModalOpen(false);
+            executeSubmitOrder(coords);
+          }, 1100);
+        } else {
+          setGpsStatus('too_far');
+        }
+      },
+      (err) => {
+        console.warn('Geolocation error:', err);
+        if (err.code === 1) { // PERMISSION_DENIED
+          setGpsStatus('permission_denied');
+        } else {
+          setGpsStatus('error');
+          setGpsErrorMessage('تعذر التقاط إشارة الـ GPS بدقة. تأكد من تفعيل الموقع في هاتفك ثم أعد المحاولة.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      }
+    );
+  };
+
+  // Safe simulation for authorized testing/preview
+  const handleSimulateInside = () => {
+    const fakeCoords: Coordinates = {
+      latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
+      longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
+      accuracy: 5,
+    };
+    setClientCoords(fakeCoords);
+    setDistanceMeters(6);
+    setGpsStatus('success');
+    setTimeout(() => {
+      setGpsModalOpen(false);
+      executeSubmitOrder(fakeCoords, true);
+    }, 900);
+  };
+
+  // Step 2: Submit Order directly to Server / KDS with verified GPS coordinates
+  const executeSubmitOrder = async (coords?: Coordinates, simulated: boolean = false) => {
     if (cartItems.length === 0) return;
     setIsSubmitting(true);
 
@@ -210,6 +294,8 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
         note: it.note || undefined,
       }));
 
+      const activeCoords = coords || clientCoords;
+
       const payload = {
         restaurantSlug: 'sh-manoosha',
         branchId: 'a84f5ec9-714f-44fe-980d-82a78eb4f9b9',
@@ -217,6 +303,12 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
         tableToken: qrTokenParam || undefined,
         items: formattedItems,
         customerNote: orderGeneralNote.trim() || undefined,
+        clientCoordinates: activeCoords ? {
+          latitude: activeCoords.latitude,
+          longitude: activeCoords.longitude,
+          accuracy: activeCoords.accuracy,
+          simulated,
+        } : undefined,
       };
 
       const res = await fetch('/api/v1/orders/submit', {
@@ -240,7 +332,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
       } else {
         showToast(data.error || 'حدث خطأ أثناء إرسال الطلب، يرجى المحاولة ثانية');
       }
-    } catch (err) {
+    } catch {
       showToast('تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت');
     } finally {
       setIsSubmitting(false);
@@ -623,7 +715,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
             <div className="drawer-footer">
               <button
                 className="btn-direct-order"
-                onClick={handleSubmitOrder}
+                onClick={handleInitiateOrderWithGps}
                 disabled={isSubmitting || cartItems.length === 0}
               >
                 <span className="btn-order-icon">🚀</span>
@@ -786,6 +878,24 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
           <span className="toast-text">{toastMsg}</span>
         </div>
       )}
+
+      {/* 7. GPS Geofencing Verification Modal */}
+      <GpsVerificationModal
+        isOpen={gpsModalOpen}
+        onClose={() => setGpsModalOpen(false)}
+        status={gpsStatus}
+        distanceMeters={distanceMeters}
+        allowedRadiusMeters={DEFAULT_RESTAURANT_COORDINATES.radiusMeters}
+        restaurantName={lang === 'ar' ? 'مطعم وكافيه شيشة ومنقوشة' : 'Shisha & Manoosha'}
+        restaurantLocationText={lang === 'ar' ? 'نابلس - رفيديا - الشارع الرئيسي' : 'Nablus - Rafidia'}
+        errorMessage={gpsErrorMessage}
+        onRetry={handleInitiateOrderWithGps}
+        onCallWaiter={() => {
+          setGpsModalOpen(false);
+          handleSendWaiterCall(lang === 'ar' ? 'تأكيد الطلب على الطاولة يدوياً (GPS)' : 'Manual Table Verification (GPS)');
+        }}
+        onSimulateInside={handleSimulateInside}
+      />
 
     </div>
   );
