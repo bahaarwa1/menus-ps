@@ -955,6 +955,8 @@ export default function ManooshaMenuClient({
         restaurantName={lang === 'ar' ? 'مطعم وكافيه شيشة ومنقوشة' : 'Shisha & Manoosha'}
         restaurantLocationText={lang === 'ar' ? 'نابلس - رفيديا - الشارع الرئيسي' : 'Nablus - Rafidia'}
         errorMessage={gpsErrorMessage}
+        userCoords={clientCoords}
+        restaurantCoords={{ latitude: gpsConfig.latitude, longitude: gpsConfig.longitude }}
         onRetry={handleInitiateOrderWithGps}
         onCallWaiter={() => {
           setGpsModalOpen(false);

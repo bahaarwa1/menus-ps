@@ -15,6 +15,8 @@ interface GpsVerificationModalProps {
   restaurantName?: string;
   restaurantLocationText?: string;
   errorMessage?: string;
+  userCoords?: Coordinates | null;
+  restaurantCoords?: { latitude: number; longitude: number };
   onRetry: () => void;
   onCallWaiter?: () => void;
   onSimulateInside?: () => void; // for testing/preview in dev or authorized demo
@@ -29,6 +31,8 @@ export default function GpsVerificationModal({
   restaurantName = 'مطعم وكافيه شيشة ومنقوشة',
   restaurantLocationText = 'نابلس - رفيديا - الشارع الرئيسي',
   errorMessage,
+  userCoords,
+  restaurantCoords,
   onRetry,
   onCallWaiter,
   onSimulateInside,
@@ -104,6 +108,12 @@ export default function GpsVerificationModal({
                 <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span>المسافة التقديرية الحالية:</span>
                   <span className="text-[#7A1C30] font-black font-mono text-sm">{formattedDistance}</span>
+                </div>
+              )}
+              {userCoords && restaurantCoords && (
+                <div className="mt-2.5 p-2 rounded-xl bg-slate-100/80 border border-slate-200 text-[10.5px] text-slate-600 font-mono space-y-0.5 text-center" dir="rtl">
+                  <div>📱 موقع هاتفك الملتقط: <span className="text-slate-900 font-bold" dir="ltr">{userCoords.latitude.toFixed(4)}, {userCoords.longitude.toFixed(4)}</span></div>
+                  <div>🏢 موقع المطعم بالنظام: <span className="text-slate-900 font-bold" dir="ltr">{restaurantCoords.latitude.toFixed(4)}, {restaurantCoords.longitude.toFixed(4)}</span></div>
                 </div>
               )}
               <p className="text-[11px] text-slate-400 mt-2">
