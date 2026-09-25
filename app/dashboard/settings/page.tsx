@@ -6,7 +6,8 @@ import {
   ExternalLink, Upload, Image as ImageIcon, Trash2, Clock, 
   MapPin, Phone, MessageCircle, Share2, Sparkles, Flame,
   User, Mail, CreditCard, Calendar, CheckCircle2, Layers,
-  Zap, Lock, Eye, EyeOff, Headphones, Award
+  Zap, Lock, Eye, EyeOff, Headphones, Award, Navigation,
+  Crosshair, Compass, Radio, CheckCircle, Info
 } from 'lucide-react';
 
 const PRESET_LOGOS = [
@@ -77,7 +78,7 @@ interface SubscriptionDetails {
 }
 
 export default function ProductionSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'subscription' | 'account' | 'marketing' | 'system'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'subscription' | 'account' | 'marketing' | 'gps' | 'system'>('general');
 
   // Restaurant details
   const [restaurantName, setRestaurantName] = useState('مطعم وكافيه شيشة ومنقوشة');
@@ -93,6 +94,14 @@ export default function ProductionSettingsPage() {
   const [serviceFee, setServiceFee] = useState('0');
   const [openingHours, setOpeningHours] = useState('يومياً من 09:00 صباحاً حتى 01:00 بعد منتصف الليل');
   const [isOpen, setIsOpen] = useState(true);
+
+  // GPS Geofencing Settings
+  const [requireGps, setRequireGps] = useState<boolean>(true);
+  const [gpsLatitude, setGpsLatitude] = useState<number>(32.2272);
+  const [gpsLongitude, setGpsLongitude] = useState<number>(35.2289);
+  const [gpsRadiusMeters, setGpsRadiusMeters] = useState<number>(350);
+  const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
+  const [gpsFeedbackMsg, setGpsFeedbackMsg] = useState<string>('');
 
   // Social Media Links
   const [whatsappNumber, setWhatsappNumber] = useState('092343905');
@@ -220,6 +229,11 @@ export default function ProductionSettingsPage() {
           if (s.offersBannerSubtitle) setOffersBannerSubtitle(s.offersBannerSubtitle);
           if (s.offersBannerActive !== undefined) setOffersBannerActive(s.offersBannerActive);
 
+          if (s.requireGps !== undefined) setRequireGps(Boolean(s.requireGps));
+          if (s.gpsLatitude) setGpsLatitude(Number(s.gpsLatitude));
+          if (s.gpsLongitude) setGpsLongitude(Number(s.gpsLongitude));
+          if (s.gpsRadiusMeters) setGpsRadiusMeters(Number(s.gpsRadiusMeters));
+
           if (s.account) {
             setAccount(s.account);
           }
@@ -301,6 +315,45 @@ export default function ProductionSettingsPage() {
     }
   };
 
+  // Automatically detect restaurant's physical GPS location using device geolocation
+  const handleDetectCurrentLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsFeedbackMsg('متصفحك لا يدعم خاصية تحديد الموقع الجغرافي GPS.');
+      return;
+    }
+
+    setIsDetectingGps(true);
+    setGpsFeedbackMsg('جاري الاتصال بالأقمار الصناعية وتحديد إحداثيات موقع المطعم بدقة...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = parseFloat(position.coords.latitude.toFixed(6));
+        const lon = parseFloat(position.coords.longitude.toFixed(6));
+        const acc = Math.round(position.coords.accuracy);
+
+        setGpsLatitude(lat);
+        setGpsLongitude(lon);
+        setIsDetectingGps(false);
+        setGpsFeedbackMsg(`تم التقاط إحداثيات المطعم بنجاح بدقة ±${acc} متر! اضغط "حفظ الإعدادات" لاعتمادها.`);
+      },
+      (error) => {
+        setIsDetectingGps(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsFeedbackMsg('تم رفض إذن الوصول للموقع. يرجى تفعيل الـ GPS والسماح للمتصفح بالوصول للموقع.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setGpsFeedbackMsg('تعذر التقاط إشارة الـ GPS حالياً، يرجى المحاولة من جديد أو كتابة الإحداثيات يدوياً.');
+        } else {
+          setGpsFeedbackMsg('انتهت مهلة تحديد الموقع، يرجى إعادة المحاولة.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -328,6 +381,10 @@ export default function ProductionSettingsPage() {
           offersBannerTitle,
           offersBannerSubtitle,
           offersBannerActive,
+          requireGps,
+          gpsLatitude,
+          gpsLongitude,
+          gpsRadiusMeters,
         }),
       });
 
@@ -446,6 +503,7 @@ export default function ProductionSettingsPage() {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200/80">
         {[
           { id: 'general', label: 'هوية المطعم واللوجو', icon: Store },
+          { id: 'gps', label: 'التحكم بالـ GPS والموقع', icon: MapPin },
           { id: 'subscription', label: 'باقة الاشتراك والترقية', icon: Award },
           { id: 'account', label: 'تفاصيل الحساب والأمان', icon: User },
           { id: 'marketing', label: 'العروض وحسابات التواصل', icon: Flame },
@@ -491,7 +549,7 @@ export default function ProductionSettingsPage() {
         {/* ======================================================== */}
         {/* TAB 1: GENERAL IDENTITY & LOGO */}
         {/* ======================================================== */}
-        {(activeTab === 'general' || activeTab === 'system') && (
+        {activeTab === 'general' && (
           <div className="space-y-6">
             
             {/* Section: Logo & Visual Identity */}
@@ -685,6 +743,295 @@ export default function ProductionSettingsPage() {
                     placeholder="مثال: نابلس - رفيديا - الشارع الرئيسي - مجمع رفيديا التجاري"
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#7A1C30]"
                   />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 2: GPS GEOFENCING SYSTEM (ربط الـ GPS مع المنيو) */}
+        {/* ======================================================== */}
+        {activeTab === 'gps' && (
+          <div className="space-y-6 animate-in fade-in">
+            
+            {/* Master Geofence Toggle Card */}
+            <div className={`p-6 rounded-3xl border transition-all ${
+              requireGps 
+                ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-white border-emerald-300 shadow-sm' 
+                : 'bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-white border-amber-300 shadow-sm'
+            }`}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-white shadow-xs text-[#7A1C30]">
+                      <Radio size={20} className={requireGps ? 'text-emerald-600 animate-pulse' : 'text-amber-500'} />
+                    </span>
+                    <h2 className="text-base font-black text-slate-900">
+                      نظام فحص الـ GPS للزبائن قبل الطلب (Geofencing)
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                    يسمح للزبائن بفتح المنيو وتصفح كامل الأصناف بحرية، ولكنه يشترط تواجدهم الفعلي داخل صالة أو محيط المطعم قبل إرسال الطلب للمطبخ لمنع الطلبات الوهمية والعشوائية.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-xs font-black px-3 py-1.5 rounded-full border ${
+                    requireGps 
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                      : 'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}>
+                    {requireGps ? '🛡️ مفعّل (محمي داخل الصالة)' : '⚠️ معطّل (الطلب متاح للجميع)'}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setRequireGps(!requireGps)}
+                    className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors cursor-pointer focus:outline-none ${
+                      requireGps ? 'bg-emerald-600' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                        requireGps ? 'translate-x-1' : 'translate-x-9'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Status explanation */}
+              <div className="mt-4 pt-4 border-t border-slate-200/60 flex items-center justify-between flex-wrap gap-2 text-xs">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Info size={14} className="text-[#7A1C30]" />
+                  <span>
+                    {requireGps 
+                      ? 'النظام يطلب من الزبون إذن الموقع عند الضغط على "تأكيد الطلب"، ويفحص البعد بالمتر عن المطعم.' 
+                      : 'يمكن للزبون إرسال الطلب من أي مكان دون فحص الموقع الجغرافي.'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRequireGps(!requireGps)}
+                  className="text-xs font-bold text-[#7A1C30] hover:underline cursor-pointer"
+                >
+                  {requireGps ? 'اضغط لتعطيل الفحص' : 'اضغط لتفعيل الفحص'}
+                </button>
+              </div>
+            </div>
+
+            {/* Restaurant Physical Location & Live Detection */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-6">
+              <div className="flex items-center justify-between flex-wrap gap-2 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <MapPin size={18} className="text-[#7A1C30]" />
+                    <span>إحداثيات موقع المطعم الجغرافي</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    حدد النقطة المركزية لمطعمك التي سيقاس بعد هواتف الزبائن بالنسبة لها
+                  </p>
+                </div>
+
+                {/* Auto Detect Button */}
+                <button
+                  type="button"
+                  onClick={handleDetectCurrentLocation}
+                  disabled={isDetectingGps}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                >
+                  {isDetectingGps ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin text-emerald-400" />
+                      <span>جاري الاتصال بالأقمار الصناعية...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair size={14} className="text-emerald-400" />
+                      <span>📍 التقاط موقع المطعم الحالي (GPS تلقائي)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Feedback Message */}
+              {gpsFeedbackMsg && (
+                <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold flex items-center gap-2.5 animate-in fade-in">
+                  <CheckCircle size={16} className="text-blue-600 shrink-0" />
+                  <span>{gpsFeedbackMsg}</span>
+                </div>
+              )}
+
+              {/* Coordinate Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>خط العرض (Latitude)</span>
+                    <span className="text-[10px] text-slate-400 font-mono">شمال / جنوب</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={gpsLatitude}
+                    onChange={(e) => setGpsLatitude(parseFloat(e.target.value) || 0)}
+                    placeholder="32.2272"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-[#7A1C30]"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>خط الطول (Longitude)</span>
+                    <span className="text-[10px] text-slate-400 font-mono">شرق / غرب</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={gpsLongitude}
+                    onChange={(e) => setGpsLongitude(parseFloat(e.target.value) || 0)}
+                    placeholder="35.2289"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-[#7A1C30]"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              {/* Google Maps Preview Link */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex-wrap gap-3">
+                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                  <Compass size={16} className="text-[#7A1C30]" />
+                  <span>الموقع المحدد حالياً:</span>
+                  <span className="font-mono font-black text-slate-900" dir="ltr">{gpsLatitude}, {gpsLongitude}</span>
+                </div>
+
+                <a
+                  href={`https://www.google.com/maps?q=${gpsLatitude},${gpsLongitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#7A1C30] hover:border-[#7A1C30]/40 text-xs font-bold shadow-2xs transition-all"
+                >
+                  <span>معاينة الموقع على خرائط Google</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            </div>
+
+            {/* Geofence Allowed Radius Card */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <Navigation size={18} className="text-[#7A1C30]" />
+                    <span>نطاق السماح للزبائن (نصف القطر بالمتر)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    المسافة الدائرية المحيطة بالمطعم التي يُسمح من خلالها بإرسال الطلبات
+                  </p>
+                </div>
+
+                <div className="px-4 py-1.5 rounded-xl bg-[#7A1C30]/10 text-[#7A1C30] text-sm font-black">
+                  {gpsRadiusMeters} متر
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">خيارات ونطاقات سريعة جاهزة:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { meters: 100, label: '100 متر', desc: 'الصالة الداخلية فقط' },
+                    { meters: 250, label: '250 متر', desc: 'صالة + تراس خارجي' },
+                    { meters: 350, label: '350 متر (موصى به)', desc: 'مطعم + باركينغ سيارات' },
+                    { meters: 500, label: '500 متر', desc: 'مجمع تجاري واسع' },
+                  ].map((p) => {
+                    const isSelected = gpsRadiusMeters === p.meters;
+                    return (
+                      <button
+                        key={p.meters}
+                        type="button"
+                        onClick={() => setGpsRadiusMeters(p.meters)}
+                        className={`p-3 rounded-2xl border text-right transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#7A1C30] text-white border-[#7A1C30] shadow-sm shadow-[#7A1C30]/20'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        <div className="text-xs font-black">{p.label}</div>
+                        <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
+                          {p.desc}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Slider / Input */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>تعديل النطاق بدقة يدوياً:</span>
+                  <span className="font-mono text-[#7A1C30] font-black">{gpsRadiusMeters} م</span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="1000"
+                  step="25"
+                  value={gpsRadiusMeters}
+                  onChange={(e) => setGpsRadiusMeters(Number(e.target.value))}
+                  className="w-full accent-[#7A1C30] cursor-pointer"
+                />
+                <div className="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>50 متر (ضيق جداً)</span>
+                  <span>350 متر (الافتراضي المتوازن)</span>
+                  <span>1000 متر (1 كم كامل)</span>
+                </div>
+              </div>
+
+              {/* Technical Tip Note */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs space-y-1">
+                <div className="font-black flex items-center gap-1.5">
+                  <span>💡 نصيحة تقنية مهمة:</span>
+                </div>
+                <p className="leading-relaxed text-amber-800 text-[11px]">
+                  نوصي بترك النطاق على <strong>350 متر</strong> على الأقل، لأن إشارات الأقمار الصناعية لـ GPS في هواتف الزبائن تضعف داخل المباني والأسقف الخرسانية للمطاعم ويحدث لها انزياح طبيعي (Drift). نطاق 350م يضمن قبول كافة الزبائن الجالسين داخل الصالة والتراس بدون أي أخطاء، وفي نفس الوقت يمنع الأشخاص المتواجدين في بيوتهم أو مدن أخرى من إرسال طلبات للمطبخ.
+                </p>
+              </div>
+            </div>
+
+            {/* How It Works Explainer Card */}
+            <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-4 shadow-md">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-400" />
+                <h3 className="text-sm font-black">كيف تظهر الميزة للزبون في صفحة المنيو؟</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center font-black text-amber-400">1</div>
+                  <h4 className="font-bold text-white">تصفح حر وبدون إزعاج</h4>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    الزبون يفتح المنيو ويتصفح كافة الأصناف والأسعار بدون أي مطالبة بصلاحيات الموقع، مما يضمن سرعة وسلاسة التصفح.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center font-black text-amber-400">2</div>
+                  <h4 className="font-bold text-white">تحقق أنيق بالرادار</h4>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    عند اختيار الطاولة والضغط على &quot;إرسال الطلب للمطبخ&quot;، تظهر نافذة تأكيد الموقع الفوري لتأكيد وجوده داخل الصالة.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center font-black text-amber-400">3</div>
+                  <h4 className="font-bold text-white">إرسال فوري مع الحماية</h4>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    إذا كان داخل النطاق يصل الطلب فوراً للمطبخ والكاشير، وإن كان خارج النطاق ينبهه النظام مع إمكانية استدعاء النادل للمساعدة.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1261,29 +1608,43 @@ export default function ProductionSettingsPage() {
               </div>
             </div>
 
-            {/* GPS Geofencing Settings */}
+            {/* GPS Geofencing Settings - Summary with Link to Tab */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <MapPin size={16} className="text-[#7A1C30]" />
                   <span>تأكيد تواجد الزبون في المطعم عبر الـ GPS (Geofencing)</span>
                 </h2>
-                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  مفعل لحماية الطلبات
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`border text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                    requireGps 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${requireGps ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    {requireGps ? 'مفعل لحماية الطلبات' : 'معطل (متاح للجميع)'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('gps')}
+                    className="text-xs font-bold text-[#7A1C30] hover:underline cursor-pointer"
+                  >
+                    فتح لوحة تحكم الـ GPS ←
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                يسمح للزبون بفتح المنيو وتصفح الأصناف بحرية، لكنه يشترط تواجده الفعلي داخل محيط المطعم (نابلس - رفيديا) قبل إرسال الطلب للمطبخ لمنع الطلبات العشوائية.
+                يسمح للزبون بفتح المنيو وتصفح الأصناف بحرية، ولكنه يشترط تواجده الفعلي داخل محيط المطعم قبل إرسال الطلب للمطبخ لمنع الطلبات العشوائية.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">خط العرض (Latitude)</label>
                   <input
-                    type="text"
-                    readOnly
-                    value="32.2272"
+                    type="number"
+                    step="any"
+                    value={gpsLatitude}
+                    onChange={(e) => setGpsLatitude(parseFloat(e.target.value) || 0)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700"
                     dir="ltr"
                   />
@@ -1292,9 +1653,10 @@ export default function ProductionSettingsPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">خط الطول (Longitude)</label>
                   <input
-                    type="text"
-                    readOnly
-                    value="35.2289"
+                    type="number"
+                    step="any"
+                    value={gpsLongitude}
+                    onChange={(e) => setGpsLongitude(parseFloat(e.target.value) || 0)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700"
                     dir="ltr"
                   />
@@ -1303,8 +1665,14 @@ export default function ProductionSettingsPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">نطاق الصالة المسموح به</label>
                   <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#7A1C30] flex items-center justify-between">
-                    <span>350 متر</span>
-                    <span className="text-[10px] text-slate-400 font-normal">صالة + شرفة + باركينغ</span>
+                    <span>{gpsRadiusMeters} متر</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('gps')}
+                      className="text-[10px] text-[#7A1C30] font-bold hover:underline"
+                    >
+                      تغيير النطاق
+                    </button>
                   </div>
                 </div>
               </div>

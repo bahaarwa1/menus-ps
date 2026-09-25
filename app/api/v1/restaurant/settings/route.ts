@@ -86,6 +86,10 @@ export async function GET(request: NextRequest) {
         offersBannerTitle: restaurant.offersBannerTitle || '',
         offersBannerSubtitle: restaurant.offersBannerSubtitle || '',
         offersBannerActive: restaurant.offersBannerActive !== false,
+        requireGps: restaurant.requireGps !== false,
+        gpsLatitude: restaurant.gpsLatitude ?? 32.2272,
+        gpsLongitude: restaurant.gpsLongitude ?? 35.2289,
+        gpsRadiusMeters: restaurant.gpsRadiusMeters ?? 350,
         subscription,
         account,
       },
@@ -115,7 +119,8 @@ export async function POST(request: NextRequest) {
     const { 
       name, logoUrl, phone, city, address, currency, staffPin, slug,
       whatsappNumber, instagramUrl, facebookUrl, tiktokUrl,
-      offersBannerUrl, offersBannerTitle, offersBannerSubtitle, offersBannerActive
+      offersBannerUrl, offersBannerTitle, offersBannerSubtitle, offersBannerActive,
+      requireGps, gpsLatitude, gpsLongitude, gpsRadiusMeters
     } = body;
 
     const targetSlug = slug || session?.restaurantSlug || 'sh-manoosha';
@@ -144,6 +149,10 @@ export async function POST(request: NextRequest) {
       offersBannerTitle,
       offersBannerSubtitle,
       offersBannerActive,
+      requireGps: requireGps !== undefined ? Boolean(requireGps) : undefined,
+      gpsLatitude: typeof gpsLatitude === 'number' ? gpsLatitude : (gpsLatitude ? parseFloat(gpsLatitude) : undefined),
+      gpsLongitude: typeof gpsLongitude === 'number' ? gpsLongitude : (gpsLongitude ? parseFloat(gpsLongitude) : undefined),
+      gpsRadiusMeters: typeof gpsRadiusMeters === 'number' ? gpsRadiusMeters : (gpsRadiusMeters ? parseInt(gpsRadiusMeters, 10) : undefined),
     });
 
     if (!success) {

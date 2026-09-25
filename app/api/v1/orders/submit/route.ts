@@ -33,17 +33,29 @@ export async function POST(request: NextRequest) {
     const { branchId, tableNumber, items, customerNote, tableToken, restaurantSlug, clientCoordinates } = body;
 
     // GPS Geofence Verification: Verify customer presence in restaurant
-    if (clientCoordinates && typeof clientCoordinates.latitude === 'number' && typeof clientCoordinates.longitude === 'number') {
-      const geoCheck = verifyCustomerLocation({
-        latitude: clientCoordinates.latitude,
-        longitude: clientCoordinates.longitude,
-      });
+    const effectiveSlug = String(restaurantSlug || 'sh-manoosha').trim().toLowerCase();
+    const targetRestaurant = await getRestaurantBySlug(effectiveSlug);
+    const isGpsRequired = targetRestaurant ? targetRestaurant.requireGps !== false : true;
+
+    if (isGpsRequired && clientCoordinates && typeof clientCoordinates.latitude === 'number' && typeof clientCoordinates.longitude === 'number') {
+      const geoCheck = verifyCustomerLocation(
+        {
+          latitude: clientCoordinates.latitude,
+          longitude: clientCoordinates.longitude,
+        },
+        {
+          name: targetRestaurant?.name || 'مطعم وكافيه شيشة ومنقوشة',
+          latitude: targetRestaurant?.gpsLatitude ?? 32.2272,
+          longitude: targetRestaurant?.gpsLongitude ?? 35.2289,
+          radiusMeters: targetRestaurant?.gpsRadiusMeters ?? 350,
+        }
+      );
 
       if (!geoCheck.isWithin && !clientCoordinates.simulated) {
         return NextResponse.json(
           {
             success: false,
-            error: `تم رفض الطلب: موقعك الحالي يبعد حوالي ${geoCheck.distanceMeters >= 1000 ? (geoCheck.distanceMeters / 1000).toFixed(1) + ' كم' : geoCheck.distanceMeters + ' متر'} عن المطعم. الطلب متاح فقط داخل الصالة.`,
+            error: `تم رفض الطلب: موقعك الحالي يبعد حوالي ${geoCheck.distanceMeters >= 1000 ? (geoCheck.distanceMeters / 1000).toFixed(1) + ' كم' : geoCheck.distanceMeters + ' متر'} عن المطعم. الطلب متاح فقط داخل الصالة ومحيطها.`,
             geofence: geoCheck,
           },
           { status: 403 }

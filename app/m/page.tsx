@@ -93,10 +93,17 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
 
   // Specific Custom Design for client: شيشة ومنقوشة (sh-manoosha)
   if (cleanSlug === 'sh-manoosha') {
+    const restaurant = await getRestaurantBySlug('sh-manoosha');
     return (
       <ManooshaMenuClient
         initialTable={tableNumber || 5}
         qrTokenParam={qrTokenParam}
+        initialGpsConfig={{
+          requireGps: restaurant?.requireGps !== false,
+          latitude: restaurant?.gpsLatitude ?? 32.2272,
+          longitude: restaurant?.gpsLongitude ?? 35.2289,
+          radiusMeters: restaurant?.gpsRadiusMeters ?? 350,
+        }}
       />
     );
   }

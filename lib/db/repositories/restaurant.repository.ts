@@ -44,6 +44,10 @@ export interface RegisteredRestaurantResult {
   offersBannerTitle?: string;
   offersBannerSubtitle?: string;
   offersBannerActive?: boolean;
+  requireGps?: boolean;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  gpsRadiusMeters?: number;
   ownerEmail?: string;
   ownerPassword?: string;
   createdAt: string;
@@ -119,6 +123,10 @@ if (!global.__menusRestaurantsStore) {
     offersBannerTitle: 'أشهى المناقيش والشيشة الفاخرة يومياً 🔥',
     offersBannerSubtitle: 'مناقيش طازجة على الحطب مع تشكيلة واسعة من المشروبات والمقبلات',
     offersBannerActive: true,
+    requireGps: true,
+    gpsLatitude: 32.2272,
+    gpsLongitude: 35.2289,
+    gpsRadiusMeters: 350,
     createdAt: new Date('2025-01-01').toISOString(),
   });
 }
@@ -480,6 +488,10 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               offersBannerTitle: memRecord?.offersBannerTitle || '',
               offersBannerSubtitle: memRecord?.offersBannerSubtitle || '',
               offersBannerActive: memRecord?.offersBannerActive !== false,
+              requireGps: memRecord?.requireGps !== false,
+              gpsLatitude: memRecord?.gpsLatitude ?? 32.2272,
+              gpsLongitude: memRecord?.gpsLongitude ?? 35.2289,
+              gpsRadiusMeters: memRecord?.gpsRadiusMeters ?? 350,
               createdAt: restData.created_at,
             };
 
@@ -527,6 +539,10 @@ export interface UpdateRestaurantSettingsInput {
   offersBannerTitle?: string;
   offersBannerSubtitle?: string;
   offersBannerActive?: boolean;
+  requireGps?: boolean;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  gpsRadiusMeters?: number;
 }
 
 /**
@@ -552,6 +568,10 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
     if (input.offersBannerTitle !== undefined) existing.offersBannerTitle = input.offersBannerTitle.trim();
     if (input.offersBannerSubtitle !== undefined) existing.offersBannerSubtitle = input.offersBannerSubtitle.trim();
     if (input.offersBannerActive !== undefined) existing.offersBannerActive = input.offersBannerActive;
+    if (input.requireGps !== undefined) existing.requireGps = input.requireGps;
+    if (input.gpsLatitude !== undefined) existing.gpsLatitude = input.gpsLatitude;
+    if (input.gpsLongitude !== undefined) existing.gpsLongitude = input.gpsLongitude;
+    if (input.gpsRadiusMeters !== undefined) existing.gpsRadiusMeters = input.gpsRadiusMeters;
     global.__menusRestaurantsStore?.set(cleanSlug, existing);
   }
 

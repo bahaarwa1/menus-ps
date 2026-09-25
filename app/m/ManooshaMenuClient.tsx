@@ -6,12 +6,31 @@ import { MANOOSHA_CATEGORIES, MANOOSHA_DISHES, MANOOSHA_INFO } from '@/data/sh-m
 import GpsVerificationModal, { GpsStatus } from '@/components/common/GpsVerificationModal';
 import { verifyCustomerLocation, Coordinates, DEFAULT_RESTAURANT_COORDINATES } from '@/lib/geo/geofence';
 
+export interface GpsConfig {
+  requireGps: boolean;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+}
+
 interface ManooshaMenuClientProps {
   initialTable?: number;
   qrTokenParam?: string;
+  initialGpsConfig?: GpsConfig;
 }
 
-export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = '' }: ManooshaMenuClientProps) {
+export default function ManooshaMenuClient({ 
+  initialTable = 5, 
+  qrTokenParam = '',
+  initialGpsConfig
+}: ManooshaMenuClientProps) {
+  const gpsConfig = initialGpsConfig || {
+    requireGps: true,
+    latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
+    longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
+    radiusMeters: DEFAULT_RESTAURANT_COORDINATES.radiusMeters,
+  };
+
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [activeCategory, setActiveCategory] = useState<string>('manaqeesh');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -202,6 +221,12 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
   const handleInitiateOrderWithGps = () => {
     if (cartItems.length === 0) return;
 
+    // If restaurant has disabled GPS geofencing in settings, submit directly!
+    if (!gpsConfig.requireGps) {
+      executeSubmitOrder();
+      return;
+    }
+
     // If customer already verified GPS during this session, proceed directly
     if (clientCoords) {
       executeSubmitOrder(clientCoords);
@@ -226,7 +251,12 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
           accuracy: pos.coords.accuracy,
         };
 
-        const result = verifyCustomerLocation(coords);
+        const result = verifyCustomerLocation(coords, {
+          name: 'مطعم وكافيه شيشة ومنقوشة',
+          latitude: gpsConfig.latitude,
+          longitude: gpsConfig.longitude,
+          radiusMeters: gpsConfig.radiusMeters,
+        });
         setDistanceMeters(result.distanceMeters);
 
         if (result.isWithin) {
@@ -260,8 +290,8 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
   // Safe simulation for authorized testing/preview
   const handleSimulateInside = () => {
     const fakeCoords: Coordinates = {
-      latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
-      longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
+      latitude: gpsConfig.latitude,
+      longitude: gpsConfig.longitude,
       accuracy: 5,
     };
     setClientCoords(fakeCoords);
