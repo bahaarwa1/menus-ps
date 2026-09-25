@@ -1,5 +1,8 @@
 import StaffOrdersManagementPage from '../page';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface StaffSlugPageProps {
   params: Promise<{ slug: string }>;
 }

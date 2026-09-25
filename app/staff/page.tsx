@@ -813,21 +813,12 @@ export default function StaffOrdersManagementPage({ initialSlug }: { initialSlug
                   boxShadow: '0 4px 12px rgba(122, 28, 48, 0.12)'
                 }}
               >
-                {restaurantLogo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img 
-                    src={restaurantLogo} 
-                    alt={restaurantName} 
-                    className="w-full h-full object-contain rounded-xl"
-                  />
-                ) : (
-                  <div 
-                    className="w-full h-full rounded-xl flex items-center justify-center text-white"
-                    style={{ background: 'linear-gradient(135deg, #7A1C30, #9C2A43)' }}
-                  >
-                    <ChefHat size={22} />
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={restaurantLogo || '/sh-manoosha/logo.png'} 
+                  alt={restaurantName || 'مطعم وكافيه شيشة ومنقوشة'} 
+                  className="w-full h-full object-contain rounded-xl"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
