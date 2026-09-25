@@ -24,12 +24,29 @@ export default function ManooshaMenuClient({
   qrTokenParam = '',
   initialGpsConfig
 }: ManooshaMenuClientProps) {
-  const gpsConfig = initialGpsConfig || {
+  const [gpsConfig, setGpsConfig] = useState<GpsConfig>(initialGpsConfig || {
     requireGps: true,
     latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
     longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
     radiusMeters: DEFAULT_RESTAURANT_COORDINATES.radiusMeters,
-  };
+  });
+
+  // Client-side live sync of restaurant GPS settings from API
+  useEffect(() => {
+    fetch('/api/v1/restaurant/settings?slug=sh-manoosha')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setGpsConfig({
+            requireGps: data.settings.requireGps !== false,
+            latitude: typeof data.settings.gpsLatitude === 'number' ? data.settings.gpsLatitude : DEFAULT_RESTAURANT_COORDINATES.latitude,
+            longitude: typeof data.settings.gpsLongitude === 'number' ? data.settings.gpsLongitude : DEFAULT_RESTAURANT_COORDINATES.longitude,
+            radiusMeters: typeof data.settings.gpsRadiusMeters === 'number' ? data.settings.gpsRadiusMeters : DEFAULT_RESTAURANT_COORDINATES.radiusMeters,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [activeCategory, setActiveCategory] = useState<string>('manaqeesh');
@@ -259,8 +276,9 @@ export default function ManooshaMenuClient({
         });
         setDistanceMeters(result.distanceMeters);
 
+        setClientCoords(coords);
+
         if (result.isWithin) {
-          setClientCoords(coords);
           setGpsStatus('success');
           setTimeout(() => {
             setGpsModalOpen(false);
@@ -301,6 +319,44 @@ export default function ManooshaMenuClient({
       setGpsModalOpen(false);
       executeSubmitOrder(fakeCoords, true);
     }, 900);
+  };
+
+  // 1-Click set user's current live location as official restaurant location
+  const handleSetCurrentAsRestaurantLocation = async () => {
+    if (!clientCoords) return;
+    setToastMsg('جاري تعيين موقعك الحالي كموقع رسمي للمطعم...');
+    try {
+      const res = await fetch('/api/v1/restaurant/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: 'sh-manoosha',
+          requireGps: true,
+          gpsLatitude: clientCoords.latitude,
+          gpsLongitude: clientCoords.longitude,
+          gpsRadiusMeters: gpsConfig.radiusMeters || 350,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGpsConfig((prev) => ({
+          ...prev,
+          latitude: clientCoords.latitude,
+          longitude: clientCoords.longitude,
+        }));
+        setGpsStatus('success');
+        setDistanceMeters(0);
+        setToastMsg('✅ تم حفظ موقع المطعم بنجاح! جاري إرسال الطلب...');
+        setTimeout(() => {
+          setGpsModalOpen(false);
+          executeSubmitOrder(clientCoords);
+        }, 1200);
+      } else {
+        setToastMsg('تعذر حفظ الموقع، يرجى المحاولة من لوحة الإعدادات');
+      }
+    } catch {
+      setToastMsg('حدث خطأ أثناء حفظ الموقع');
+    }
   };
 
   // Step 2: Submit Order directly to Server / KDS with verified GPS coordinates
@@ -915,7 +971,7 @@ export default function ManooshaMenuClient({
         onClose={() => setGpsModalOpen(false)}
         status={gpsStatus}
         distanceMeters={distanceMeters}
-        allowedRadiusMeters={DEFAULT_RESTAURANT_COORDINATES.radiusMeters}
+        allowedRadiusMeters={gpsConfig.radiusMeters}
         restaurantName={lang === 'ar' ? 'مطعم وكافيه شيشة ومنقوشة' : 'Shisha & Manoosha'}
         restaurantLocationText={lang === 'ar' ? 'نابلس - رفيديا - الشارع الرئيسي' : 'Nablus - Rafidia'}
         errorMessage={gpsErrorMessage}
@@ -925,6 +981,7 @@ export default function ManooshaMenuClient({
           handleSendWaiterCall(lang === 'ar' ? 'تأكيد الطلب على الطاولة يدوياً (GPS)' : 'Manual Table Verification (GPS)');
         }}
         onSimulateInside={handleSimulateInside}
+        onSetAsRestaurantLocation={clientCoords ? handleSetCurrentAsRestaurantLocation : undefined}
       />
 
     </div>

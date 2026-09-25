@@ -484,14 +484,14 @@ export async function getRestaurantBySlug(slug: string): Promise<RegisteredResta
               instagramUrl: extraMeta?.instagramUrl || memRecord?.instagramUrl || '',
               facebookUrl: extraMeta?.facebookUrl || memRecord?.facebookUrl || '',
               tiktokUrl: extraMeta?.tiktokUrl || memRecord?.tiktokUrl || '',
-              offersBannerUrl: memRecord?.offersBannerUrl || '',
-              offersBannerTitle: memRecord?.offersBannerTitle || '',
-              offersBannerSubtitle: memRecord?.offersBannerSubtitle || '',
-              offersBannerActive: memRecord?.offersBannerActive !== false,
-              requireGps: memRecord?.requireGps !== false,
-              gpsLatitude: memRecord?.gpsLatitude ?? 32.2272,
-              gpsLongitude: memRecord?.gpsLongitude ?? 35.2289,
-              gpsRadiusMeters: memRecord?.gpsRadiusMeters ?? 350,
+              offersBannerUrl: extraMeta?.offersBannerUrl || memRecord?.offersBannerUrl || '',
+              offersBannerTitle: extraMeta?.offersBannerTitle || memRecord?.offersBannerTitle || '',
+              offersBannerSubtitle: extraMeta?.offersBannerSubtitle || memRecord?.offersBannerSubtitle || '',
+              offersBannerActive: extraMeta?.offersBannerActive !== undefined ? extraMeta.offersBannerActive : (memRecord?.offersBannerActive !== false),
+              requireGps: extraMeta?.requireGps !== undefined ? extraMeta.requireGps : (memRecord?.requireGps !== false),
+              gpsLatitude: extraMeta?.gpsLatitude ?? memRecord?.gpsLatitude ?? 32.2272,
+              gpsLongitude: extraMeta?.gpsLongitude ?? memRecord?.gpsLongitude ?? 35.2289,
+              gpsRadiusMeters: extraMeta?.gpsRadiusMeters ?? memRecord?.gpsRadiusMeters ?? 350,
               createdAt: restData.created_at,
             };
 
@@ -593,7 +593,7 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
           .eq('slug', cleanSlug);
       }
 
-      // Update primary branch city/name/address/social if changed
+      // Update primary branch city/name/address/social/GPS/banners if changed
       if (
         input.city ||
         input.name ||
@@ -601,7 +601,15 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
         input.whatsappNumber !== undefined ||
         input.instagramUrl !== undefined ||
         input.facebookUrl !== undefined ||
-        input.tiktokUrl !== undefined
+        input.tiktokUrl !== undefined ||
+        input.requireGps !== undefined ||
+        input.gpsLatitude !== undefined ||
+        input.gpsLongitude !== undefined ||
+        input.gpsRadiusMeters !== undefined ||
+        input.offersBannerUrl !== undefined ||
+        input.offersBannerTitle !== undefined ||
+        input.offersBannerSubtitle !== undefined ||
+        input.offersBannerActive !== undefined
       ) {
         const { data: rest } = await (supabase as any)
           .from('restaurants')
@@ -627,6 +635,14 @@ export async function updateRestaurantSettings(input: UpdateRestaurantSettingsIn
             instagramUrl: input.instagramUrl !== undefined ? input.instagramUrl.trim() : (parsed.extraMeta?.instagramUrl || existing?.instagramUrl),
             facebookUrl: input.facebookUrl !== undefined ? input.facebookUrl.trim() : (parsed.extraMeta?.facebookUrl || existing?.facebookUrl),
             tiktokUrl: input.tiktokUrl !== undefined ? input.tiktokUrl.trim() : (parsed.extraMeta?.tiktokUrl || existing?.tiktokUrl),
+            requireGps: input.requireGps !== undefined ? Boolean(input.requireGps) : (parsed.extraMeta?.requireGps ?? existing?.requireGps),
+            gpsLatitude: input.gpsLatitude !== undefined ? Number(input.gpsLatitude) : (parsed.extraMeta?.gpsLatitude ?? existing?.gpsLatitude),
+            gpsLongitude: input.gpsLongitude !== undefined ? Number(input.gpsLongitude) : (parsed.extraMeta?.gpsLongitude ?? existing?.gpsLongitude),
+            gpsRadiusMeters: input.gpsRadiusMeters !== undefined ? Number(input.gpsRadiusMeters) : (parsed.extraMeta?.gpsRadiusMeters ?? existing?.gpsRadiusMeters),
+            offersBannerUrl: input.offersBannerUrl !== undefined ? input.offersBannerUrl.trim() : (parsed.extraMeta?.offersBannerUrl || existing?.offersBannerUrl),
+            offersBannerTitle: input.offersBannerTitle !== undefined ? input.offersBannerTitle.trim() : (parsed.extraMeta?.offersBannerTitle || existing?.offersBannerTitle),
+            offersBannerSubtitle: input.offersBannerSubtitle !== undefined ? input.offersBannerSubtitle.trim() : (parsed.extraMeta?.offersBannerSubtitle || existing?.offersBannerSubtitle),
+            offersBannerActive: input.offersBannerActive !== undefined ? Boolean(input.offersBannerActive) : (parsed.extraMeta?.offersBannerActive ?? existing?.offersBannerActive),
           };
           const nextAddress = input.address !== undefined ? input.address.trim() : parsed.cleanAddress;
           branchUpdates.address = serializeSubscriptionAddress(

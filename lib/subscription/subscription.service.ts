@@ -16,6 +16,14 @@ export interface RestaurantExtraMeta {
   instagramUrl?: string;
   facebookUrl?: string;
   tiktokUrl?: string;
+  requireGps?: boolean;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  gpsRadiusMeters?: number;
+  offersBannerUrl?: string;
+  offersBannerTitle?: string;
+  offersBannerSubtitle?: string;
+  offersBannerActive?: boolean;
 }
 
 /**
@@ -54,6 +62,14 @@ export function parseSubscriptionFromAddress(
         instagramUrl: meta.instagramUrl || undefined,
         facebookUrl: meta.facebookUrl || undefined,
         tiktokUrl: meta.tiktokUrl || undefined,
+        requireGps: meta.requireGps !== undefined ? Boolean(meta.requireGps) : undefined,
+        gpsLatitude: typeof meta.gpsLatitude === 'number' ? meta.gpsLatitude : (meta.gpsLatitude ? parseFloat(meta.gpsLatitude) : undefined),
+        gpsLongitude: typeof meta.gpsLongitude === 'number' ? meta.gpsLongitude : (meta.gpsLongitude ? parseFloat(meta.gpsLongitude) : undefined),
+        gpsRadiusMeters: typeof meta.gpsRadiusMeters === 'number' ? meta.gpsRadiusMeters : (meta.gpsRadiusMeters ? parseInt(meta.gpsRadiusMeters, 10) : undefined),
+        offersBannerUrl: meta.offersBannerUrl || undefined,
+        offersBannerTitle: meta.offersBannerTitle || undefined,
+        offersBannerSubtitle: meta.offersBannerSubtitle || undefined,
+        offersBannerActive: meta.offersBannerActive !== undefined ? Boolean(meta.offersBannerActive) : undefined,
       };
     } catch {}
   }
@@ -103,6 +119,14 @@ export function serializeSubscriptionAddress(
     if (extraMeta.instagramUrl) metaObj.instagramUrl = extraMeta.instagramUrl;
     if (extraMeta.facebookUrl) metaObj.facebookUrl = extraMeta.facebookUrl;
     if (extraMeta.tiktokUrl) metaObj.tiktokUrl = extraMeta.tiktokUrl;
+    if (extraMeta.requireGps !== undefined) metaObj.requireGps = extraMeta.requireGps;
+    if (extraMeta.gpsLatitude !== undefined) metaObj.gpsLatitude = extraMeta.gpsLatitude;
+    if (extraMeta.gpsLongitude !== undefined) metaObj.gpsLongitude = extraMeta.gpsLongitude;
+    if (extraMeta.gpsRadiusMeters !== undefined) metaObj.gpsRadiusMeters = extraMeta.gpsRadiusMeters;
+    if (extraMeta.offersBannerUrl) metaObj.offersBannerUrl = extraMeta.offersBannerUrl;
+    if (extraMeta.offersBannerTitle) metaObj.offersBannerTitle = extraMeta.offersBannerTitle;
+    if (extraMeta.offersBannerSubtitle) metaObj.offersBannerSubtitle = extraMeta.offersBannerSubtitle;
+    if (extraMeta.offersBannerActive !== undefined) metaObj.offersBannerActive = extraMeta.offersBannerActive;
   }
   const metaJson = JSON.stringify(metaObj);
   return clean ? `${clean} || ${META_PREFIX}${metaJson}` : `${META_PREFIX}${metaJson}`;

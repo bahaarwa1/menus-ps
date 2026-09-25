@@ -315,7 +315,7 @@ export default function ProductionSettingsPage() {
     }
   };
 
-  // Automatically detect restaurant's physical GPS location using device geolocation
+  // Automatically detect restaurant's physical GPS location using device geolocation and persist it instantly
   const handleDetectCurrentLocation = () => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setGpsFeedbackMsg('متصفحك لا يدعم خاصية تحديد الموقع الجغرافي GPS.');
@@ -326,7 +326,7 @@ export default function ProductionSettingsPage() {
     setGpsFeedbackMsg('جاري الاتصال بالأقمار الصناعية وتحديد إحداثيات موقع المطعم بدقة...');
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = parseFloat(position.coords.latitude.toFixed(6));
         const lon = parseFloat(position.coords.longitude.toFixed(6));
         const acc = Math.round(position.coords.accuracy);
@@ -334,7 +334,32 @@ export default function ProductionSettingsPage() {
         setGpsLatitude(lat);
         setGpsLongitude(lon);
         setIsDetectingGps(false);
-        setGpsFeedbackMsg(`تم التقاط إحداثيات المطعم بنجاح بدقة ±${acc} متر! اضغط "حفظ الإعدادات" لاعتمادها.`);
+        setGpsFeedbackMsg(`تم التقاط إحداثيات موقعك بنجاح (${lat}, ${lon}). جاري حفظ الموقع في النظام...`);
+
+        // Instant Auto-Save to Backend so the user's location is saved immediately!
+        try {
+          const res = await fetch('/api/v1/restaurant/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              slug: slug || 'sh-manoosha',
+              requireGps: true,
+              gpsLatitude: lat,
+              gpsLongitude: lon,
+              gpsRadiusMeters: gpsRadiusMeters || 350,
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setGpsFeedbackMsg(`✅ تم تعيين موقع جهازك الحالي (${lat}, ${lon}) وحفظه في النظام بنجاح! دقة الجهاز: ±${acc} متر.`);
+            setSavedMessage('تم حفظ موقع المطعم الجغرافي الجديد بنجاح واعتماده لكافة الزبائن!');
+            setTimeout(() => setSavedMessage(''), 5000);
+          } else {
+            setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ الإعدادات" لتأكيدها.`);
+          }
+        } catch {
+          setGpsFeedbackMsg(`تم التقاط الإحداثيات (${lat}, ${lon}). يرجى الضغط على زر "حفظ الإعدادات" لتأكيدها.`);
+        }
       },
       (error) => {
         setIsDetectingGps(false);

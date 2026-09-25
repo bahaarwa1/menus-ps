@@ -18,6 +18,7 @@ interface GpsVerificationModalProps {
   onRetry: () => void;
   onCallWaiter?: () => void;
   onSimulateInside?: () => void; // for testing/preview in dev or authorized demo
+  onSetAsRestaurantLocation?: () => void; // automatically sets user's live position as restaurant location
 }
 
 export default function GpsVerificationModal({
@@ -32,6 +33,7 @@ export default function GpsVerificationModal({
   onRetry,
   onCallWaiter,
   onSimulateInside,
+  onSetAsRestaurantLocation,
 }: GpsVerificationModalProps) {
   if (!isOpen) return null;
 
@@ -112,33 +114,44 @@ export default function GpsVerificationModal({
             </div>
 
             <div className="space-y-2 pt-2">
+              {onSetAsRestaurantLocation && (
+                <button
+                  type="button"
+                  onClick={onSetAsRestaurantLocation}
+                  className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <MapPin size={15} />
+                  <span>📍 تعيين موقعي الحالي كموقع رسمي للمطعم وحفظه</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onRetry}
-                className="w-full py-3 rounded-2xl bg-[#7A1C30] hover:bg-[#631425] text-white text-xs font-black shadow-md shadow-[#7A1C30]/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                className="w-full py-2.5 rounded-2xl bg-[#7A1C30] hover:bg-[#631425] text-white text-xs font-black shadow-md shadow-[#7A1C30]/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
               >
                 <RefreshCw size={15} />
-                <span>إعادة فحص الموقع (أنا داخل المطعم)</span>
+                <span>إعادة فحص الموقع (تحديث GPS)</span>
               </button>
-
-              {onCallWaiter && (
-                <button
-                  type="button"
-                  onClick={onCallWaiter}
-                  className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <UserCheck size={15} />
-                  <span>طلب مساعدة الويتر لتأكيد الطلب يدوياً</span>
-                </button>
-              )}
 
               {onSimulateInside && (
                 <button
                   type="button"
                   onClick={onSimulateInside}
-                  className="w-full py-2 text-[10px] text-slate-400 hover:text-slate-600 underline font-medium"
+                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  تأكيد تجريبي (أنا داخل الفرع للتجربة)
+                  <span>⚡ إرسال الطلب فوراً (تجاوز تجريبي للمعاينة)</span>
+                </button>
+              )}
+
+              {onCallWaiter && (
+                <button
+                  type="button"
+                  onClick={onCallWaiter}
+                  className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <UserCheck size={14} />
+                  <span>طلب مساعدة الويتر لتأكيد الطلب</span>
                 </button>
               )}
             </div>
