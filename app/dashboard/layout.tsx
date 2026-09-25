@@ -18,10 +18,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (session?.userId && session.userId.startsWith('superadmin-impersonate-'));
 
   const isImpersonating = Boolean(isMasterOwner && restaurantSlug !== 'platform-master');
+  const isManoosha = restaurantSlug === 'sh-manoosha';
 
   return (
     <div 
-      className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-orange-500 selection:text-white" 
+      className={`min-h-screen bg-[#F8FAFC] text-slate-900 font-sans ${
+        isManoosha
+          ? 'selection:bg-[#7A1C30] selection:text-white brand-sh-manoosha'
+          : 'selection:bg-orange-500 selection:text-white'
+      }`}
+      data-brand={isManoosha ? 'sh-manoosha' : undefined}
       dir="rtl"
     >
       {/* Super Admin Impersonation Indicator */}

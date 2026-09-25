@@ -91,3 +91,71 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0 !important;
   }
 }
+
+/* Custom Client Branding: شيشة ومنقوشة (sh-manoosha) */
+.brand-sh-manoosha,
+[data-brand="sh-manoosha"] {
+  --color-primary: #7A1C30 !important;
+  --color-primary-dark: #5E1424 !important;
+  --color-primary-light: #FBF2F4 !important;
+}
+
+.brand-sh-manoosha .bg-orange-500,
+[data-brand="sh-manoosha"] .bg-orange-500,
+.brand-sh-manoosha .bg-orange-600,
+[data-brand="sh-manoosha"] .bg-orange-600 {
+  background-color: #7A1C30 !important;
+}
+
+.brand-sh-manoosha .text-orange-500,
+[data-brand="sh-manoosha"] .text-orange-500,
+.brand-sh-manoosha .text-orange-600,
+[data-brand="sh-manoosha"] .text-orange-600 {
+  color: #7A1C30 !important;
+}
+
+.brand-sh-manoosha .border-orange-500,
+[data-brand="sh-manoosha"] .border-orange-500,
+.brand-sh-manoosha .border-orange-400,
+[data-brand="sh-manoosha"] .border-orange-400 {
+  border-color: #7A1C30 !important;
+}
+
+.brand-sh-manoosha .from-orange-500,
+[data-brand="sh-manoosha"] .from-orange-500 {
+  --tw-gradient-from: #7A1C30 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(122 28 48 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.brand-sh-manoosha .to-amber-500,
+[data-brand="sh-manoosha"] .to-amber-500,
+.brand-sh-manoosha .to-orange-600,
+[data-brand="sh-manoosha"] .to-orange-600 {
+  --tw-gradient-to: #C28B3E var(--tw-gradient-to-position) !important;
+}
+
+.brand-sh-manoosha .bg-orange-50,
+[data-brand="sh-manoosha"] .bg-orange-50 {
+  background-color: #FBF2F4 !important;
+}
+
+.brand-sh-manoosha .hover\:bg-orange-600:hover,
+[data-brand="sh-manoosha"] .hover\:bg-orange-600:hover {
+  background-color: #5E1424 !important;
+}
+
+.brand-sh-manoosha .hover\:text-orange-600:hover,
+[data-brand="sh-manoosha"] .hover\:text-orange-600:hover {
+  color: #5E1424 !important;
+}
+
+.brand-sh-manoosha .focus\:border-orange-500:focus,
+[data-brand="sh-manoosha"] .focus\:border-orange-500:focus {
+  border-color: #7A1C30 !important;
+}
+
+.brand-sh-manoosha .shadow-orange-500\/20,
+[data-brand="sh-manoosha"] .shadow-orange-500\/20 {
+  box-shadow: 0 4px 14px rgba(122, 28, 48, 0.25) !important;
+}

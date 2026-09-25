@@ -35,6 +35,8 @@ export default function ProductionSidebar({
 
   const [appOrigin, setAppOrigin] = useState('https://menus.cool');
 
+  const isManoosha = activeSlug === 'sh-manoosha' || restaurantSlug === 'sh-manoosha';
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setAppOrigin(window.location.origin);
@@ -44,6 +46,11 @@ export default function ProductionSidebar({
       if (created) {
         setActiveSlug(created);
         setActiveName(created.replace(/-/g, ' '));
+      }
+
+      if (target === 'sh-manoosha' || restaurantSlug === 'sh-manoosha') {
+        document.documentElement.setAttribute('data-brand', 'sh-manoosha');
+        document.documentElement.classList.add('brand-sh-manoosha');
       }
 
       fetch(`/api/v1/restaurant/settings${target ? `?slug=${encodeURIComponent(target)}` : ''}`)
@@ -56,7 +63,7 @@ export default function ProductionSidebar({
         })
         .catch(() => {});
     }
-  }, [pathname, activeSlug]);
+  }, [pathname, activeSlug, restaurantSlug]);
 
   const liveUrl = activeSlug ? `https://${activeSlug}.menus.cool` : 'https://menus.cool';
   const directMenuUrl = activeSlug ? `https://${activeSlug}.menus.cool` : '/';
@@ -107,7 +114,12 @@ export default function ProductionSidebar({
       {/* Restaurant Overview Card — Soft Light Theme */}
       <div className="p-3.5 m-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-800 shadow-2xs relative overflow-hidden">
         <div className="flex items-center gap-3 mb-3">
-          {logoUrl ? (
+          {isManoosha ? (
+            <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#7A1C30]/20 bg-white shadow-xs shrink-0 p-0.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/sh-manoosha/logo.png" alt="شيشة ومنقوشة" className="w-full h-full object-cover rounded-lg" />
+            </div>
+          ) : logoUrl ? (
             <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoUrl} alt={activeName} className="w-full h-full object-cover" />
@@ -118,7 +130,9 @@ export default function ProductionSidebar({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="font-black text-sm truncate capitalize leading-tight text-slate-900">{activeName}</h3>
+            <h3 className="font-black text-sm truncate capitalize leading-tight text-slate-900">
+              {isManoosha && (!activeName || activeName === 'مطعمي' || activeName === 'my-restaurant') ? 'مطعم وكافيه شيشة ومنقوشة' : activeName}
+            </h3>
             <p className="text-[11px] text-slate-500 truncate mt-0.5">الفرع الرئيسي — {city}</p>
           </div>
         </div>
@@ -145,7 +159,11 @@ export default function ProductionSidebar({
           <a
             href={directMenuUrl}
             target="_blank"
-            className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all"
+            className={`py-1.5 px-2 rounded-xl text-white text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs transition-all ${
+              isManoosha
+                ? 'bg-gradient-to-r from-[#7A1C30] to-[#C28B3E] hover:from-[#5E1424] hover:to-[#a3722e]'
+                : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600'
+            }`}
           >
             <span>منيو الزبائن</span>
             <ExternalLink size={11} />
@@ -155,7 +173,7 @@ export default function ProductionSidebar({
             target="_blank"
             className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 transition-all border border-slate-200 shadow-2xs"
           >
-            <ChefHat size={12} className="text-amber-500" />
+            <ChefHat size={12} className={isManoosha ? 'text-[#C28B3E]' : 'text-amber-500'} />
             <span>المطبخ KDS</span>
           </Link>
         </div>
@@ -177,14 +195,16 @@ export default function ProductionSidebar({
               onClick={() => setMobileOpen(false)}
               className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 ${
                 active
-                  ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                  ? isManoosha
+                    ? 'bg-[#7A1C30] text-white shadow-sm shadow-[#7A1C30]/25'
+                    : 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                   active 
-                    ? 'bg-orange-500 text-white' 
+                    ? isManoosha ? 'bg-[#7A1C30] text-white' : 'bg-orange-500 text-white' 
                     : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-800'
                 }`}>
                   <IconComponent size={14} />
@@ -193,7 +213,9 @@ export default function ProductionSidebar({
               </div>
               {link.badge && (
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                  active ? 'bg-orange-500 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  active 
+                    ? isManoosha ? 'bg-[#5E1424] text-white' : 'bg-orange-600 text-white' 
+                    : isManoosha ? 'bg-[#FBF2F4] text-[#7A1C30] border border-[#7A1C30]/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 }`}>
                   {link.badge}
                 </span>

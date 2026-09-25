@@ -287,12 +287,12 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
           </div>
 
           <div className="header-actions">
-            {/* Table button */}
-            <button className="action-btn btn-table" onClick={() => setIsTableModalOpen(true)} title="تغيير الطاولة">
+            {/* Table Badge (Fixed - Customer cannot change table) */}
+            <div className="action-btn btn-table btn-table-locked" title={lang === 'ar' ? `طاولة رقم ${tableNumber}` : `Table #${tableNumber}`}>
               <span>🪑</span>
               <span className="table-badge-text">{lang === 'ar' ? 'طاولة' : 'Table'}</span>
               <span className="table-number-label">{tableNumber}</span>
-            </button>
+            </div>
 
             {/* Waiter bell */}
             <button className="action-btn btn-bell" onClick={() => setIsWaiterModalOpen(true)} title="نداء الويتر">
@@ -563,9 +563,9 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
                     </div>
                   </div>
                 </div>
-                <button className="change-table-pill" onClick={() => { setIsCartOpen(false); setIsTableModalOpen(true); }}>
-                  {lang === 'ar' ? 'تغيير' : 'Change'}
-                </button>
+                <div className="table-locked-indicator">
+                  <span className="table-locked-tag">{lang === 'ar' ? 'محددة تلقائياً ✓' : 'Verified Table ✓'}</span>
+                </div>
               </div>
 
               {/* Items List */}
@@ -716,42 +716,7 @@ export default function ManooshaMenuClient({ initialTable = 5, qrTokenParam = ''
         </div>
       )}
 
-      {/* 3. Table Modal */}
-      {isTableModalOpen && (
-        <div className="modal-backdrop open" onClick={() => setIsTableModalOpen(false)}>
-          <div className="dialog-card" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-icon">🪑</div>
-            <h3 className="dialog-title">{lang === 'ar' ? 'رقم طاولتك داخل الصالة' : 'Your Table Number'}</h3>
-            <p className="dialog-desc">
-              {lang === 'ar' ? 'أدخل رقم الطاولة المكتوب على ستيكر طاولتك' : 'Enter the table number shown on your table sticker'}
-            </p>
-            <input
-              type="number"
-              className="dialog-table-input"
-              min="1"
-              max="99"
-              value={inputTableVal}
-              onChange={(e) => setInputTableVal(e.target.value)}
-            />
-            <button
-              className="dialog-btn-primary"
-              onClick={() => {
-                const parsed = parseInt(inputTableVal, 10);
-                if (parsed > 0) {
-                  setTableNumber(parsed);
-                  setIsTableModalOpen(false);
-                  showToast(lang === 'ar' ? `تم تحديد طاولة رقم #${parsed}` : `Table set to #${parsed}`);
-                }
-              }}
-            >
-              {lang === 'ar' ? 'تأكيد رقم الطاولة' : 'Confirm Table'}
-            </button>
-            <button className="dialog-btn-cancel" onClick={() => setIsTableModalOpen(false)}>
-              {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 3. Table Modal (Disabled - Table is permanently locked to table number) */}
 
       {/* 4. Waiter Modal */}
       {isWaiterModalOpen && (

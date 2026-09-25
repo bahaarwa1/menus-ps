@@ -230,7 +230,7 @@ function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder={isEn ? "admin@menus.ps or burger-house-nablus" : "admin@menus.ps أو معرف المطعم"}
+                    placeholder={isEn ? "name@restaurant.com or restaurant-slug" : "restaurant@example.com أو معرف المطعم"}
                     className={`w-full py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-orange-500 transition-all text-slate-800 placeholder-slate-400 shadow-2xs ${
                       isEn ? 'pl-10 pr-4 text-left' : 'pr-10 pl-4 text-left'
                     }`}
