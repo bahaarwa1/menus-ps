@@ -96,7 +96,7 @@ export default function ProductionSettingsPage() {
   const [isOpen, setIsOpen] = useState(true);
 
   // GPS Geofencing Settings
-  const [requireGps, setRequireGps] = useState<boolean>(true);
+  const [requireGps, setRequireGps] = useState<boolean>(false);
   const [gpsLatitude, setGpsLatitude] = useState<number>(32.2272);
   const [gpsLongitude, setGpsLongitude] = useState<number>(35.2289);
   const [gpsRadiusMeters, setGpsRadiusMeters] = useState<number>(350);

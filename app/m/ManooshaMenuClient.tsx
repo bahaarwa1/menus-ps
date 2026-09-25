@@ -25,7 +25,7 @@ export default function ManooshaMenuClient({
   initialGpsConfig
 }: ManooshaMenuClientProps) {
   const [gpsConfig, setGpsConfig] = useState<GpsConfig>(initialGpsConfig || {
-    requireGps: true,
+    requireGps: false,
     latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
     longitude: DEFAULT_RESTAURANT_COORDINATES.longitude,
     radiusMeters: DEFAULT_RESTAURANT_COORDINATES.radiusMeters,
@@ -38,7 +38,7 @@ export default function ManooshaMenuClient({
       .then((data) => {
         if (data.success && data.settings) {
           setGpsConfig({
-            requireGps: data.settings.requireGps !== false,
+            requireGps: Boolean(data.settings.requireGps),
             latitude: typeof data.settings.gpsLatitude === 'number' ? data.settings.gpsLatitude : DEFAULT_RESTAURANT_COORDINATES.latitude,
             longitude: typeof data.settings.gpsLongitude === 'number' ? data.settings.gpsLongitude : DEFAULT_RESTAURANT_COORDINATES.longitude,
             radiusMeters: typeof data.settings.gpsRadiusMeters === 'number' ? data.settings.gpsRadiusMeters : DEFAULT_RESTAURANT_COORDINATES.radiusMeters,
@@ -234,9 +234,15 @@ export default function ManooshaMenuClient({
     });
   };
 
-  // Step 1: Initiate GPS Geofence Verification before placing order
+  // Step 1: Submit order directly (GPS check disabled as requested)
   const handleInitiateOrderWithGps = async () => {
     if (cartItems.length === 0) return;
+
+    // If restaurant has disabled GPS geofencing (Default/Requested), submit directly with 0 delay!
+    if (!gpsConfig.requireGps) {
+      executeSubmitOrder();
+      return;
+    }
 
     setGpsModalOpen(true);
     setGpsStatus('checking');
@@ -249,7 +255,7 @@ export default function ManooshaMenuClient({
       const data = await res.json();
       if (data.success && data.settings) {
         currentConfig = {
-          requireGps: data.settings.requireGps !== false,
+          requireGps: Boolean(data.settings.requireGps),
           latitude: typeof data.settings.gpsLatitude === 'number' ? data.settings.gpsLatitude : gpsConfig.latitude,
           longitude: typeof data.settings.gpsLongitude === 'number' ? data.settings.gpsLongitude : gpsConfig.longitude,
           radiusMeters: typeof data.settings.gpsRadiusMeters === 'number' ? data.settings.gpsRadiusMeters : gpsConfig.radiusMeters,
@@ -258,7 +264,7 @@ export default function ManooshaMenuClient({
       }
     } catch {}
 
-    // If restaurant has disabled GPS geofencing in settings, submit directly!
+    // If GPS disabled on server, submit directly!
     if (!currentConfig.requireGps) {
       setGpsModalOpen(false);
       executeSubmitOrder();

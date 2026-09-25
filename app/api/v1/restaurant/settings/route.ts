@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         offersBannerTitle: restaurant.offersBannerTitle || '',
         offersBannerSubtitle: restaurant.offersBannerSubtitle || '',
         offersBannerActive: restaurant.offersBannerActive !== false,
-        requireGps: restaurant.requireGps !== false,
+        requireGps: Boolean(restaurant.requireGps),
         gpsLatitude: restaurant.gpsLatitude ?? 32.2272,
         gpsLongitude: restaurant.gpsLongitude ?? 35.2289,
         gpsRadiusMeters: restaurant.gpsRadiusMeters ?? 350,

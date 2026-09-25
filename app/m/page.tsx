@@ -99,7 +99,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
         initialTable={tableNumber || 5}
         qrTokenParam={qrTokenParam}
         initialGpsConfig={{
-          requireGps: restaurant?.requireGps !== false,
+          requireGps: Boolean(restaurant?.requireGps),
           latitude: restaurant?.gpsLatitude ?? 32.2272,
           longitude: restaurant?.gpsLongitude ?? 35.2289,
           radiusMeters: restaurant?.gpsRadiusMeters ?? 350,
