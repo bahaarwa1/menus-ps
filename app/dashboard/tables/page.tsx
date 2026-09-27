@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles, Upload, Image as ImageIcon, Trash2, Layers, RefreshCw, ChevronDown } from 'lucide-react';
+import JSZip from 'jszip';
+import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles, Upload, Image as ImageIcon, Trash2, Layers, RefreshCw, ChevronDown, Archive } from 'lucide-react';
 import { printTableStand, printAllTableStands, printPureQr, printAllPureQrs, StandCardTheme, TableStandData } from '@/lib/print-utils';
 import { generateBrandedQRCode, QR_COLOR_PRESETS } from '@/lib/qr-generator';
 
@@ -25,6 +26,7 @@ export default function ProductionTablesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPrintingAll, setIsPrintingAll] = useState(false);
   const [isPrintingAllPure, setIsPrintingAllPure] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
 
   // QR Customization Studio States
@@ -563,6 +565,42 @@ export default function ProductionTablesPage() {
     }
   };
 
+  const handleDownloadAllZip = async () => {
+    if (tables.length === 0 || isZipping) return;
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      const activeSlug = currentSlug || (typeof window !== 'undefined' ? localStorage.getItem('current_restaurant_slug') : '') || 'restaurant';
+      const activeName = restaurantName || 'مطعمنا';
+
+      for (const table of tables) {
+        const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
+        const qrDataUrl =
+          table.qrDataUrl ||
+          (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
+
+        const base64Data = qrDataUrl.split(',')[1];
+        if (base64Data) {
+          zip.file(`table-${table.tableNumber}.png`, base64Data, { base64: true });
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${activeSlug}-tables-qr.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to generate ZIP:', err);
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-900" dir="rtl">
       
@@ -576,7 +614,7 @@ export default function ProductionTablesPage() {
             </span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            كل طاولة تمتلك رمز QR فريد ومشفر باللون وهوية المطعم يربط الزبون بطاولته تلقائياً ويطبع بدقة فائقة
+            تنسيق مخصص للطباعة والمطابع: أوراق ملصقات A4 مقسمة للقص أو ملف ZIP بالصور عالية الدقة
           </p>
         </div>
 
@@ -600,10 +638,20 @@ export default function ProductionTablesPage() {
                 onClick={triggerPrintAllPureQrs}
                 disabled={isPrintingAllPure}
                 className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                title="طباعة كافة أكواد الـ QR لوحدها بدون بطاقات (مناسب للملصقات وطابعات الفواتير)"
+                title="طباعة كل الملصقات مجمعة بورق A4 (6 بالصفحة مع خطوط قص واضحة)"
               >
                 <QrCode size={15} className="text-orange-400" />
-                <span>{isPrintingAllPure ? 'جاري التجهيز...' : 'طباعة الـ QR لحاله (الكل)'}</span>
+                <span>{isPrintingAllPure ? 'جاري التجهيز...' : 'ورق ملصقات A4 للقص (الكل)'}</span>
+              </button>
+
+              <button
+                onClick={handleDownloadAllZip}
+                disabled={isZipping}
+                className="px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                title="تحميل جميع صور الباركود عالية الدقة كملف مضغوط ZIP لتقديمه للمطبعة"
+              >
+                <Archive size={15} className="text-emerald-600" />
+                <span>{isZipping ? 'جاري التحزيم...' : 'تحميل كل الصور (ZIP للمطبعة)'}</span>
               </button>
 
               <button
@@ -612,7 +660,7 @@ export default function ProductionTablesPage() {
                 className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <Printer size={15} />
-                <span>{isPrintingAll ? 'جاري التجهيز...' : 'طباعة كل البطاقات'}</span>
+                <span>{isPrintingAll ? 'جاري التجهيز...' : 'طباعة كل البطاقات الكاملة'}</span>
               </button>
             </>
           )}

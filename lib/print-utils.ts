@@ -1056,31 +1056,19 @@ export function printAllTableStands(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildPureQrHtml(stands: TableStandData[]): string {
-  const pagesHtml = stands.map((stand, idx) => {
+  // If printing 1 table only: print as single centered sticker
+  if (stands.length === 1) {
+    const stand = stands[0];
     const titleText =
       stand.restaurantName && stand.restaurantName.trim() !== '' && stand.restaurantName !== 'المطعم'
         ? stand.restaurantName
         : '';
 
-    return `
-    <div class="pure-qr-page ${idx < stands.length - 1 ? 'page-break' : ''}">
-      <div class="pure-qr-card">
-        ${titleText ? `<div class="pure-qr-restaurant">${titleText}</div>` : ''}
-        <div class="pure-qr-table-badge">طاولة ${stand.tableNumber}</div>
-        <div class="pure-qr-code-box">
-          <img class="pure-qr-img" src="${stand.qrDataUrl}" alt="QR طاولة ${stand.tableNumber}" />
-        </div>
-        <div class="pure-qr-hint">امسح الرمز لطلب الطعام 📱</div>
-        <div class="pure-qr-subhint">قائمة الطعام الإلكترونية المباشرة</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
   <meta charset="utf-8" />
-  <title>طباعة رمز QR - الطاولات</title>
+  <title>ملصق QR - طاولة ${stand.tableNumber}</title>
   <style>
     @page {
       size: auto;
@@ -1095,54 +1083,48 @@ export function buildPureQrHtml(stands: TableStandData[]): string {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .page-break {
-        page-break-after: always;
-        break-after: page;
-      }
-      .pure-qr-card {
-        border-color: #000 !important;
-      }
     }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
       direction: rtl;
       background: #fff;
       color: #0f172a;
-      text-align: center;
-    }
-    .pure-qr-page {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       padding: 10px;
-      min-height: 80mm;
-      box-sizing: border-box;
     }
     .pure-qr-card {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border: 2px dashed #94a3b8;
+      border: 2px dashed #475569;
       border-radius: 18px;
       padding: 18px 24px;
       background: #ffffff;
       max-width: 300px;
       width: 100%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      text-align: center;
+      position: relative;
+    }
+    .cut-line-badge {
+      position: absolute;
+      top: -9px;
+      left: 14px;
+      background: #ffffff;
+      padding: 0 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
     }
     .pure-qr-restaurant {
       font-size: 14px;
       font-weight: 800;
       color: #334155;
       margin-bottom: 6px;
-      letter-spacing: -0.2px;
     }
     .pure-qr-table-badge {
       display: inline-block;
@@ -1152,11 +1134,11 @@ export function buildPureQrHtml(stands: TableStandData[]): string {
       font-weight: 900;
       padding: 4px 20px;
       border-radius: 9999px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .pure-qr-code-box {
       background: #ffffff;
-      padding: 8px;
+      padding: 6px;
       border-radius: 12px;
       border: 1px solid #e2e8f0;
       display: flex;
@@ -1170,8 +1152,8 @@ export function buildPureQrHtml(stands: TableStandData[]): string {
       display: block;
     }
     .pure-qr-hint {
-      margin-top: 12px;
-      font-size: 13px;
+      margin-top: 10px;
+      font-size: 12px;
       font-weight: 800;
       color: #0f172a;
     }
@@ -1180,6 +1162,198 @@ export function buildPureQrHtml(stands: TableStandData[]): string {
       font-size: 10px;
       font-weight: 600;
       color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="pure-qr-card">
+    <div class="cut-line-badge">✂️ خط القص</div>
+    ${titleText ? `<div class="pure-qr-restaurant">${titleText}</div>` : ''}
+    <div class="pure-qr-table-badge">طاولة ${stand.tableNumber}</div>
+    <div class="pure-qr-code-box">
+      <img class="pure-qr-img" src="${stand.qrDataUrl}" alt="QR طاولة ${stand.tableNumber}" />
+    </div>
+    <div class="pure-qr-hint">امسح الرمز لطلب الطعام 📱</div>
+    <div class="pure-qr-subhint">قائمة الطعام الإلكترونية المباشرة</div>
+  </div>
+</body>
+</html>`;
+  }
+
+  // If printing multiple tables: chunk into A4 sheets of 6 stickers each (2 columns × 3 rows)
+  const CHUNK_SIZE = 6;
+  const pages: TableStandData[][] = [];
+  for (let i = 0; i < stands.length; i += CHUNK_SIZE) {
+    pages.push(stands.slice(i, i + CHUNK_SIZE));
+  }
+
+  const pagesHtml = pages.map((pageStands, pageIdx) => {
+    const isLastPage = pageIdx === pages.length - 1;
+    const cardsHtml = pageStands.map((stand) => {
+      const titleText =
+        stand.restaurantName && stand.restaurantName.trim() !== '' && stand.restaurantName !== 'المطعم'
+          ? stand.restaurantName
+          : '';
+
+      return `
+        <div class="pure-sticker-item">
+          <div class="sticker-cut-badge">✂️ قص هنا</div>
+          ${titleText ? `<div class="sticker-restaurant">${titleText}</div>` : ''}
+          <div class="sticker-badge">طاولة ${stand.tableNumber}</div>
+          <div class="sticker-qr-box">
+            <img class="sticker-qr-img" src="${stand.qrDataUrl}" alt="QR طاولة ${stand.tableNumber}" />
+          </div>
+          <div class="sticker-hint">امسح لطلب الطعام 📱</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="sheet-page ${isLastPage ? '' : 'page-break'}">
+        <div class="sheet-header-strip">
+          <span>ورقة ملصقات طاولات A4 — صفحة ${pageIdx + 1} من ${pages.length}</span>
+          <span>قص حول الخطوط المنقطة ✂️</span>
+        </div>
+        <div class="sheet-grid">
+          ${cardsHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <title>أوراق ملصقات QR للطاولات (A4)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm 6mm;
+    }
+    @media print {
+      html, body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page-break {
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+      .sheet-page {
+        height: 275mm !important;
+        max-height: 275mm !important;
+        overflow: hidden !important;
+      }
+      .sheet-page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+      direction: rtl;
+      background: #fff;
+      color: #0f172a;
+    }
+    .sheet-page {
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      height: 275mm;
+      padding: 2mm 0;
+    }
+    .sheet-header-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      border-bottom: 1px dashed #cbd5e1;
+      padding-bottom: 2px;
+      margin-bottom: 3mm;
+    }
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 4mm;
+      flex: 1;
+      box-sizing: border-box;
+    }
+    .pure-sticker-item {
+      box-sizing: border-box;
+      border: 1.5px dashed #475569;
+      border-radius: 12px;
+      padding: 6px 10px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      text-align: center;
+      height: 100%;
+    }
+    .sticker-cut-badge {
+      position: absolute;
+      top: -7px;
+      left: 10px;
+      background: #fff;
+      padding: 0 4px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .sticker-restaurant {
+      font-size: 11px;
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90%;
+    }
+    .sticker-badge {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 2px 14px;
+      border-radius: 9999px;
+      margin-bottom: 4px;
+    }
+    .sticker-qr-box {
+      background: #ffffff;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sticker-qr-img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      display: block;
+    }
+    .sticker-hint {
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #0f172a;
     }
   </style>
 </head>
