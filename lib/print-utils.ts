@@ -1049,3 +1049,206 @@ export function printAllTableStands(
   }
   setTimeout(schedulePrint, 700);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Standalone Pure QR Printing Utility (طباعة رمز الـ QR لحاله بدون البطاقة)
+// Clean, high-contrast, ink-saving sticker/plaque design for thermal label printers or acrylic stands.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function buildPureQrHtml(stands: TableStandData[]): string {
+  const pagesHtml = stands.map((stand, idx) => {
+    const titleText =
+      stand.restaurantName && stand.restaurantName.trim() !== '' && stand.restaurantName !== 'المطعم'
+        ? stand.restaurantName
+        : '';
+
+    return `
+    <div class="pure-qr-page ${idx < stands.length - 1 ? 'page-break' : ''}">
+      <div class="pure-qr-card">
+        ${titleText ? `<div class="pure-qr-restaurant">${titleText}</div>` : ''}
+        <div class="pure-qr-table-badge">طاولة ${stand.tableNumber}</div>
+        <div class="pure-qr-code-box">
+          <img class="pure-qr-img" src="${stand.qrDataUrl}" alt="QR طاولة ${stand.tableNumber}" />
+        </div>
+        <div class="pure-qr-hint">امسح الرمز لطلب الطعام 📱</div>
+        <div class="pure-qr-subhint">قائمة الطعام الإلكترونية المباشرة</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <title>طباعة رمز QR - الطاولات</title>
+  <style>
+    @page {
+      size: auto;
+      margin: 4mm;
+    }
+    @media print {
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      .pure-qr-card {
+        border-color: #000 !important;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+      direction: rtl;
+      background: #fff;
+      color: #0f172a;
+      text-align: center;
+    }
+    .pure-qr-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      min-height: 80mm;
+      box-sizing: border-box;
+    }
+    .pure-qr-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #94a3b8;
+      border-radius: 18px;
+      padding: 18px 24px;
+      background: #ffffff;
+      max-width: 300px;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .pure-qr-restaurant {
+      font-size: 14px;
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 6px;
+      letter-spacing: -0.2px;
+    }
+    .pure-qr-table-badge {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 4px 20px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+    .pure-qr-code-box {
+      background: #ffffff;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pure-qr-img {
+      width: 200px;
+      height: 200px;
+      object-fit: contain;
+      display: block;
+    }
+    .pure-qr-hint {
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .pure-qr-subhint {
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  ${pagesHtml}
+</body>
+</html>`;
+}
+
+export function printPureQr(stand: TableStandData) {
+  if (typeof window === 'undefined') return;
+
+  const existingFrame = document.getElementById('pure-qr-print-frame');
+  if (existingFrame) existingFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'pure-qr-print-frame';
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
+
+  const html = buildPureQrHtml([stand]);
+  doc.open(); doc.write(html); doc.close();
+
+  let printed = false;
+  const doPrint = () => {
+    if (printed) return;
+    printed = true;
+    iframe.contentWindow?.focus();
+    iframe.contentWindow?.print();
+    setTimeout(() => { iframe.remove(); }, 2500);
+  };
+
+  if (iframe.contentWindow) {
+    iframe.contentWindow.onload = () => setTimeout(doPrint, 250);
+  }
+  setTimeout(doPrint, 500);
+}
+
+export function printAllPureQrs(stands: TableStandData[]) {
+  if (typeof window === 'undefined' || stands.length === 0) return;
+
+  const existingFrame = document.getElementById('pure-qrs-all-print-frame');
+  if (existingFrame) existingFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'pure-qrs-all-print-frame';
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
+
+  const html = buildPureQrHtml(stands);
+  doc.open(); doc.write(html); doc.close();
+
+  let printed = false;
+  const doPrint = () => {
+    if (printed) return;
+    printed = true;
+    iframe.contentWindow?.focus();
+    iframe.contentWindow?.print();
+    setTimeout(() => { iframe.remove(); }, 2500);
+  };
+
+  if (iframe.contentWindow) {
+    iframe.contentWindow.onload = () => setTimeout(doPrint, 250);
+  }
+  setTimeout(doPrint, 600);
+}

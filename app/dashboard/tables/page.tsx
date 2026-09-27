@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Printer, ExternalLink, Copy, Check, QrCode, Palette, Download, Eye, Sparkles, Upload, Image as ImageIcon, Trash2, Layers, RefreshCw, ChevronDown } from 'lucide-react';
-import { printTableStand, printAllTableStands, StandCardTheme } from '@/lib/print-utils';
+import { printTableStand, printAllTableStands, printPureQr, printAllPureQrs, StandCardTheme, TableStandData } from '@/lib/print-utils';
 import { generateBrandedQRCode, QR_COLOR_PRESETS } from '@/lib/qr-generator';
 
 interface TableItem {
@@ -24,6 +24,7 @@ export default function ProductionTablesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPrintingAll, setIsPrintingAll] = useState(false);
+  const [isPrintingAllPure, setIsPrintingAllPure] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
 
   // QR Customization Studio States
@@ -505,6 +506,63 @@ export default function ProductionTablesPage() {
     }
   };
 
+  const handlePrintPureQr = async (table: TableItem) => {
+    try {
+      const activeSlug = currentSlug || (typeof window !== 'undefined' ? localStorage.getItem('current_restaurant_slug') : '') || 'demo';
+      const activeName = restaurantName || 'مطعمنا';
+      const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
+      const qrDataUrl = table.qrDataUrl || (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
+
+      printPureQr({
+        tableNumber: table.tableNumber,
+        restaurantName: activeName,
+        targetUrl,
+        qrDataUrl,
+        logoUrl: qrStyle !== 'solid' ? restaurantLogo : undefined,
+        brandColor: qrColor,
+        cardTheme,
+        cardBgImage,
+        tagline: cardTagline,
+      });
+    } catch (err) {
+      console.error('Print pure QR error:', err);
+    }
+  };
+
+  const triggerPrintAllPureQrs = async () => {
+    if (tables.length === 0 || isPrintingAllPure) return;
+    setIsPrintingAllPure(true);
+    try {
+      const activeSlug = currentSlug || (typeof window !== 'undefined' ? localStorage.getItem('current_restaurant_slug') : '') || 'demo';
+      const activeName = restaurantName || 'مطعمنا';
+
+      const stands: TableStandData[] = await Promise.all(
+        tables.map(async (table) => {
+          const targetUrl = `https://${activeSlug}.menus.cool/?table=${table.tableNumber}&token=${table.qrToken}`;
+          const qrDataUrl =
+            table.qrDataUrl ||
+            (await makeBrandedQr(targetUrl, qrColor, qrStyle, restaurantLogo, activeName, table.tableNumber));
+          return {
+            tableNumber: table.tableNumber,
+            restaurantName: activeName,
+            targetUrl,
+            qrDataUrl,
+            logoUrl: qrStyle !== 'solid' ? restaurantLogo : undefined,
+            brandColor: qrColor,
+            cardTheme,
+            cardBgImage,
+            tagline: cardTagline,
+          };
+        })
+      );
+      printAllPureQrs(stands);
+    } catch (err) {
+      console.error('Print all pure QRs error:', err);
+    } finally {
+      setIsPrintingAllPure(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans text-slate-900" dir="rtl">
       
@@ -522,7 +580,7 @@ export default function ProductionTablesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={() => setShowCustomizer(!showCustomizer)}
@@ -537,14 +595,26 @@ export default function ProductionTablesPage() {
           </button>
 
           {tables.length > 0 && (
-            <button
-              onClick={triggerPrintAll}
-              disabled={isPrintingAll}
-              className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Printer size={15} />
-              <span>{isPrintingAll ? 'جاري التجهيز...' : 'طباعة كل بطاقات الـ QR'}</span>
-            </button>
+            <>
+              <button
+                onClick={triggerPrintAllPureQrs}
+                disabled={isPrintingAllPure}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                title="طباعة كافة أكواد الـ QR لوحدها بدون بطاقات (مناسب للملصقات وطابعات الفواتير)"
+              >
+                <QrCode size={15} className="text-orange-400" />
+                <span>{isPrintingAllPure ? 'جاري التجهيز...' : 'طباعة الـ QR لحاله (الكل)'}</span>
+              </button>
+
+              <button
+                onClick={triggerPrintAll}
+                disabled={isPrintingAll}
+                className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <Printer size={15} />
+                <span>{isPrintingAll ? 'جاري التجهيز...' : 'طباعة كل البطاقات'}</span>
+              </button>
+            </>
           )}
 
           <button
@@ -995,13 +1065,24 @@ export default function ProductionTablesPage() {
                     </a>
                   </div>
 
-                  <button
-                    onClick={() => handlePrintSingle(table)}
-                    className="w-full py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 font-black text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Printer size={13} />
-                    <span>طباعة بطاقة طاولة {table.tableNumber}</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-1.5 pt-1">
+                    <button
+                      onClick={() => handlePrintPureQr(table)}
+                      className="py-2 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[11px] flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs"
+                      title="طباعة رمز الـ QR لوحده كملصق أو ورقة صغيرة"
+                    >
+                      <QrCode size={12} className="text-orange-400" />
+                      <span>الـ QR لحاله</span>
+                    </button>
+                    <button
+                      onClick={() => handlePrintSingle(table)}
+                      className="py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 font-black text-[11px] flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      title="طباعة بطاقة الاستاند الكاملة"
+                    >
+                      <Printer size={12} />
+                      <span>بطاقة كاملة</span>
+                    </button>
+                  </div>
                 </div>
 
               </div>
@@ -1188,25 +1269,37 @@ export default function ProductionTablesPage() {
 
             {/* Modal Actions */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => downloadTableQr(selectedPrintTable)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Download size={14} />
                   <span>تحميل PNG</span>
                 </button>
                 <button
                   onClick={() => {
-                    handlePrintSingle(selectedPrintTable);
+                    handlePrintPureQr(selectedPrintTable);
                     setSelectedPrintTable(null);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  title="طباعة رمز الـ QR لوحده بدون بطاقة (للاصقات والمطابع)"
                 >
-                  <Printer size={14} />
-                  <span>طباعة البطاقة</span>
+                  <QrCode size={14} className="text-orange-400" />
+                  <span>طباعة الـ QR لحاله</span>
                 </button>
               </div>
+
+              <button
+                onClick={() => {
+                  handlePrintSingle(selectedPrintTable);
+                  setSelectedPrintTable(null);
+                }}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Printer size={14} />
+                <span>طباعة بطاقة الاستاند الكاملة</span>
+              </button>
 
               <button
                 onClick={() => setSelectedPrintTable(null)}
