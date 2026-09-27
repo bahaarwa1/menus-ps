@@ -93,7 +93,10 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
 
   // Specific Custom Design for client: شيشة ومنقوشة (sh-manoosha)
   if (cleanSlug === 'sh-manoosha') {
-    const restaurant = await getRestaurantBySlug('sh-manoosha');
+    const [restaurant, menuCategories] = await Promise.all([
+      getRestaurantBySlug('sh-manoosha'),
+      getRestaurantMenu('sh-manoosha', true),
+    ]);
     return (
       <ManooshaMenuClient
         initialTable={tableNumber || 5}
@@ -104,6 +107,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
           longitude: restaurant?.gpsLongitude ?? 35.2289,
           radiusMeters: restaurant?.gpsRadiusMeters ?? 350,
         }}
+        initialCategories={menuCategories ?? undefined}
       />
     );
   }

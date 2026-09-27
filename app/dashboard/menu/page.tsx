@@ -68,6 +68,7 @@ export default function ProductionMenuPage() {
   const [editPopular, setEditPopular] = useState(false);
   const [editSpicy, setEditSpicy] = useState(false);
   const [editImage, setEditImage] = useState('');
+  const [editCategory, setEditCategory] = useState('');
   const [isUploadingEdit, setIsUploadingEdit] = useState(false);
   const [showPresetsEdit, setShowPresetsEdit] = useState(false);
   const [isEditingSaving, setIsEditingSaving] = useState(false);
@@ -133,10 +134,17 @@ export default function ProductionMenuPage() {
   }, []);
 
   useEffect(() => {
+    let urlSlug = '';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      urlSlug = params.get('restaurant') || params.get('slug') || '';
+    }
+
     fetch('/api/auth/session', { credentials: 'include', cache: 'no-store' })
       .then((r) => r.json())
       .then((data) => {
-        const slug = data.user?.restaurantSlug || '';
+        const sessionSlug = data.user?.restaurantSlug || '';
+        const slug = urlSlug || sessionSlug || (data.user?.role === 'admin' ? 'sh-manoosha' : '');
         if (slug) {
           setCurrentSlug(slug);
           loadMenu(slug);
@@ -217,16 +225,28 @@ export default function ProductionMenuPage() {
   const deleteItem = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا الصنف من المنيو؟')) return;
 
+    const previousItems = items;
     setItems((prev) => prev.filter((it) => it.id !== id));
 
     try {
-      await fetch('/api/v1/menu', {
+      const res = await fetch('/api/v1/menu', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: id }),
+        body: JSON.stringify({ itemId: id, slug: currentSlug }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setItems(previousItems);
+        alert(data.error || 'تعذر حذف الصنف من قاعدة البيانات');
+      } else {
+        if (currentSlug) {
+          loadMenu(currentSlug, true);
+        }
+      }
     } catch (err) {
       console.error('Failed to delete menu item:', err);
+      setItems(previousItems);
+      alert('حدث خطأ أثناء محاولة حذف الصنف');
     }
   };
 
@@ -330,6 +350,7 @@ export default function ProductionMenuPage() {
     setEditPrice(String(item.price));
     setEditDescription(item.description);
     setEditImage(item.image || '');
+    setEditCategory(item.category || '');
     setEditPopular(Boolean(item.popular));
     setEditSpicy(Boolean(item.spicy));
     setShowPresetsEdit(false);
@@ -350,8 +371,10 @@ export default function ProductionMenuPage() {
           price: parseFloat(editPrice),
           description: editDescription.trim(),
           imageUrl: editImage.trim() || undefined,
+          categoryId: editCategory || undefined,
           isPopular: editPopular,
           isSpicy: editSpicy,
+          slug: currentSlug,
         }),
       });
 
@@ -366,6 +389,7 @@ export default function ProductionMenuPage() {
                   price: parseFloat(editPrice),
                   description: editDescription.trim(),
                   image: editImage.trim() || undefined,
+                  category: editCategory || it.category,
                   popular: editPopular,
                   spicy: editSpicy,
                 }
@@ -373,6 +397,9 @@ export default function ProductionMenuPage() {
           )
         );
         setEditingItem(null);
+        if (currentSlug) {
+          loadMenu(currentSlug, true);
+        }
       } else {
         alert(data.error || 'فشل تحديث الصنف');
       }
@@ -445,6 +472,11 @@ export default function ProductionMenuPage() {
               setNewPrice('');
               setNewDescription('');
               setNewImage('');
+              const currentCat = categories.find(c => c.id === activeCategory && c.id !== 'all') 
+                || categories.find(c => c.id !== 'all');
+              if (currentCat) {
+                setNewCategory(currentCat.name);
+              }
               setIsModalOpen(true);
             }}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-2 shadow-md shadow-orange-500/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
@@ -1047,13 +1079,34 @@ export default function ProductionMenuPage() {
 
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">القسم</label>
-                    <input
-                      type="text"
-                      placeholder="مثال: الأطباق الرئيسية، سناك"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
-                    />
+                    <div className="space-y-1.5">
+                      <select
+                        value={categories.some(c => c.id !== 'all' && (c.name === newCategory || c.id === newCategory)) ? newCategory : '__custom__'}
+                        onChange={(e) => {
+                          if (e.target.value !== '__custom__') {
+                            setNewCategory(e.target.value);
+                          } else {
+                            setNewCategory('');
+                          }
+                        }}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium bg-white text-slate-800"
+                      >
+                        {categories.filter(c => c.id !== 'all').map(c => (
+                          <option key={c.id} value={c.name}>{c.icon || '🍽️'} {c.name}</option>
+                        ))}
+                        <option value="__custom__">➕ إضافة قسم جديد آخر...</option>
+                      </select>
+                      {(!categories.some(c => c.id !== 'all' && (c.name === newCategory || c.id === newCategory)) || newCategory === '') && (
+                        <input
+                          type="text"
+                          placeholder="اكتب اسم القسم الجديد..."
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium"
+                          autoFocus
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1296,6 +1349,19 @@ export default function ProductionMenuPage() {
                   onChange={(e) => setEditPrice(e.target.value)}
                   className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium font-mono"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">القسم</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 font-medium bg-white text-slate-800"
+                >
+                  {categories.filter(c => c.id !== 'all').map(c => (
+                    <option key={c.id} value={c.id}>{c.icon || '🍽️'} {c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

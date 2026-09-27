@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, price, description, categoryName, isPopular, isSpicy, slug, imageUrl } = body;
+    const { name, price, description, categoryName, categoryId, isPopular, isSpicy, slug, imageUrl } = body;
 
     if (!name || price === undefined) {
       return NextResponse.json({ success: false, error: 'اسم الصنف والسعر مطلوبان' }, { status: 400 });
@@ -193,14 +193,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'المطعم غير موجود' }, { status: 404 });
     }
 
-    // 2. Find or create category
-    const catTitle = categoryName || 'الأصناف الرئيسية';
-    let { data: cat } = await (supabase as any)
-      .from('menu_categories')
-      .select('id')
-      .eq('restaurant_id', rest.id)
-      .eq('name_ar', catTitle)
-      .maybeSingle();
+    // 2. Find or create category (support categoryId uuid or categoryName)
+    let cat: any = null;
+    const isCatIdUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId || categoryName || '');
+    if (isCatIdUuid) {
+      const targetCatId = categoryId || categoryName;
+      const { data: foundCat } = await (supabase as any)
+        .from('menu_categories')
+        .select('id, name_ar')
+        .eq('restaurant_id', rest.id)
+        .eq('id', targetCatId)
+        .maybeSingle();
+      if (foundCat) cat = foundCat;
+    }
+
+    const catTitle = cat?.name_ar || categoryName || 'الأصناف الرئيسية';
+    if (!cat) {
+      const { data: catByName } = await (supabase as any)
+        .from('menu_categories')
+        .select('id, name_ar')
+        .eq('restaurant_id', rest.id)
+        .eq('name_ar', catTitle)
+        .maybeSingle();
+      cat = catByName;
+    }
 
     if (!cat) {
       const { data: newCat, error: catErr } = await (supabase as any)
@@ -210,7 +226,7 @@ export async function POST(request: NextRequest) {
           name_ar: catTitle,
           icon: '🍽️',
         })
-        .select('id')
+        .select('id, name_ar')
         .single();
       if (catErr) {
         console.error('[menu POST] Failed to create category:', catErr.message, '| RLS issue?');
@@ -235,6 +251,7 @@ export async function POST(request: NextRequest) {
         is_popular: Boolean(isPopular),
         is_spicy: Boolean(isSpicy),
         is_available: true,
+        sort_order: 0,
       })
       .select('id, name_ar, description_ar, price, image_url, is_popular, is_spicy, is_available')
       .single();
@@ -262,7 +279,7 @@ export async function POST(request: NextRequest) {
         available: newItem.is_available,
         category: cat.id,
         categoryId: cat.id,
-        categoryName: catTitle,
+        categoryName: cat.name_ar || catTitle,
       },
     });
   } catch (err) {
@@ -294,8 +311,17 @@ export async function DELETE(request: NextRequest) {
       const supabase = createAdminClient();
 
       if (itemId) {
+        // Delete child extras first to prevent foreign key errors
+        try {
+          await (supabase as any).from('item_extras').delete().eq('item_id', itemId);
+        } catch {}
+
         // Delete single menu item
-        await (supabase as any).from('menu_items').delete().eq('id', itemId);
+        const { error: delErr } = await (supabase as any).from('menu_items').delete().eq('id', itemId);
+        if (delErr) {
+          console.error('[menu DELETE] Error deleting menu item:', delErr);
+          return NextResponse.json({ success: false, error: `فشل حذف الصنف: ${delErr.message}` }, { status: 500 });
+        }
       } else if (categoryId || categoryName) {
         let catIdToDelete = categoryId;
 
@@ -376,11 +402,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, name, price, description, isPopular, isSpicy, isAvailable, imageUrl } = body;
+    const { itemId, name, price, description, isPopular, isSpicy, isAvailable, imageUrl, categoryId, slug } = body;
 
     if (!itemId) {
       return NextResponse.json({ success: false, error: 'معرف الصنف مطلوب' }, { status: 400 });
     }
+
+    const targetSlug = slug || session.restaurantSlug;
 
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient();
@@ -392,6 +420,9 @@ export async function PUT(request: NextRequest) {
       if (isPopular !== undefined) updates.is_popular = Boolean(isPopular);
       if (isSpicy !== undefined) updates.is_spicy = Boolean(isSpicy);
       if (isAvailable !== undefined) updates.is_available = Boolean(isAvailable);
+      if (categoryId !== undefined && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId)) {
+        updates.category_id = categoryId;
+      }
 
       const { error: updateErr } = await (supabase as any)
         .from('menu_items')
@@ -407,6 +438,9 @@ export async function PUT(request: NextRequest) {
     appCache.clear();
     appCache.invalidateTag('menu');
     appCache.delete(`item_price:${itemId}`);
+    if (targetSlug) {
+      appCache.delete(`menu:${targetSlug}`);
+    }
 
     return NextResponse.json({ success: true, message: 'تم تحديث الصنف بنجاح' });
   } catch (err) {

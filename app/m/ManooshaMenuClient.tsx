@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import './sh-manoosha.css';
 import { MANOOSHA_CATEGORIES, MANOOSHA_DISHES, MANOOSHA_INFO } from '@/data/sh-manoosha-data';
 import GpsVerificationModal, { GpsStatus } from '@/components/common/GpsVerificationModal';
@@ -13,17 +13,61 @@ export interface GpsConfig {
   radiusMeters: number;
 }
 
+const STATIC_CAT_BY_NAME = new Map<string, any>();
+MANOOSHA_CATEGORIES.forEach((c) => {
+  STATIC_CAT_BY_NAME.set(c.name, c);
+  STATIC_CAT_BY_NAME.set(c.id, c);
+});
+
+const STATIC_DISH_BY_NAME = new Map<string, any>();
+MANOOSHA_DISHES.forEach((d) => {
+  STATIC_DISH_BY_NAME.set(d.name, d);
+  STATIC_DISH_BY_NAME.set(d.id, d);
+});
+
 interface ManooshaMenuClientProps {
   initialTable?: number;
   qrTokenParam?: string;
   initialGpsConfig?: GpsConfig;
+  initialCategories?: any[];
 }
 
 export default function ManooshaMenuClient({ 
   initialTable = 5, 
   qrTokenParam = '',
-  initialGpsConfig
+  initialGpsConfig,
+  initialCategories
 }: ManooshaMenuClientProps) {
+  const [categoriesData, setCategoriesData] = useState<any[]>(initialCategories || []);
+
+  // Live real-time sync of restaurant menu from DB / API
+  const fetchLiveMenu = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/menu?slug=sh-manoosha&fresh=1&_t=${Date.now()}`, {
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategoriesData(data.categories);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchLiveMenu();
+    const interval = setInterval(fetchLiveMenu, 4000);
+    const onFocus = () => fetchLiveMenu();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [fetchLiveMenu]);
+
   const [gpsConfig, setGpsConfig] = useState<GpsConfig>(initialGpsConfig || {
     requireGps: false,
     latitude: DEFAULT_RESTAURANT_COORDINATES.latitude,
@@ -130,9 +174,70 @@ export default function ManooshaMenuClient({
     }
   }, [initialTable]);
 
+  const uiCategories = useMemo(() => {
+    if (!categoriesData || categoriesData.length === 0) {
+      return MANOOSHA_CATEGORIES;
+    }
+    const result: Array<{ id: string; name: string; nameEn: string; icon: string }> = [
+      { id: 'all', name: 'الكل', nameEn: 'All', icon: '🍽️' },
+    ];
+    categoriesData.forEach((cat: any) => {
+      const meta = STATIC_CAT_BY_NAME.get(cat.name) || {};
+      result.push({
+        id: cat.id,
+        name: cat.name,
+        nameEn: meta.nameEn || cat.name,
+        icon: cat.icon || meta.icon || '🍽️',
+      });
+    });
+    return result;
+  }, [categoriesData]);
+
+  const allDishes = useMemo(() => {
+    if (!categoriesData || categoriesData.length === 0) {
+      return MANOOSHA_DISHES;
+    }
+    const list: any[] = [];
+    categoriesData.forEach((cat: any) => {
+      if (!Array.isArray(cat.items)) return;
+      cat.items.forEach((item: any) => {
+        const staticMatch = STATIC_DISH_BY_NAME.get(item.name) || STATIC_DISH_BY_NAME.get(item.id);
+        list.push({
+          id: item.id,
+          category: cat.id,
+          categoryName: cat.name,
+          name: item.name,
+          nameEn: staticMatch?.nameEn || item.name,
+          description: item.description || staticMatch?.description || '',
+          descriptionEn: staticMatch?.descriptionEn || item.description || '',
+          price: Number(item.price),
+          image: item.image || staticMatch?.image || '/sh-manoosha/logo.png',
+          popular: Boolean(item.popular ?? staticMatch?.popular),
+          spicy: Boolean(item.spicy ?? staticMatch?.spicy),
+          woodFired: Boolean(staticMatch?.woodFired),
+          badge: (item.popular ?? staticMatch?.popular) ? 'الأكثر طلباً' : undefined,
+          sizes: staticMatch?.sizes || (item.extras?.length ? item.extras.map((e: any) => ({ name: e.name, price: e.price })) : undefined),
+        });
+      });
+    });
+    return list;
+  }, [categoriesData]);
+
+  // Sync activeCategory when categories loaded if still default
+  useEffect(() => {
+    if (uiCategories.length > 1 && (activeCategory === 'manaqeesh' || !uiCategories.some(c => c.id === activeCategory))) {
+      const match = uiCategories.find(c => c.id === 'manaqeesh' || c.name === 'مناقيش الفرن العربي');
+      if (match) {
+        setActiveCategory(match.id);
+      } else if (uiCategories[1]) {
+        setActiveCategory(uiCategories[1].id);
+      }
+    }
+  }, [uiCategories, activeCategory]);
+
   // Dishes filtered by search or category
   const filteredDishes = useMemo(() => {
-    let list = MANOOSHA_DISHES;
+    let list = allDishes;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       return list.filter(
@@ -143,8 +248,12 @@ export default function ManooshaMenuClient({
       );
     }
     if (activeCategory === 'all') return list;
-    return list.filter((d: any) => d.category === activeCategory);
-  }, [searchQuery, activeCategory]);
+    return list.filter((d: any) => 
+      d.category === activeCategory || 
+      d.categoryName === activeCategory ||
+      (STATIC_CAT_BY_NAME.get(activeCategory)?.name && d.categoryName === STATIC_CAT_BY_NAME.get(activeCategory)?.name)
+    );
+  }, [searchQuery, activeCategory, allDishes]);
 
   // Cart calculations
   const cartItems = useMemo(() => Object.values(cart), [cart]);
@@ -504,11 +613,11 @@ export default function ManooshaMenuClient({
 
           {/* Categories Scroller */}
           <div className="categories-wrapper hide-scrollbar">
-            {MANOOSHA_CATEGORIES.map((cat) => {
+            {uiCategories.map((cat) => {
               const count = cat.id === 'all'
-                ? MANOOSHA_DISHES.length
-                : MANOOSHA_DISHES.filter((d: any) => d.category === cat.id).length;
-              const isActive = activeCategory === cat.id && !searchQuery;
+                ? allDishes.length
+                : allDishes.filter((d: any) => d.category === cat.id || d.categoryName === cat.name).length;
+              const isActive = (activeCategory === cat.id || activeCategory === cat.name) && !searchQuery;
               return (
                 <button
                   key={cat.id}
@@ -532,7 +641,7 @@ export default function ManooshaMenuClient({
           <div className="section-title-wrap">
             <h3 className="section-heading">
               <span className="section-heading-icon">
-                {searchQuery ? '🔍' : MANOOSHA_CATEGORIES.find((c) => c.id === activeCategory)?.icon || '🍽️'}
+                {searchQuery ? '🔍' : uiCategories.find((c) => c.id === activeCategory || c.name === activeCategory)?.icon || '🍽️'}
               </span>
               <span>
                 {searchQuery
@@ -540,8 +649,8 @@ export default function ManooshaMenuClient({
                   : activeCategory === 'all'
                   ? lang === 'ar' ? 'جميع أصناف القائمة' : 'All Menu Dishes'
                   : lang === 'ar'
-                  ? MANOOSHA_CATEGORIES.find((c) => c.id === activeCategory)?.name
-                  : MANOOSHA_CATEGORIES.find((c) => c.id === activeCategory)?.nameEn}
+                  ? uiCategories.find((c) => c.id === activeCategory || c.name === activeCategory)?.name
+                  : uiCategories.find((c) => c.id === activeCategory || c.name === activeCategory)?.nameEn}
               </span>
             </h3>
             <span className="items-count-badge">
