@@ -622,9 +622,12 @@ export default function ManooshaMenuClient({
                 <button
                   key={cat.id}
                   className={`category-pill ${isActive ? 'active' : ''}`}
-                  onClick={() => {
+                  onClick={(e) => {
                     setActiveCategory(cat.id);
                     setSearchQuery('');
+                    try {
+                      e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    } catch (err) {}
                   }}
                 >
                   <span className="cat-icon">{cat.icon}</span>
