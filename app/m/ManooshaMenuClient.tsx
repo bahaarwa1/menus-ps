@@ -675,6 +675,7 @@ export default function ManooshaMenuClient({
                       className="dish-img"
                       loading="lazy"
                     />
+                    <div className="dish-img-overlay"></div>
                     {dish.badge && (
                       <span className="dish-badge-top">{dish.badge}</span>
                     )}
@@ -685,16 +686,19 @@ export default function ManooshaMenuClient({
 
                   <div className="dish-body">
                     <h4 className="dish-title">{lang === 'ar' ? dish.name : (dish.nameEn || dish.name)}</h4>
+                    {dish.nameEn && lang === 'ar' && (
+                      <div className="dish-title-en">{dish.nameEn}</div>
+                    )}
                     <p className="dish-desc">{lang === 'ar' ? dish.description : (dish.descriptionEn || dish.description)}</p>
 
                     <div className="dish-footer" onClick={(e) => e.stopPropagation()}>
                       <div className="dish-price">
                         {dish.sizes && dish.sizes.length > 1 && (
-                          <span style={{ fontSize: '10px', color: 'var(--stone-600)', marginInlineEnd: '2px' }}>
+                          <span className="price-from">
                             {lang === 'ar' ? 'من' : 'From'}
                           </span>
                         )}
-                        <span>{dish.sizes && dish.sizes.length > 0 ? dish.sizes[0].price : dish.price}</span>
+                        <span className="price-val">{dish.sizes && dish.sizes.length > 0 ? dish.sizes[0].price : dish.price}</span>
                         <span className="currency">{lang === 'ar' ? '₪' : 'ILS'}</span>
                       </div>
 
