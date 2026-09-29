@@ -37,3 +37,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+scratch/
+scripts/sync-sh-manoosha-menu.js

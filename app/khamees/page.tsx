@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import Head from 'next/head';
-import { RESTAURANT_INFO, CATEGORIES, DISHES } from '@/data/khamees-menu-data';
+import { RESTAURANT_INFO, CATEGORIES, DISHES } from '@/data/menu-data';
+import CategoryIcon from '@/components/CategoryIcon';
 
-export default function KhameesStandalonePage() {
+export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentLang, setCurrentLang] = useState<'ar' | 'en'>('ar');
@@ -95,23 +95,14 @@ export default function KhameesStandalonePage() {
   const currency = currentLang === 'ar' ? RESTAURANT_INFO.currency : RESTAURANT_INFO.currencyEn;
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-[#F8FAFC] flex justify-center text-slate-800 antialiased selection:bg-[#8B1D2C]/10 selection:text-[#8B1D2C]"
-      style={{ fontFamily: "'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
-    >
-      {/* Load Tajawal Google Font */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
-
+    <div className="min-h-screen bg-[#F8FAFC] flex justify-center selection:bg-[#8B1D2C]/10 selection:text-[#8B1D2C]">
       <div className="w-full max-w-[480px] min-h-screen bg-white shadow-sm border-x border-slate-100 relative flex flex-col pb-0">
         
         {/* 1. Top Header (Clean Pure White) */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 flex items-center justify-between gap-2 shadow-2xs">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full min-w-[70px]">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            <span className="w-2 h-2 bg-emerald-500 rounded-full pulse-green-dot"></span>
             <span className="text-[11px] font-bold text-emerald-800 tracking-tight whitespace-nowrap">
               {currentLang === 'ar' ? 'مفتوح الآن' : 'Open Now'}
             </span>
@@ -143,12 +134,12 @@ export default function KhameesStandalonePage() {
           </div>
         </header>
 
-        {/* 2. Ambient Hero Banner (Natural Light, Soft Blur, No Duplicate Logo) */}
+        {/* 2. Ambient Hero Banner (Natural Light, No Yellowing) */}
         <section className="relative w-full h-[155px] overflow-hidden bg-slate-900">
           <img
             src="/assets/cover.jpg"
             alt="Hero Cover"
-            className="w-full h-full object-cover brightness-105 contrast-102 scale-105"
+            className="w-full h-full object-cover brightness-105 contrast-102 scale-106"
             style={{ filter: 'blur(2.5px)' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/15 to-transparent flex items-end p-4">
@@ -192,7 +183,7 @@ export default function KhameesStandalonePage() {
             </div>
           </div>
 
-          {/* Category Tabs Scroller (Clean Text-Only Design) */}
+          {/* Category Tabs Scroller (Clean Modern Pills) */}
           <div ref={pillsContainerRef} className="flex gap-2 overflow-x-auto hide-scrollbar px-3 py-2 scroll-smooth">
             {/* 'All' Pill */}
             <button
@@ -252,7 +243,7 @@ export default function KhameesStandalonePage() {
                 <section
                   key={cat.id}
                   id={`cat-sec-${cat.id}`}
-                  className="mb-7"
+                  className="mb-7 category-tab-animate"
                 >
                   {/* Category Title Header with Burgundy Accent Bar (Clean Text-Only) */}
                   <div className="flex items-center justify-between gap-3 mb-3.5 px-1 pb-2 border-b border-slate-100">
