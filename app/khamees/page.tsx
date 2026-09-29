@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { RESTAURANT_INFO, CATEGORIES, DISHES } from '@/data/menu-data';
-import CategoryIcon from '@/components/CategoryIcon';
+import { RESTAURANT_INFO, CATEGORIES, DISHES } from '@/data/khamees-menu-data';
 
-export default function MenuPage() {
+export default function KhameesStandalonePage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentLang, setCurrentLang] = useState<'ar' | 'en'>('ar');
@@ -95,14 +94,131 @@ export default function MenuPage() {
   const currency = currentLang === 'ar' ? RESTAURANT_INFO.currency : RESTAURANT_INFO.currencyEn;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex justify-center selection:bg-[#8B1D2C]/10 selection:text-[#8B1D2C]">
-      <div className="w-full max-w-[480px] min-h-screen bg-white shadow-sm border-x border-slate-100 relative flex flex-col pb-0">
+    <div
+      dir="rtl"
+      className="min-h-screen bg-[#F8FAFC] flex justify-center text-slate-800 antialiased selection:bg-[#8B1D2C]/10 selection:text-[#8B1D2C]"
+      style={{ fontFamily: "'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+    >
+      {/* Explicit Embedded CSS ensuring 100% pixel-perfect image sizing and card alignment across all environments */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+        
+        .sh-page-wrap * {
+          font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          box-sizing: border-box;
+        }
+
+        .sh-card-grid {
+          display: grid !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 12px !important;
+        }
+
+        .sh-dish-card {
+          background: #FFFFFF !important;
+          border-radius: 16px !important;
+          border: 1px solid #E2E8F0 !important;
+          overflow: hidden !important;
+          display: flex !important;
+          flex-direction: column !important;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+          transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        .sh-dish-card:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .sh-img-frame {
+          position: relative !important;
+          width: 100% !important;
+          aspect-ratio: 4 / 3 !important;
+          height: auto !important;
+          background-color: #F8FAFC !important;
+          overflow: hidden !important;
+          border-bottom: 1px solid #F1F5F9 !important;
+        }
+
+        .sh-dish-img {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          display: block !important;
+          transition: transform 0.35s ease !important;
+        }
+
+        .sh-dish-card:hover .sh-dish-img {
+          transform: scale(1.05) !important;
+        }
+
+        .sh-card-body {
+          padding: 10px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          flex: 1 !important;
+          min-height: 105px !important;
+          background: #FFFFFF !important;
+        }
+
+        .sh-dish-title {
+          font-size: 14.5px !important;
+          font-weight: 700 !important;
+          color: #1E293B !important;
+          line-height: 1.35 !important;
+          letter-spacing: -0.01em !important;
+          margin: 0 !important;
+        }
+
+        .sh-dish-desc {
+          font-size: 11.5px !important;
+          font-weight: 400 !important;
+          line-height: 1.55 !important;
+          color: #64748B !important;
+          margin-top: 4px !important;
+          margin-bottom: 0 !important;
+          display: -webkit-box !important;
+          -webkit-line-clamp: 2 !important;
+          -webkit-box-orient: vertical !important;
+          overflow: hidden !important;
+        }
+
+        .sh-dish-footer {
+          margin-top: auto !important;
+          padding-top: 8px !important;
+          border-top: 1px solid #F1F5F9 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          width: 100% !important;
+        }
+
+        .sh-dish-price {
+          margin-right: auto !important;
+          margin-left: 0 !important;
+          display: inline-flex !important;
+          align-items: baseline !important;
+          gap: 2px !important;
+          white-space: nowrap !important;
+        }
+
+        .sh-hide-scrollbar::-webkit-scrollbar {
+          display: none !important;
+        }
+        .sh-hide-scrollbar {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+      `}} />
+
+      <div className="sh-page-wrap w-full max-w-[480px] min-h-screen bg-white shadow-sm border-x border-slate-100 relative flex flex-col pb-0">
         
         {/* 1. Top Header (Clean Pure White) */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 flex items-center justify-between gap-2 shadow-2xs">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full min-w-[70px]">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full pulse-green-dot"></span>
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
             <span className="text-[11px] font-bold text-emerald-800 tracking-tight whitespace-nowrap">
               {currentLang === 'ar' ? 'مفتوح الآن' : 'Open Now'}
             </span>
@@ -113,7 +229,7 @@ export default function MenuPage() {
             <img
               src="/assets/logo.png"
               alt={RESTAURANT_INFO.name}
-              className="h-10 w-auto max-w-[155px] object-contain drop-shadow-2xs"
+              className="h-10 w-auto max-w-[155px] object-contain"
             />
           </div>
 
@@ -121,7 +237,7 @@ export default function MenuPage() {
           <div className="min-w-[70px] flex justify-end">
             <button
               onClick={toggleLanguage}
-              className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition shadow-2xs"
+              className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition"
               title="Change Language"
             >
               <svg className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -134,13 +250,13 @@ export default function MenuPage() {
           </div>
         </header>
 
-        {/* 2. Ambient Hero Banner (Natural Light, No Yellowing) */}
+        {/* 2. Ambient Hero Banner (Natural Light, Soft Blur) */}
         <section className="relative w-full h-[155px] overflow-hidden bg-slate-900">
           <img
             src="/assets/cover.jpg"
             alt="Hero Cover"
-            className="w-full h-full object-cover brightness-105 contrast-102 scale-106"
-            style={{ filter: 'blur(2.5px)' }}
+            className="w-full h-full object-cover brightness-105 contrast-102"
+            style={{ filter: 'blur(2.5px)', transform: 'scale(1.06)' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/15 to-transparent flex items-end p-4">
             <div className="flex flex-col gap-0.5 text-white">
@@ -157,7 +273,7 @@ export default function MenuPage() {
         </section>
 
         {/* 3. Search Bar & Horizontal Category Tabs */}
-        <div ref={navSectionRef} className="bg-white border-b border-slate-100 shadow-2xs">
+        <div ref={navSectionRef} className="bg-white border-b border-slate-100">
           {/* Search Box */}
           <div className="p-3 pb-1.5">
             <div className="relative flex items-center">
@@ -183,8 +299,8 @@ export default function MenuPage() {
             </div>
           </div>
 
-          {/* Category Tabs Scroller (Clean Modern Pills) */}
-          <div ref={pillsContainerRef} className="flex gap-2 overflow-x-auto hide-scrollbar px-3 py-2 scroll-smooth">
+          {/* Category Tabs Scroller (Clean Text-Only Design) */}
+          <div ref={pillsContainerRef} className="flex gap-2 overflow-x-auto sh-hide-scrollbar px-3 py-2 scroll-smooth">
             {/* 'All' Pill */}
             <button
               onClick={() => handleCategoryClick('all')}
@@ -243,12 +359,12 @@ export default function MenuPage() {
                 <section
                   key={cat.id}
                   id={`cat-sec-${cat.id}`}
-                  className="mb-7 category-tab-animate"
+                  className="mb-7"
                 >
-                  {/* Category Title Header with Burgundy Accent Bar (Clean Text-Only) */}
+                  {/* Category Title Header with Burgundy Accent Bar */}
                   <div className="flex items-center justify-between gap-3 mb-3.5 px-1 pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-1.5 h-5 bg-[#8B1D2C] rounded-full shadow-2xs"></span>
+                      <span className="w-1.5 h-5 bg-[#8B1D2C] rounded-full inline-block"></span>
                       <h3 className="text-[17px] font-bold text-slate-800 tracking-tight m-0">
                         {catTitle}
                       </h3>
@@ -264,8 +380,8 @@ export default function MenuPage() {
                     )}
                   </div>
 
-                  {/* 2-Column Dish Cards Grid (Crisp Clean White Style) */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* 2-Column Symmetrical Dish Cards Grid */}
+                  <div className="sh-card-grid">
                     {cat.items.map((dish) => {
                       const title = currentLang === 'ar' ? dish.name : (dish.nameEn || dish.name);
                       const desc = currentLang === 'ar' ? dish.description : (dish.descriptionEn || dish.description);
@@ -275,14 +391,14 @@ export default function MenuPage() {
                       return (
                         <div
                           key={dish.id}
-                          className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden flex flex-col shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                          className="sh-dish-card"
                         >
-                          {/* Image Frame: Clean Light Slate Frame Background */}
-                          <div className="relative w-full aspect-4/3 bg-slate-100 overflow-hidden border-b border-slate-100">
+                          {/* Image Frame with Strict 4/3 Aspect Ratio */}
+                          <div className="sh-img-frame">
                             <img
                               src={dish.image || '/assets/cover.jpg'}
                               alt={title}
-                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                              className="sh-dish-img"
                               loading="lazy"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/assets/cover.jpg';
@@ -290,24 +406,24 @@ export default function MenuPage() {
                             />
                           </div>
 
-                          {/* Card Body with Clean, Crisp, Eye-Resting Typography */}
-                          <div className="p-2.5 flex flex-col justify-between flex-1 min-h-[96px] bg-white">
+                          {/* Card Body */}
+                          <div className="sh-card-body">
                             <div>
-                              {/* Dish Title in Soft Dark Slate (#1E293B) */}
-                              <h4 className="text-[14.5px] font-bold text-slate-800 leading-snug tracking-tight m-0">
+                              {/* Dish Title */}
+                              <h4 className="sh-dish-title">
                                 {title}
                               </h4>
 
-                              {/* Arabic Description in Clean Neutral Slate (#64748B) */}
+                              {/* Arabic Description */}
                               {desc && (
-                                <p className="text-[12px] font-normal leading-[1.55] text-slate-500 mt-1 mb-0 line-clamp-2">
+                                <p className="sh-dish-desc">
                                   {desc}
                                 </p>
                               )}
                             </div>
 
                             {/* Card Footer: Price on visual left, sizes pill on right */}
-                            <div className="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between w-full">
+                            <div className="sh-dish-footer">
                               {/* Sizes Pill */}
                               {hasSizes && dish.priceS && dish.priceL ? (
                                 <div className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
@@ -316,7 +432,7 @@ export default function MenuPage() {
                               ) : <div></div>}
 
                               {/* Price in Rich Burgundy on visual left */}
-                              <div className="inline-flex items-baseline gap-0.5 ms-auto">
+                              <div className="sh-dish-price">
                                 {hasSizes && (
                                   <span className="text-[10px] font-semibold text-slate-400 me-0.5">
                                     {currentLang === 'ar' ? 'من' : 'From'}
